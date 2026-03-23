@@ -7,6 +7,7 @@ import {
 } from "../api/site-settings.api";
 import { uploadGalleryImage } from "../api/gallery.api";
 import { getAllProducts } from "../api/admin.api";
+import { getLocations } from "../api/location.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../context/SiteSettingsContext";
@@ -192,6 +193,35 @@ function normalizeLocalizedValue(value) {
   };
 }
 
+function getLocationLabel(location, fallback = "Location") {
+  const primaryLabel = String(location?.name || location?.city || "").trim();
+  if (primaryLabel) return primaryLabel;
+
+  const locationId = Number(location?.id);
+  if (Number.isInteger(locationId) && locationId > 0) {
+    return `${fallback} #${locationId}`;
+  }
+
+  return fallback;
+}
+
+function normalizeLocalSeoParagraph(value) {
+  return normalizeLocalizedValue(value);
+}
+
+function normalizeLocalSeoEntry(entry, location = null) {
+  const locationId = Number(entry?.locationId ?? location?.id);
+
+  return {
+    locationId: Number.isInteger(locationId) && locationId > 0 ? locationId : null,
+    locationName: String(entry?.locationName || getLocationLabel(location, "")).trim(),
+    title: normalizeLocalizedValue(entry?.title),
+    paragraphs: Array.isArray(entry?.paragraphs)
+      ? entry.paragraphs.map(normalizeLocalSeoParagraph)
+      : [],
+  };
+}
+
 function HighlightedIngredientsManager({
   items,
   pendingValue,
@@ -280,6 +310,38 @@ function HighlightedIngredientsManager({
   );
 }
 
+function LocalSeoParagraphFields({
+  index,
+  value,
+  onChange,
+  onRemove,
+  tr,
+}) {
+  return (
+    <div className="grid gap-3 rounded-[1.5rem] border border-white/10 bg-black/20 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-300">
+          {tr("Paragraphe", "Paragraph")} {index + 1}
+        </p>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="rounded-full border border-red-300/35 bg-red-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-red-100 transition hover:bg-red-500/20"
+        >
+          {tr("Supprimer", "Remove")}
+        </button>
+      </div>
+
+      <LocalizedField
+        label={tr("Contenu", "Content")}
+        value={value}
+        multiline
+        onChange={onChange}
+      />
+    </div>
+  );
+}
+
 export default function SiteInfoAdmin() {
   const { token, user, loading: authLoading } = useContext(AuthContext);
   const { tr } = useLanguage();
@@ -294,6 +356,9 @@ export default function SiteInfoAdmin() {
   const [openSectionId, setOpenSectionId] = useState(null);
   const [availableProducts, setAvailableProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [availableLocations, setAvailableLocations] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [editingLocalSeoLocationId, setEditingLocalSeoLocationId] = useState(null);
   const [highlightedIngredientDraft, setHighlightedIngredientDraft] = useState("");
   const [isAddingHighlightedIngredient, setIsAddingHighlightedIngredient] = useState(false);
   const sectionRefs = useRef({});
@@ -359,6 +424,35 @@ export default function SiteInfoAdmin() {
     };
   }, [authLoading, token, user]);
 
+  useEffect(() => {
+    if (authLoading || !token || user?.role !== "ADMIN") return;
+
+    let active = true;
+    async function loadLocations() {
+      try {
+        setLoadingLocations(true);
+        const locations = await getLocations();
+        if (!active) return;
+        const sorted = [...(Array.isArray(locations) ? locations : [])].sort((left, right) =>
+          getLocationLabel(left, "Location").localeCompare(getLocationLabel(right, "Location"), "fr")
+        );
+        setAvailableLocations(sorted);
+      } catch (_err) {
+        if (!active) return;
+        setAvailableLocations([]);
+      } finally {
+        if (active) {
+          setLoadingLocations(false);
+        }
+      }
+    }
+
+    loadLocations();
+    return () => {
+      active = false;
+    };
+  }, [authLoading, token, user]);
+
   const feedbackClassName = useMemo(() => {
     if (messageType === "success") {
       return "border-emerald-300/35 bg-emerald-500/10 text-emerald-100";
@@ -393,6 +487,37 @@ export default function SiteInfoAdmin() {
     [form.pizzaPage?.featuredProductIds]
   );
   const selectableProducts = useMemo(() => availableProducts, [availableProducts]);
+  const localSeoRows = useMemo(
+    () =>
+      availableLocations.map((location) => {
+        const locationId = Number(location?.id);
+        const key = Number.isInteger(locationId) && locationId > 0 ? String(locationId) : "";
+        const storedEntry =
+          key && form.localSeo?.entries && typeof form.localSeo.entries === "object"
+            ? form.localSeo.entries[key]
+            : null;
+        const entry = normalizeLocalSeoEntry(storedEntry, location);
+
+        return {
+          location,
+          key,
+          label: getLocationLabel(location, tr("Location", "Location")),
+          hasContent: Boolean(
+            entry.title.fr.trim() ||
+              entry.title.en.trim() ||
+              entry.paragraphs.some((paragraph) => paragraph.fr.trim() || paragraph.en.trim())
+          ),
+          entry,
+        };
+      }),
+    [availableLocations, form.localSeo?.entries, tr]
+  );
+  const activeLocalSeoRow = useMemo(
+    () =>
+      localSeoRows.find((row) => Number(row.location?.id) === Number(editingLocalSeoLocationId)) ||
+      null,
+    [editingLocalSeoLocationId, localSeoRows]
+  );
 
   const updateRootField = (field, value) => {
     setForm((prev) => ({
@@ -431,6 +556,79 @@ export default function SiteInfoAdmin() {
           [locale]: value,
         },
       },
+    }));
+  };
+
+  const updateLocalSeoEntry = (location, updater) => {
+    const locationId = Number(location?.id);
+    if (!Number.isInteger(locationId) || locationId <= 0) return;
+
+    setForm((prev) => {
+      const key = String(locationId);
+      const currentEntry = normalizeLocalSeoEntry(prev.localSeo?.entries?.[key], location);
+      const nextEntry = normalizeLocalSeoEntry(
+        typeof updater === "function" ? updater(currentEntry) : updater,
+        location
+      );
+
+      return {
+        ...prev,
+        localSeo: {
+          ...prev.localSeo,
+          entries: {
+            ...(prev.localSeo?.entries || {}),
+            [key]: nextEntry,
+          },
+        },
+      };
+    });
+  };
+
+  const handleEditLocalSeoLocation = (location) => {
+    const locationId = Number(location?.id);
+    if (!Number.isInteger(locationId) || locationId <= 0) return;
+
+    updateLocalSeoEntry(location, (currentEntry) => currentEntry);
+    setEditingLocalSeoLocationId(locationId);
+  };
+
+  const handleUpdateLocalSeoTitle = (location, locale, value) => {
+    updateLocalSeoEntry(location, (currentEntry) => ({
+      ...currentEntry,
+      title: {
+        ...currentEntry.title,
+        [locale]: value,
+      },
+    }));
+  };
+
+  const handleAddLocalSeoParagraph = (location) => {
+    updateLocalSeoEntry(location, (currentEntry) => ({
+      ...currentEntry,
+      paragraphs: [...currentEntry.paragraphs, { fr: "", en: "" }],
+    }));
+  };
+
+  const handleUpdateLocalSeoParagraph = (location, index, locale, value) => {
+    updateLocalSeoEntry(location, (currentEntry) => ({
+      ...currentEntry,
+      paragraphs: currentEntry.paragraphs.map((paragraph, paragraphIndex) =>
+        paragraphIndex === index
+          ? {
+              ...paragraph,
+              [locale]: value,
+            }
+          : paragraph
+      ),
+    }));
+  };
+
+  const handleRemoveLocalSeoParagraph = (location, index) => {
+    updateLocalSeoEntry(location, (currentEntry) => ({
+      ...currentEntry,
+      paragraphs: currentEntry.paragraphs.filter(
+        (_paragraph, paragraphIndex) => paragraphIndex !== index
+      ),
     }));
   };
 
@@ -604,6 +802,8 @@ export default function SiteInfoAdmin() {
         };
       case "blog":
         return { blog: form.blog };
+      case "localSeo":
+        return { localSeo: form.localSeo };
       case "contactPage":
         return { contactPage: form.contactPage };
       case "order":
@@ -688,6 +888,9 @@ export default function SiteInfoAdmin() {
           break;
         case "blog":
           payload = { blog: form.blog };
+          break;
+        case "localSeo":
+          payload = { localSeo: form.localSeo };
           break;
         case "contactPage":
           payload = { contactPage: form.contactPage };
@@ -1424,6 +1627,131 @@ export default function SiteInfoAdmin() {
               multiline
               onChange={(locale, value) => updateNestedLocalized("blog", "introText", locale, value)}
             />
+          </div>
+        </AccordionSection>
+
+        <AccordionSection
+          sectionRef={(node) => {
+            sectionRefs.current.localSeo = node;
+          }}
+          eyebrow="SEO LOCAL"
+          title={tr("Contenus locaux par location", "Local content by location")}
+          description={tr(
+            "Ajoutez un titre et des paragraphes relies a chaque location.",
+            "Add a title and paragraphs tied to each location."
+          )}
+          isOpen={openSectionId === "localSeo"}
+          onToggle={() => toggleSection("localSeo")}
+          onSave={() => saveSection("localSeo")}
+          saving={savingSectionId === "localSeo"}
+          translating={false}
+          saveLabel={saveButtonLabel}
+        >
+          <div className="grid gap-5">
+            {loadingLocations ? (
+              <p className="text-sm text-stone-300">{tr("Chargement...", "Loading...")}</p>
+            ) : localSeoRows.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/15 bg-black/10 px-4 py-4 text-sm text-stone-400">
+                {tr("Aucune location disponible.", "No location available.")}
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                {localSeoRows.map((row) => {
+                  const isEditing =
+                    Number(editingLocalSeoLocationId) === Number(row.location?.id);
+
+                  return (
+                    <div
+                      key={row.key}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-charcoal/40 px-4 py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-white">{row.label}</p>
+                        <p className="text-xs text-stone-400">
+                          {row.hasContent
+                            ? tr("Contenu configure", "Content configured")
+                            : tr("Aucun contenu pour le moment", "No content yet")}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          isEditing
+                            ? setEditingLocalSeoLocationId(null)
+                            : handleEditLocalSeoLocation(row.location)
+                        }
+                        className={`rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-wide transition ${
+                          isEditing
+                            ? "border border-white/20 bg-white/10 text-white hover:bg-white/15"
+                            : "bg-saffron text-charcoal hover:bg-yellow-300"
+                        }`}
+                      >
+                        {isEditing ? tr("Fermer", "Close") : "EDIT"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {activeLocalSeoRow ? (
+              <div className="grid gap-4 rounded-[1.75rem] border border-white/10 bg-black/20 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.25em] text-saffron">SEO LOCAL</p>
+                    <h4 className="mt-1 text-xl font-semibold text-white">
+                      {activeLocalSeoRow.label}
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleAddLocalSeoParagraph(activeLocalSeoRow.location)}
+                    className="rounded-full border border-white/20 bg-black/20 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-white transition hover:bg-white/10"
+                  >
+                    {tr("Ajouter un paragraphe", "Add paragraph")}
+                  </button>
+                </div>
+
+                <LocalizedField
+                  label={tr("Titre", "Title")}
+                  value={activeLocalSeoRow.entry.title}
+                  onChange={(locale, value) =>
+                    handleUpdateLocalSeoTitle(activeLocalSeoRow.location, locale, value)
+                  }
+                />
+
+                {activeLocalSeoRow.entry.paragraphs.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-white/15 bg-black/10 px-4 py-4 text-sm text-stone-400">
+                    {tr(
+                      "Aucun paragraphe pour cette location. Ajoutez-en un pour commencer.",
+                      "No paragraph for this location yet. Add one to get started."
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {activeLocalSeoRow.entry.paragraphs.map((paragraph, index) => (
+                      <LocalSeoParagraphFields
+                        key={`${activeLocalSeoRow.key}-${index}`}
+                        index={index}
+                        value={paragraph}
+                        onChange={(locale, value) =>
+                          handleUpdateLocalSeoParagraph(
+                            activeLocalSeoRow.location,
+                            index,
+                            locale,
+                            value
+                          )
+                        }
+                        onRemove={() =>
+                          handleRemoveLocalSeoParagraph(activeLocalSeoRow.location, index)
+                        }
+                        tr={tr}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
           </div>
         </AccordionSection>
 

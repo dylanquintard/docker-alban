@@ -54,3 +54,37 @@ test("mergeSiteSettings accepts the menu image visibility toggle", () => {
 
   expect(merged.order.showMenuProductImages).toBe(false);
 });
+
+test("mergeSiteSettings normalizes local seo entries", () => {
+  const merged = mergeSiteSettings({
+    localSeo: {
+      entries: {
+        3: {
+          locationId: "3",
+          locationName: "Hayange",
+          title: { fr: "Pizza Hayange" },
+          paragraphs: [{ fr: "Premier paragraphe" }, { en: "Second paragraph" }],
+        },
+      },
+    },
+  });
+
+  expect(merged.localSeo.entries["3"]).toEqual({
+    locationId: 3,
+    locationName: "Hayange",
+    title: {
+      fr: "Pizza Hayange",
+      en: "",
+    },
+    paragraphs: [
+      {
+        fr: "Premier paragraphe",
+        en: "",
+      },
+      {
+        fr: "",
+        en: "Second paragraph",
+      },
+    ],
+  });
+});

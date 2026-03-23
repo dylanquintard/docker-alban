@@ -93,6 +93,9 @@ export const DEFAULT_SITE_SETTINGS = Object.freeze({
       en: "Here we talk about Italy, flavor, craft and quality!",
     },
   },
+  localSeo: {
+    entries: {},
+  },
   contactPage: {
     pageTitle: {
       fr: "Nous contacter",
@@ -180,6 +183,37 @@ function mergeLocalizedValue(defaultValue, nextValue) {
           ? defaultValue.en
           : "",
   };
+}
+
+function normalizeLocalSeoParagraph(value) {
+  return mergeLocalizedValue({ fr: "", en: "" }, value);
+}
+
+function normalizeLocalSeoEntry(key, value) {
+  const source = isPlainObject(value) ? value : {};
+  const normalizedLocationId = Number(source.locationId ?? key);
+
+  return {
+    locationId:
+      Number.isInteger(normalizedLocationId) && normalizedLocationId > 0
+        ? normalizedLocationId
+        : null,
+    locationName:
+      typeof source.locationName === "string" ? source.locationName.trim() : "",
+    title: mergeLocalizedValue({ fr: "", en: "" }, source.title),
+    paragraphs: Array.isArray(source.paragraphs)
+      ? source.paragraphs.map(normalizeLocalSeoParagraph)
+      : [],
+  };
+}
+
+function normalizeLocalSeoEntries(value) {
+  const source = isPlainObject(value) ? value : {};
+
+  return Object.entries(source).reduce((accumulator, [key, entry]) => {
+    accumulator[key] = normalizeLocalSeoEntry(key, entry);
+    return accumulator;
+  }, {});
 }
 
 export function mergeSiteSettings(nextValue) {
@@ -278,6 +312,9 @@ export function mergeSiteSettings(nextValue) {
     blog: {
       introTitle: mergeLocalizedValue(defaults.blog.introTitle, source.blog?.introTitle),
       introText: mergeLocalizedValue(defaults.blog.introText, source.blog?.introText),
+    },
+    localSeo: {
+      entries: normalizeLocalSeoEntries(source.localSeo?.entries),
     },
     contactPage: {
       pageTitle: mergeLocalizedValue(

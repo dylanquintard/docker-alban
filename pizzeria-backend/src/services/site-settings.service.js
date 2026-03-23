@@ -93,6 +93,9 @@ const DEFAULT_SITE_SETTINGS = Object.freeze({
       en: "Here we talk about Italy, flavor, craft and quality!",
     },
   },
+  localSeo: {
+    entries: {},
+  },
   contactPage: {
     pageTitle: {
       fr: "Nous contacter",
@@ -220,6 +223,39 @@ function mergeLocalizedValue(currentValue, nextValue, fieldName) {
   };
 }
 
+function normalizeLocalSeoParagraph(value, fieldName) {
+  return mergeLocalizedValue({ fr: "", en: "" }, value, fieldName);
+}
+
+function normalizeLocalSeoEntry(key, value) {
+  const fieldName = `localSeo.entries.${key}`;
+  const source = ensureObject(value, fieldName);
+  const normalizedLocationId = Number(source.locationId ?? key);
+
+  return {
+    locationId:
+      Number.isInteger(normalizedLocationId) && normalizedLocationId > 0
+        ? normalizedLocationId
+        : null,
+    locationName: normalizeString(source.locationName, `${fieldName}.locationName`) ?? "",
+    title: mergeLocalizedValue({ fr: "", en: "" }, source.title || {}, `${fieldName}.title`),
+    paragraphs: Array.isArray(source.paragraphs)
+      ? source.paragraphs.map((paragraph, index) =>
+          normalizeLocalSeoParagraph(paragraph, `${fieldName}.paragraphs.${index}`)
+        )
+      : [],
+  };
+}
+
+function normalizeLocalSeoEntries(value) {
+  const source = ensureObject(value, "localSeo.entries");
+
+  return Object.entries(source).reduce((accumulator, [key, entry]) => {
+    accumulator[key] = normalizeLocalSeoEntry(key, entry);
+    return accumulator;
+  }, {});
+}
+
 function formatSiteSettingsRecord(record) {
   const defaults = cloneDefaults();
   const source = record || {};
@@ -335,6 +371,9 @@ function formatSiteSettingsRecord(record) {
         "blog.introText"
       ),
     },
+    localSeo: {
+      entries: normalizeLocalSeoEntries(source.localSeo?.entries),
+    },
     contactPage: {
       pageTitle: mergeLocalizedValue(
         defaults.contactPage.pageTitle,
@@ -439,6 +478,7 @@ function buildPersistedPayload(settings) {
     seo: settings.seo,
     home: settings.home,
     blog: settings.blog,
+    localSeo: settings.localSeo,
     contactPage: settings.contactPage,
     order: settings.order,
     footer: settings.footer,
@@ -736,6 +776,15 @@ async function updateSiteSettings(payload) {
                 : current.blog.introText,
           }
         : current.blog,
+    localSeo:
+      source.localSeo !== undefined
+        ? {
+            entries:
+              ensureObject(source.localSeo, "localSeo").entries !== undefined
+                ? normalizeLocalSeoEntries(ensureObject(source.localSeo, "localSeo").entries)
+                : current.localSeo.entries,
+          }
+        : current.localSeo,
     contactPage:
       source.contactPage !== undefined
         ? {
