@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { getLocations } from "../api/location.api";
+import { getPublicReviews } from "../api/review.api";
 import { getSeoLocations } from "../api/seo.api";
 import { getPublicWeeklySettings } from "../api/timeslot.api";
-import PublicReviewsSection from "../components/reviews/PublicReviewsSection";
 import SeoHead from "../components/seo/SeoHead";
+import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../context/SiteSettingsContext";
 import { buildBaseFoodEstablishmentJsonLd, buildBreadcrumbJsonLd } from "../seo/jsonLd";
 import { DEFAULT_SITE_SETTINGS } from "../site/siteSettings";
@@ -62,6 +63,24 @@ function getSeoLocationLabel(location) {
 
 function buildLocationCardKey(locationName, address) {
   return `${String(locationName || "").trim()}|${String(address || "").trim()}`;
+}
+
+function formatReviewDate(value, locale) {
+  if (!value) return "";
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(new Date(value));
+  } catch (_err) {
+    return "";
+  }
+}
+
+function renderStars(rating) {
+  const score = Math.max(0, Math.min(5, Number(rating) || 0));
+  return Array.from({ length: 5 }, (_value, index) => (index < score ? "\u2605" : "\u2606")).join("");
 }
 
 function normalizeSeoCatalogEntries(entries) {
@@ -161,6 +180,7 @@ function CityPageNotFound({ citySlug }) {
 }
 
 export default function CitySeoPage({ forcedCitySlug = "" }) {
+  const { locale, tr } = useLanguage();
   const { settings } = useSiteSettings();
   const location = useLocation();
   const params = useParams();
@@ -178,6 +198,11 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
   const [seoCatalog, setSeoCatalog] = useState([]);
   const [locations, setLocations] = useState([]);
   const [allowedLoaded, setAllowedLoaded] = useState(false);
+  const [reviewsPayload, setReviewsPayload] = useState({
+    summary: { averageRating: 0, totalReviews: 0 },
+    reviews: [],
+  });
+  const [reviewsLoading, setReviewsLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -406,6 +431,52 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
     return [...grouped.values()];
   }, [cityDisplay, currentBucket?.entries, matchingLocations]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!reviewLocationId) {
+      setReviewsPayload({
+        summary: { averageRating: 0, totalReviews: 0 },
+        reviews: [],
+      });
+      setReviewsLoading(false);
+      return undefined;
+    }
+
+    setReviewsLoading(true);
+
+    getPublicReviews({ locationId: reviewLocationId, limit: 5 })
+      .then((data) => {
+        if (cancelled) return;
+        setReviewsPayload({
+          summary: data?.summary || { averageRating: 0, totalReviews: 0 },
+          reviews: Array.isArray(data?.reviews) ? data.reviews : [],
+        });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setReviewsPayload({
+          summary: { averageRating: 0, totalReviews: 0 },
+          reviews: [],
+        });
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setReviewsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reviewLocationId]);
+
+  const averageLabel = useMemo(() => {
+    const average = Number(reviewsPayload.summary?.averageRating || 0);
+    if (!average) return "0.0";
+    return average.toFixed(1);
+  }, [reviewsPayload.summary?.averageRating]);
+
   const cityJsonLd = useMemo(
     () =>
       [
@@ -523,46 +594,128 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
         </p>
       </header>
 
-      <section className="glass-panel p-6">
-        <h2 className="text-lg font-bold text-white">Adresses et horaires d'ouverture</h2>
-        {locationScheduleCards.length > 0 ? (
-          <>
-            <p className="mt-3 text-sm text-stone-300">
-              Les horaires affiches ci-dessous sont directement relies aux adresses actives de cette location.
-            </p>
-            <ul className="mt-3 grid gap-2 md:grid-cols-2">
-              {locationScheduleCards.map((entry) => (
-                <li
-                  key={entry.key}
-                  className="rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-stone-200"
-                >
-                  <p className="font-semibold text-white">{entry.locationName}</p>
-                  {entry.address ? <p className="mt-1 text-xs text-stone-300">{entry.address}</p> : null}
-                  {entry.slots.length > 0 ? (
-                    <div className="mt-3 space-y-1">
-                      {entry.slots.map((slot) => (
-                        <p key={slot.key} className="text-xs text-stone-300">
-                          {slot.dayLabel} - {slot.hours}
-                        </p>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-xs text-stone-400">Horaires non renseignes pour le moment.</p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : (
-          <p className="mt-3 text-sm text-stone-300">
-            Aucun horaire ou emplacement n'est encore publie pour cette location.
-          </p>
-        )}
-      </section>
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
+        <div className="space-y-6">
+          <section className="glass-panel min-h-[420px] p-6">
+            <div className="max-w-2xl space-y-3">
+              <p className="text-xs uppercase tracking-[0.24em] text-saffron">
+                {tr("Contenu local", "Local content")}
+              </p>
+              <h2 className="text-lg font-bold text-white">
+                {tr("Zone reservee aux futurs paragraphes", "Reserved space for future paragraphs")}
+              </h2>
+              <p className="text-sm text-stone-300">
+                {tr(
+                  "Cette colonne reste volontairement libre pour accueillir plus tard les paragraphes pilotes depuis l'admin site-info.",
+                  "This column intentionally stays open for future paragraphs managed from the site-info admin."
+                )}
+              </p>
+            </div>
+          </section>
+        </div>
 
-      {reviewLocationId ? (
-        <PublicReviewsSection locationId={reviewLocationId} className="space-y-5" />
-      ) : null}
+        <aside className="space-y-6">
+          <section className="glass-panel p-6">
+            <h2 className="text-lg font-bold text-white">Adresses et horaires d'ouverture</h2>
+            {locationScheduleCards.length > 0 ? (
+              <>
+                <p className="mt-3 text-sm text-stone-300">
+                  Les horaires affiches ci-dessous sont directement relies aux adresses actives de cette location.
+                </p>
+                <ul className="mt-3 space-y-2">
+                  {locationScheduleCards.map((entry) => (
+                    <li
+                      key={entry.key}
+                      className="rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-stone-200"
+                    >
+                      <p className="font-semibold text-white">{entry.locationName}</p>
+                      {entry.address ? <p className="mt-1 text-xs text-stone-300">{entry.address}</p> : null}
+                      {entry.slots.length > 0 ? (
+                        <div className="mt-3 space-y-1">
+                          {entry.slots.map((slot) => (
+                            <p key={slot.key} className="text-xs text-stone-300">
+                              {slot.dayLabel} - {slot.hours}
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-xs text-stone-400">Horaires non renseignes pour le moment.</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="mt-3 text-sm text-stone-300">
+                Aucun horaire ou emplacement n'est encore publie pour cette location.
+              </p>
+            )}
+          </section>
+
+          {reviewLocationId ? (
+            <section className="glass-panel p-6">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.24em] text-saffron">
+                    {tr("Avis clients", "Customer reviews")}
+                  </p>
+                  <h2 className="mt-2 text-lg font-bold text-white">
+                    {tr("Avis de cette location", "Reviews for this location")}
+                  </h2>
+                </div>
+                <div className="rounded-2xl border border-saffron/25 bg-saffron/10 px-3 py-2 text-right">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-saffron">
+                    {tr("Moyenne", "Average")}
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-white">{averageLabel}/5</p>
+                </div>
+              </div>
+
+              {reviewsLoading ? (
+                <div className="mt-4 space-y-3">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div
+                      key={`city-review-skeleton-${index}`}
+                      className="animate-pulse rounded-xl border border-white/10 bg-white/5 p-4"
+                    >
+                      <div className="h-4 w-20 rounded bg-white/10" />
+                      <div className="mt-3 h-12 rounded bg-white/10" />
+                      <div className="mt-3 h-3 w-24 rounded bg-white/10" />
+                    </div>
+                  ))}
+                </div>
+              ) : Array.isArray(reviewsPayload.reviews) && reviewsPayload.reviews.length > 0 ? (
+                <div className="mt-4 space-y-3">
+                  {reviewsPayload.reviews.map((review) => (
+                    <article
+                      key={review.id}
+                      className="rounded-xl border border-white/10 bg-white/5 p-4"
+                    >
+                      <p className="text-sm tracking-[0.16em] text-saffron">
+                        {renderStars(review.rating)}
+                      </p>
+                      <p className="mt-3 text-sm leading-6 text-stone-200">{review.comment}</p>
+                      <div className="mt-3 border-t border-white/10 pt-3 text-[11px] text-stone-400">
+                        <p className="font-semibold uppercase tracking-[0.16em] text-white">
+                          {review.customerLabel}
+                        </p>
+                        <p className="mt-1">{formatReviewDate(review.createdAt, locale)}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-4 text-sm text-stone-300">
+                  {tr(
+                    "Aucun avis public n'est encore disponible pour cette location.",
+                    "No public review is available for this location yet."
+                  )}
+                </p>
+              )}
+            </section>
+          ) : null}
+        </aside>
+      </section>
 
       <section className="glass-panel p-6">
         <h2 className="text-lg font-bold text-white">Commander votre pizza</h2>
