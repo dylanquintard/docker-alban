@@ -11,6 +11,12 @@ import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { slugify } from "../utils/slugify";
 
+const ALLOWED_BLOG_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+
 function createParagraph(seed = {}) {
   return {
     id: seed.id || `paragraph-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -180,6 +186,7 @@ function ArticleEditor({
   setForm,
   onSubmit,
   onCancel,
+  onMessage,
   slugLocked,
   saving,
   submitLabel,
@@ -465,10 +472,20 @@ function ArticleEditor({
                       <span>{tr("Uploader une image", "Upload image")}</span>
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp"
                         onChange={(event) => {
                           const file = event.target.files?.[0] || null;
                           if (!file) return;
+                          if (!ALLOWED_BLOG_IMAGE_MIME_TYPES.has(file.type)) {
+                            onMessage?.(
+                              tr(
+                                "Format non supporte. Utilisez uniquement JPG, PNG ou WEBP.",
+                                "Unsupported format. Please use JPG, PNG or WEBP only."
+                              )
+                            );
+                            event.target.value = "";
+                            return;
+                          }
                           const previewUrl = URL.createObjectURL(file);
                           updateParagraphImage(index, {
                             file,
@@ -503,8 +520,8 @@ function ArticleEditor({
                     ) : (
                       <p className="rounded-2xl border border-dashed border-white/10 px-4 py-3 text-xs leading-6 text-stone-400">
                         {tr(
-                          "Ajoute une image pour afficher automatiquement ce visuel dans cette section de l'article.",
-                          "Add an image to automatically show this visual in this article section."
+                          "Ajoute une image JPG, PNG ou WEBP pour afficher automatiquement ce visuel dans cette section de l'article.",
+                          "Add a JPG, PNG or WEBP image to automatically show this visual in this article section."
                         )}
                       </p>
                     )}
@@ -766,6 +783,7 @@ export default function BlogAdmin() {
           setForm={setCreateForm}
           onSubmit={handleCreate}
           onCancel={() => setIsCreateOpen(false)}
+          onMessage={setMessage}
           slugLocked={false}
           saving={saving && !editingId}
           submitLabel={tr("Créer l'article", "Create article")}
@@ -781,6 +799,7 @@ export default function BlogAdmin() {
           setForm={setEditForm}
           onSubmit={handleUpdate}
           onCancel={cancelEditing}
+          onMessage={setMessage}
           slugLocked
           saving={saving && Boolean(editingId)}
           submitLabel={tr("Mettre à jour", "Update article")}

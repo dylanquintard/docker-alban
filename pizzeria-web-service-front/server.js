@@ -11,6 +11,7 @@ const SEO_CACHE_TTL_MS = Number(process.env.SEO_CACHE_TTL_MS || 300000);
 const SEO_FETCH_TIMEOUT_MS = Number(process.env.SEO_FETCH_TIMEOUT_MS || 6000);
 const SEO_FORCE_REFRESH_MIN_INTERVAL_MS = Number(process.env.SEO_FORCE_REFRESH_MIN_INTERVAL_MS || 15000);
 const SITEMAP_CACHE_TTL_MS = Math.max(15000, Math.min(SEO_CACHE_TTL_MS, 300000));
+const BACKEND_SITEMAP_CACHE_TTL_MS = Math.min(SITEMAP_CACHE_TTL_MS, 15000);
 
 const FIXED_CITY_CATALOG = [
   { slug: "thionville", label: "Thionville" },
@@ -656,7 +657,7 @@ async function getSitemapPayload(req) {
     if (backendLocs.length > 0) {
       sitemapCache.xml = buildSitemapXml(backendLocs);
       sitemapCache.sourceLabel = "backend";
-      sitemapCache.expiresAt = Date.now() + SITEMAP_CACHE_TTL_MS;
+      sitemapCache.expiresAt = Date.now() + BACKEND_SITEMAP_CACHE_TTL_MS;
       return sitemapCache;
     }
 
@@ -1081,12 +1082,22 @@ app.get("/healthz", (_req, res) => {
 app.get("/sitemap.xml", async (req, res) => {
   try {
     const payload = await getSitemapPayload(req);
-    return res
+    const cacheControl =
+      payload.sourceLabel === "backend"
+        ? "no-store, no-cache, must-revalidate, max-age=0"
+        : "public, max-age=60, stale-while-revalidate=30";
+    const response = res
       .status(200)
       .type("application/xml; charset=utf-8")
-      .set("Cache-Control", "public, max-age=60, stale-while-revalidate=30")
-      .set("X-Sitemap-Source", payload.sourceLabel)
-      .send(payload.xml);
+      .set("Cache-Control", cacheControl)
+      .set("X-Sitemap-Source", payload.sourceLabel);
+
+    if (payload.sourceLabel === "backend") {
+      response.set("Pragma", "no-cache");
+      response.set("Expires", "0");
+    }
+
+    return response.send(payload.xml);
   } catch (_error) {
     return res.status(503).type("text/plain; charset=utf-8").send("Sitemap unavailable");
   }

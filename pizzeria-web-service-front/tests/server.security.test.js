@@ -298,6 +298,12 @@ test("sitemap endpoint prefers backend sitemap entries over local fallback when 
           const response = await requestServer(baseUrl, "/sitemap.xml");
           assert.equal(response.status, 200);
           assert.equal(response.headers["x-sitemap-source"], "backend");
+          assert.equal(
+            response.headers["cache-control"],
+            "no-store, no-cache, must-revalidate, max-age=0"
+          );
+          assert.equal(response.headers.pragma, "no-cache");
+          assert.equal(response.headers.expires, "0");
           assert.match(response.body, /https:\/\/backend\.example\/pizza-yutz/i);
           assert.doesNotMatch(response.body, /https:\/\/www\.example\.com/i);
           assert.equal(getFetchCount(), 1);
