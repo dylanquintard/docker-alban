@@ -3,7 +3,6 @@ import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { getLocations } from "../api/location.api";
 import { getSeoLocations } from "../api/seo.api";
 import { getPublicWeeklySettings } from "../api/timeslot.api";
-import PageFaqSection from "../components/common/PageFaqSection";
 import PublicReviewsSection from "../components/reviews/PublicReviewsSection";
 import SeoHead from "../components/seo/SeoHead";
 import { useSiteSettings } from "../context/SiteSettingsContext";
@@ -11,7 +10,6 @@ import { buildBaseFoodEstablishmentJsonLd, buildBreadcrumbJsonLd } from "../seo/
 import { DEFAULT_SITE_SETTINGS } from "../site/siteSettings";
 import {
   BLOCKED_LOCAL_CITY_SLUGS,
-  buildDynamicCityContent,
   FIXED_LOCAL_CITY_SLUGS,
   getFixedCityPathBySlug,
   slugifyCity,
@@ -33,6 +31,7 @@ function toDisplayCity(citySlug) {
     .trim();
 
   if (!normalized) return "Moselle";
+
   return normalized
     .split(" ")
     .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
@@ -59,6 +58,10 @@ function formatAddress(location) {
 
 function getSeoLocationLabel(location) {
   return String(location?.name || location?.city || "").trim();
+}
+
+function buildLocationCardKey(locationName, address) {
+  return `${String(locationName || "").trim()}|${String(address || "").trim()}`;
 }
 
 function normalizeSeoCatalogEntries(entries) {
@@ -101,12 +104,15 @@ function normalizeSeoCatalogEntries(entries) {
 function buildCatalogFromLocations(entries) {
   const source = Array.isArray(entries) ? entries : [];
   const fallback = [];
+
   for (const location of source) {
     const locationId = Number(location?.id);
     const labelCandidates = [location?.city, location?.name].filter(Boolean);
+
     for (const candidate of labelCandidates) {
       const slug = slugifyCity(candidate);
       if (!slug || BLOCKED_LOCAL_CITY_SLUGS.includes(slug)) continue;
+
       fallback.push({
         slug,
         label: String(candidate).trim(),
@@ -115,11 +121,13 @@ function buildCatalogFromLocations(entries) {
       });
     }
   }
+
   return normalizeSeoCatalogEntries(fallback);
 }
 
 function CityPageNotFound({ citySlug }) {
   const pathname = citySlug ? `/pizza-${citySlug}` : "/404";
+
   return (
     <div className="section-shell space-y-6 pb-20 pt-12">
       <SeoHead
@@ -165,6 +173,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
     const parsed = Number(value);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }, [location.search]);
+
   const [weeklySettings, setWeeklySettings] = useState([]);
   const [seoCatalog, setSeoCatalog] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -205,6 +214,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
         locationsResult.status === "fulfilled" && Array.isArray(locationsResult.value)
           ? locationsResult.value
           : [];
+
       setLocations(activeLocations);
 
       const normalizedSeoCatalog =
@@ -212,12 +222,11 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
           ? normalizeSeoCatalogEntries(seoResult.value?.locations)
           : [];
 
-      if (normalizedSeoCatalog.length > 0) {
-        setSeoCatalog(normalizedSeoCatalog);
-      } else {
-        setSeoCatalog(buildCatalogFromLocations(activeLocations));
-      }
-
+      setSeoCatalog(
+        normalizedSeoCatalog.length > 0
+          ? normalizedSeoCatalog
+          : buildCatalogFromLocations(activeLocations)
+      );
       setAllowedLoaded(true);
     };
 
@@ -238,7 +247,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
     const source = Array.isArray(weeklySettings) ? weeklySettings : [];
     const locationsById = new Map(
       (Array.isArray(locations) ? locations : [])
-        .map((location) => [Number(location?.id), location])
+        .map((entry) => [Number(entry?.id), entry])
         .filter(([locationId]) => Number.isFinite(locationId) && locationId > 0)
     );
 
@@ -258,10 +267,10 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
 
       for (const service of services) {
         const locationId = Number(service?.locationId || dayEntry?.locationId);
-        const location =
+        const serviceLocation =
           service?.location ||
           (Number.isFinite(locationId) && locationId > 0 ? locationsById.get(locationId) : null);
-        const label = getSeoLocationLabel(location);
+        const label = getSeoLocationLabel(serviceLocation);
         const slug = slugifyCity(label);
         if (!slug) continue;
 
@@ -275,13 +284,12 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
 
         const dayLabel = DAY_LABELS[dayEntry?.dayOfWeek] || dayEntry?.dayOfWeek || "";
         const hours = formatHourRange(service?.startTime, service?.endTime);
-        const locationName = location?.name || location?.city || "Emplacement";
-        const address = formatAddress(location);
+        const locationName = serviceLocation?.name || serviceLocation?.city || "Emplacement";
+        const address = formatAddress(serviceLocation);
         const dedupeKey = `${locationName}|${address}|${dayLabel}|${hours}`;
         const bucket = map.get(slug);
-        const alreadyExists = bucket.entries.some((entry) => entry.key === dedupeKey);
 
-        if (!alreadyExists) {
+        if (!bucket.entries.some((entry) => entry.key === dedupeKey)) {
           bucket.entries.push({
             key: dedupeKey,
             locationName,
@@ -298,19 +306,21 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
 
   const catalogBySlug = useMemo(() => {
     const map = new Map();
-    for (const item of seoCatalog) {
-      if (item?.slug) map.set(item.slug, item);
-    }
+    seoCatalog.forEach((entry) => {
+      if (entry?.slug) {
+        map.set(entry.slug, entry);
+      }
+    });
     return map;
   }, [seoCatalog]);
 
   const catalogByLocationId = useMemo(() => {
     const map = new Map();
-    for (const item of seoCatalog) {
-      if (Number.isFinite(item?.locationId) && item.locationId > 0) {
-        map.set(Number(item.locationId), item);
+    seoCatalog.forEach((entry) => {
+      if (Number.isFinite(entry?.locationId) && entry.locationId > 0) {
+        map.set(Number(entry.locationId), entry);
       }
-    }
+    });
     return map;
   }, [seoCatalog]);
 
@@ -320,13 +330,25 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
       return catalogByLocationId.get(queryLocationId)?.slug || "";
     }
     return "";
-  }, [citySlugFromPath, queryLocationId, catalogByLocationId]);
+  }, [catalogByLocationId, citySlugFromPath, queryLocationId]);
 
   const currentBucket = useMemo(
-    () => locationBuckets.find((bucket) => bucket.slug === resolvedCitySlug),
-    [resolvedCitySlug, locationBuckets]
+    () => locationBuckets.find((bucket) => bucket.slug === resolvedCitySlug) || null,
+    [locationBuckets, resolvedCitySlug]
   );
-  const catalogEntry = catalogBySlug.get(resolvedCitySlug);
+
+  const catalogEntry = catalogBySlug.get(resolvedCitySlug) || null;
+
+  const matchingLocations = useMemo(
+    () =>
+      (Array.isArray(locations) ? locations : []).filter((entry) => {
+        const citySlug = slugifyCity(entry?.city);
+        const nameSlug = slugifyCity(entry?.name);
+        return citySlug === resolvedCitySlug || nameSlug === resolvedCitySlug;
+      }),
+    [locations, resolvedCitySlug]
+  );
+
   const reviewLocationId = useMemo(() => {
     const fromQuery = Number(queryLocationId);
     if (Number.isInteger(fromQuery) && fromQuery > 0) return fromQuery;
@@ -334,32 +356,63 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
     const fromCatalog = Number(catalogEntry?.locationId);
     if (Number.isInteger(fromCatalog) && fromCatalog > 0) return fromCatalog;
 
-    const fallbackLocation = (Array.isArray(locations) ? locations : []).find((entry) => {
-      const citySlug = slugifyCity(entry?.city);
-      const nameSlug = slugifyCity(entry?.name);
-      return citySlug === resolvedCitySlug || nameSlug === resolvedCitySlug;
-    });
-    const fallbackId = Number(fallbackLocation?.id);
+    const fallbackId = Number(matchingLocations[0]?.id);
     return Number.isInteger(fallbackId) && fallbackId > 0 ? fallbackId : null;
-  }, [catalogEntry?.locationId, locations, queryLocationId, resolvedCitySlug]);
+  }, [catalogEntry?.locationId, matchingLocations, queryLocationId]);
+
   const cityDisplay = catalogEntry?.label || currentBucket?.label || toDisplayCity(resolvedCitySlug);
-  const content = useMemo(
-    () =>
-      buildDynamicCityContent(cityDisplay, {
-        locationHighlights: (currentBucket?.entries || []).map((entry) => entry.locationName),
-      }),
-    [cityDisplay, currentBucket]
-  );
-  const canonicalPath = catalogEntry?.path || content.pathname;
+  const canonicalPath = catalogEntry?.path || `/pizza-${resolvedCitySlug}`;
   const siteName = settings.siteName || DEFAULT_SITE_SETTINGS.siteName;
   const canonicalSiteUrl = String(settings.seo?.canonicalSiteUrl || "").trim();
+  const pageTitle = `Pizza ${cityDisplay} | ${siteName}`;
+  const pageDescription = `Retrouvez les adresses et horaires d'ouverture pour ${cityDisplay}.`;
+
+  const locationScheduleCards = useMemo(() => {
+    const grouped = new Map();
+
+    (currentBucket?.entries || []).forEach((entry) => {
+      const key = buildLocationCardKey(entry.locationName, entry.address);
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          key,
+          locationName: entry.locationName,
+          address: entry.address,
+          slots: [],
+        });
+      }
+
+      grouped.get(key).slots.push({
+        key: entry.key,
+        dayLabel: entry.dayLabel,
+        hours: entry.hours,
+      });
+    });
+
+    matchingLocations.forEach((entry) => {
+      const locationName = entry?.name || entry?.city || cityDisplay;
+      const address = formatAddress(entry);
+      const key = buildLocationCardKey(locationName, address);
+
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          key,
+          locationName,
+          address,
+          slots: [],
+        });
+      }
+    });
+
+    return [...grouped.values()];
+  }, [cityDisplay, currentBucket?.entries, matchingLocations]);
+
   const cityJsonLd = useMemo(
     () =>
       [
         buildBaseFoodEstablishmentJsonLd({
           pagePath: canonicalPath,
-          pageName: content.title,
-          description: content.description,
+          pageName: pageTitle,
+          description: pageDescription,
           siteName,
           siteUrl: canonicalSiteUrl || undefined,
           phone: settings.contact?.phone,
@@ -387,8 +440,8 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
       canonicalPath,
       canonicalSiteUrl,
       cityDisplay,
-      content.description,
-      content.title,
+      pageDescription,
+      pageTitle,
       settings.contact?.address,
       settings.contact?.email,
       settings.contact?.mapsUrl,
@@ -403,14 +456,14 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
 
   const effectiveAllowedSlugs = useMemo(() => {
     const combined = new Set(FIXED_LOCAL_CITY_SLUGS);
-    for (const item of seoCatalog) {
-      if (item?.slug) combined.add(item.slug);
-    }
-    for (const bucket of locationBuckets) {
-      if (bucket?.slug) combined.add(bucket.slug);
-    }
+    seoCatalog.forEach((entry) => {
+      if (entry?.slug) combined.add(entry.slug);
+    });
+    locationBuckets.forEach((entry) => {
+      if (entry?.slug) combined.add(entry.slug);
+    });
     return combined;
-  }, [seoCatalog, locationBuckets]);
+  }, [locationBuckets, seoCatalog]);
 
   if (!allowedLoaded) {
     return (
@@ -455,70 +508,61 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
   return (
     <div className="section-shell space-y-8 pb-20 pt-10">
       <SeoHead
-        title={content.title}
-        description={content.description}
+        title={pageTitle}
+        description={pageDescription}
         pathname={canonicalPath}
         jsonLd={cityJsonLd}
       />
 
       <header className="space-y-3">
-        <h1 className="font-display text-4xl uppercase tracking-wide text-white sm:text-5xl">{content.h1}</h1>
-        {Array.isArray(content.introParagraphs) && content.introParagraphs.length > 0 ? (
-          content.introParagraphs.map((paragraph, index) => (
-            <p key={`intro-${index}`} className="max-w-3xl text-sm text-stone-300 sm:text-base">
-              {paragraph}
-            </p>
-          ))
-        ) : (
-          <p className="max-w-3xl text-sm text-stone-300 sm:text-base">{content.intro}</p>
-        )}
+        <h1 className="font-display text-4xl uppercase tracking-wide text-white sm:text-5xl">
+          Pizza {cityDisplay}
+        </h1>
+        <p className="max-w-3xl text-sm text-stone-300 sm:text-base">
+          Retrouvez ci-dessous les adresses et horaires d'ouverture actuellement publies pour {cityDisplay}.
+        </p>
       </header>
 
-      {content.sections.map((section) => (
-        <section key={section.heading} className="glass-panel p-6">
-          <h2 className="text-xl font-bold text-white">{section.heading}</h2>
-          {section.paragraphs.map((paragraph, index) => (
-            <p key={`${section.heading}-${index}`} className="mt-3 text-sm leading-7 text-stone-300">
-              {paragraph}
+      <section className="glass-panel p-6">
+        <h2 className="text-lg font-bold text-white">Adresses et horaires d'ouverture</h2>
+        {locationScheduleCards.length > 0 ? (
+          <>
+            <p className="mt-3 text-sm text-stone-300">
+              Les horaires affiches ci-dessous sont directement relies aux adresses actives de cette location.
             </p>
-          ))}
-        </section>
-      ))}
-
-      {currentBucket?.entries?.length > 0 && (
-        <section className="glass-panel p-6">
-          <h2 className="text-lg font-bold text-white">
-            {content?.nearbySection?.heading || `Prochains emplacements a ${cityDisplay}`}
-          </h2>
+            <ul className="mt-3 grid gap-2 md:grid-cols-2">
+              {locationScheduleCards.map((entry) => (
+                <li
+                  key={entry.key}
+                  className="rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-stone-200"
+                >
+                  <p className="font-semibold text-white">{entry.locationName}</p>
+                  {entry.address ? <p className="mt-1 text-xs text-stone-300">{entry.address}</p> : null}
+                  {entry.slots.length > 0 ? (
+                    <div className="mt-3 space-y-1">
+                      {entry.slots.map((slot) => (
+                        <p key={slot.key} className="text-xs text-stone-300">
+                          {slot.dayLabel} - {slot.hours}
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-xs text-stone-400">Horaires non renseignes pour le moment.</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
           <p className="mt-3 text-sm text-stone-300">
-            {content?.nearbySection?.lead || "Exemples d'emplacements actifs :"}
+            Aucun horaire ou emplacement n'est encore publie pour cette location.
           </p>
-          <ul className="mt-3 grid gap-2 md:grid-cols-2">
-            {currentBucket.entries.slice(0, 6).map((entry) => (
-              <li key={entry.key} className="rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-stone-200">
-                <p className="font-semibold text-white">{entry.locationName}</p>
-                {entry.address ? (
-                  <p className="mt-1 text-xs text-stone-300">{entry.address}</p>
-                ) : null}
-                <p className="mt-1 text-xs text-stone-300">
-                  {entry.dayLabel} - {entry.hours}
-                </p>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 text-sm text-stone-300">
-            {content?.nearbySection?.footer ||
-              "Consultez la page horaires d'ouvertures pour connaitre les prochains passages du camion pizza."}
-          </p>
-        </section>
-      )}
+        )}
+      </section>
 
-      <PublicReviewsSection locationId={reviewLocationId} className="space-y-5" />
-
-      <PageFaqSection
-        pathname={canonicalPath}
-        title={`Questions fréquentes sur ${cityDisplay}`}
-      />
+      {reviewLocationId ? (
+        <PublicReviewsSection locationId={reviewLocationId} className="space-y-5" />
+      ) : null}
 
       <section className="glass-panel p-6">
         <h2 className="text-lg font-bold text-white">Commander votre pizza</h2>
