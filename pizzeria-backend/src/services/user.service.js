@@ -145,6 +145,12 @@ function parseSmtpPort(value) {
   return parsed;
 }
 
+function parseBooleanFlag(value, defaultValue) {
+  if (value === undefined || value === null || value === "") return defaultValue;
+  const normalized = String(value).trim().toLowerCase();
+  return ["1", "true", "yes", "on"].includes(normalized);
+}
+
 function getEmailTransporter() {
   if (emailTransporter) return emailTransporter;
 
@@ -152,11 +158,12 @@ function getEmailTransporter() {
   const port = parseSmtpPort(getRequiredMailEnv("SMTP_PORT"));
   const user = getRequiredMailEnv("SMTP_USER");
   const pass = getRequiredMailEnv("SMTP_PASS");
+  const secure = parseBooleanFlag(process.env.SMTP_SECURE, port === 465);
 
   emailTransporter = nodemailer.createTransport({
     host,
     port,
-    secure: port === 465,
+    secure,
     auth: { user, pass },
   });
 

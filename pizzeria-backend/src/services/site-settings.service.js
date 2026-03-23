@@ -983,6 +983,42 @@ async function translateSiteSettingsToEnglish(payload) {
     })
   );
 
+  const localSeoEntries = ensureObject(source.localSeo?.entries, "localSeo.entries");
+  const translatedLocalSeoEntries = {};
+
+  await Promise.all(
+    Object.entries(localSeoEntries).map(async ([key, entry]) => {
+      const titleFr = String(entry?.title?.fr || "").trim();
+      const titleEn = String(entry?.title?.en || "").trim();
+      const paragraphs = Array.isArray(entry?.paragraphs) ? entry.paragraphs : [];
+
+      translatedLocalSeoEntries[key] = {
+        ...entry,
+        title: {
+          fr: titleFr,
+          en: titleFr ? await translateFrenchTextToEnglish(titleFr) : titleEn,
+        },
+        paragraphs: await Promise.all(
+          paragraphs.map(async (paragraph) => {
+            const paragraphFr = String(paragraph?.fr || "").trim();
+            const paragraphEn = String(paragraph?.en || "").trim();
+
+            return {
+              fr: paragraphFr,
+              en: paragraphFr
+                ? await translateFrenchTextToEnglish(paragraphFr)
+                : paragraphEn,
+            };
+          })
+        ),
+      };
+    })
+  );
+
+  translated.localSeo = {
+    entries: translatedLocalSeoEntries,
+  };
+
   return translated;
 }
 

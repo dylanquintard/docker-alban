@@ -999,6 +999,9 @@ export default function SiteInfoAdmin() {
         case "blog":
           next.blog = translated.blog ?? prev.blog;
           break;
+        case "localSeo":
+          next.localSeo = translated.localSeo ?? prev.localSeo;
+          break;
         case "contactPage":
           next.contactPage = translated.contactPage ?? prev.contactPage;
           break;
@@ -1643,8 +1646,9 @@ export default function SiteInfoAdmin() {
           isOpen={openSectionId === "localSeo"}
           onToggle={() => toggleSection("localSeo")}
           onSave={() => saveSection("localSeo")}
+          onTranslate={() => handleTranslateSection("localSeo")}
           saving={savingSectionId === "localSeo"}
-          translating={false}
+          translating={translatingSectionId === "localSeo"}
           saveLabel={saveButtonLabel}
         >
           <div className="grid gap-5">

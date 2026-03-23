@@ -147,6 +147,7 @@ export default function TimeslotsAdmin() {
   const [activeDay, setActiveDay] = useState("MONDAY");
   const [form, setForm] = useState({ ...DEFAULT_FORM });
   const [editingService, setEditingService] = useState(null);
+  const [isServiceFormOpen, setIsServiceFormOpen] = useState(false);
   const [closureForm, setClosureForm] = useState({ ...DEFAULT_CLOSURE_FORM });
   const [managedService, setManagedService] = useState(null);
   const [managedServiceDate, setManagedServiceDate] = useState("");
@@ -213,6 +214,7 @@ export default function TimeslotsAdmin() {
 
   useEffect(() => {
     setEditingService(null);
+    setIsServiceFormOpen(false);
     setManagedService(null);
     setManagedServiceDate("");
     setManagedConcreteSlots([]);
@@ -310,7 +312,18 @@ export default function TimeslotsAdmin() {
       }
 
       upsertWeeklySettingInState(activeDay, savedSetting);
+      const preservedLocationId = form.locationId || "";
+      const preservedAgentId = form.agentId || "";
+      const wasEditing = Boolean(editingService);
       setEditingService(null);
+      setForm({
+        ...DEFAULT_FORM,
+        locationId: preservedLocationId,
+        agentId: preservedAgentId,
+      });
+      if (!wasEditing) {
+        setIsServiceFormOpen(false);
+      }
       setManagedService(null);
       setManagedServiceDate("");
       setManagedConcreteSlots([]);
@@ -330,6 +343,7 @@ export default function TimeslotsAdmin() {
   const handleEditService = (service) => {
     if (!service) return;
 
+    setIsServiceFormOpen(true);
     setManagedService(null);
     setManagedServiceDate("");
     setManagedConcreteSlots([]);
@@ -355,11 +369,25 @@ export default function TimeslotsAdmin() {
 
   const handleCancelEdit = () => {
     setEditingService(null);
+    setIsServiceFormOpen(false);
     setForm((prev) => ({
       ...DEFAULT_FORM,
       locationId: prev.locationId || "",
       agentId: prev.agentId || "",
     }));
+  };
+
+  const handleOpenAddServiceForm = () => {
+    setEditingService(null);
+    setManagedService(null);
+    setManagedServiceDate("");
+    setManagedConcreteSlots([]);
+    setForm((prev) => ({
+      ...DEFAULT_FORM,
+      locationId: prev.locationId || "",
+      agentId: prev.agentId || "",
+    }));
+    setIsServiceFormOpen(true);
   };
 
   const handleToggleServiceManager = async (service) => {
@@ -557,6 +585,15 @@ export default function TimeslotsAdmin() {
         </p>
       </div>
 
+      <LocationManagerSection
+        token={token}
+        tr={tr}
+        sectionId="emplacements"
+        titleFr="Emplacements"
+        titleEn="Locations"
+        onLocationsChanged={refreshData}
+      />
+
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <aside className="space-y-4">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
@@ -705,19 +742,42 @@ export default function TimeslotsAdmin() {
           ) : (
             <div className="space-y-6">
               <div className="rounded-2xl border border-white/10 bg-black/20 p-4 sm:p-5">
-                <h3 className="text-lg font-bold text-white">
-                  {editingService
-                    ? tr(
-                        `Modifier un service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelFr || ""}`,
-                        `Edit service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelEn || ""}`
-                      )
-                    : tr(
-                        `Ajouter un service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelFr || ""}`,
-                        `Add service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelEn || ""}`
-                      )}
-                </h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  {!isServiceFormOpen ? (
+                    <button
+                      type="button"
+                      onClick={handleOpenAddServiceForm}
+                      className="rounded-full bg-saffron px-5 py-2 text-sm font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300"
+                    >
+                      {tr("Ajouter un service", "Add service")}
+                    </button>
+                  ) : null}
 
-                <form onSubmit={handleAddService} className="mt-4 space-y-4">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={handleCloseDay}
+                    className="rounded-full border border-red-400/50 bg-red-500/10 px-5 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {tr("FERMER JOUR", "CLOSE DAY")}
+                  </button>
+                </div>
+
+                {isServiceFormOpen ? (
+                  <>
+                    <h3 className="mt-4 text-lg font-bold text-white">
+                      {editingService
+                        ? tr(
+                            `Modifier un service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelFr || ""}`,
+                            `Edit service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelEn || ""}`
+                          )
+                        : tr(
+                            `Ajouter un service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelFr || ""}`,
+                            `Add service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelEn || ""}`
+                          )}
+                    </h3>
+
+                    <form onSubmit={handleAddService} className="mt-4 space-y-4">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="text-sm text-stone-300">
                       {tr("Heure ouverture", "Opening time")}
@@ -830,27 +890,18 @@ export default function TimeslotsAdmin() {
                           ? tr("Enregistrer", "Save")
                           : tr("Ajouter ce service", "Add this service")}
                     </button>
-                    {editingService ? (
-                      <button
-                        type="button"
-                        onClick={handleCancelEdit}
-                        disabled={saving}
-                        className="rounded-full border border-white/25 px-5 py-2 text-sm font-semibold text-stone-100 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {tr("Annuler", "Cancel")}
-                      </button>
-                    ) : null}
-
                     <button
                       type="button"
+                      onClick={handleCancelEdit}
                       disabled={saving}
-                      onClick={handleCloseDay}
-                      className="rounded-full border border-red-400/50 bg-red-500/10 px-5 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-full border border-white/25 px-5 py-2 text-sm font-semibold text-stone-100 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {tr("FERMER JOUR", "CLOSE DAY")}
+                      {tr("Annuler", "Cancel")}
                     </button>
                   </div>
                 </form>
+                  </>
+                ) : null}
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
@@ -1027,14 +1078,6 @@ export default function TimeslotsAdmin() {
         </section>
       </div>
 
-      <LocationManagerSection
-        token={token}
-        tr={tr}
-        sectionId="emplacements"
-        titleFr="Emplacements"
-        titleEn="Locations"
-        onLocationsChanged={refreshData}
-      />
     </div>
   );
 }
