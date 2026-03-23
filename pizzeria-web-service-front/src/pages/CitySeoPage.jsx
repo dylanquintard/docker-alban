@@ -4,6 +4,7 @@ import { getLocations } from "../api/location.api";
 import { getPublicReviews } from "../api/review.api";
 import { getSeoLocations } from "../api/seo.api";
 import { getPublicWeeklySettings } from "../api/timeslot.api";
+import PageFaqSection from "../components/common/PageFaqSection";
 import SeoHead from "../components/seo/SeoHead";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../context/SiteSettingsContext";
@@ -716,6 +717,11 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
           ) : null}
         </aside>
       </section>
+
+      <PageFaqSection
+        pathname={canonicalPath}
+        title={`Questions fréquentes sur ${cityDisplay}`}
+      />
     </div>
   );
 }
