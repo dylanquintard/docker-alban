@@ -1345,13 +1345,32 @@ export default function App() {
                       <h2>
                         Commande #{selectedOrder.id} - {getStatusLabel(selectedWorkflowStatus)}
                       </h2>
-                      <p className="muted-copy compact-copy">Selection commande</p>
-                      <p className="muted-copy compact-copy">
-                        {selectedOrder.timeSlot?.location?.name || "Lieu non renseigne"} Â·{" "}
-                        {selectedOrder.timeSlot?.startTime
-                          ? formatTimeLabel(selectedOrder.timeSlot.startTime)
-                          : "Heure non renseignee"}
-                      </p>
+                      <div className="inline-nav">
+                        <button
+                          type="button"
+                          className="ghost-icon-button"
+                          onClick={() => navigateSelection(-1)}
+                          disabled={selectedOrderIndex <= 0}
+                        >
+                          &lt;
+                        </button>
+                        <span>
+                          {selectedOrderIndex >= 0
+                            ? `${selectedOrderIndex + 1}/${orderedOrderIds.length}`
+                            : "--"}
+                        </span>
+                        <button
+                          type="button"
+                          className="ghost-icon-button"
+                          onClick={() => navigateSelection(1)}
+                          disabled={
+                            selectedOrderIndex < 0 ||
+                            selectedOrderIndex >= orderedOrderIds.length - 1
+                          }
+                        >
+                          &gt;
+                        </button>
+                      </div>
                     </div>
                     <div className="detail-head-actions">
                       <button
