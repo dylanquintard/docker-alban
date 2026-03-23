@@ -105,7 +105,7 @@ describe("App integration", () => {
 
     render(<App />);
 
-    expect(await screen.findByText("Gestion rapide")).toBeTruthy();
+    expect(await screen.findByText("Applications admin")).toBeTruthy();
     await waitFor(() => {
       expect(ordersApi.fetchOrders).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -131,18 +131,17 @@ describe("App integration", () => {
     });
     fireEvent.click(loginButton);
 
-    expect(await screen.findByText("Gestion rapide")).toBeTruthy();
+    expect(await screen.findByText("Applications admin")).toBeTruthy();
     expect(authApi.login).toHaveBeenCalledWith("boss@pizza.test", "super-secret");
   });
 
-  it("scrolls to top when switching header menu section", async () => {
+  it("scrolls to top when opening an app from the launcher", async () => {
     authApi.fetchMe.mockResolvedValueOnce({ role: "ADMIN", email: "admin@pizza.test" });
-    ticketsApi.fetchTickets.mockResolvedValueOnce([]);
 
     render(<App />);
-    const ticketsButton = await screen.findByRole("button", { name: "Tickets" });
+    const clickCollectButton = await screen.findByRole("button", { name: /click&collect/i });
 
-    fireEvent.click(ticketsButton);
+    fireEvent.click(clickCollectButton);
 
     await waitFor(() => {
       expect(window.scrollTo).toHaveBeenCalled();
