@@ -2,8 +2,10 @@ const siteSettingsService = require("../services/site-settings.service");
 const fs = require("fs/promises");
 const path = require("path");
 const sharp = require("sharp");
-const pngToIco = require("png-to-ico");
+const pngToIcoModule = require("png-to-ico");
 const { UPLOAD_DIR, UPLOAD_PUBLIC_BASE_URL } = require("../lib/env");
+
+const pngToIco = pngToIcoModule.default || pngToIcoModule;
 
 function setNoStoreHeaders(res) {
   res.setHeader("Cache-Control", "no-store");
