@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { APP_NAME, REALTIME_STREAM_URL } from "./config";
+import { APP_NAME, PUBLIC_ORDER_URL, REALTIME_STREAM_URL } from "./config";
 import { clearCsrfToken } from "./lib/api";
 import { fetchMe, login, logout } from "./lib/api/auth";
 import { fetchCustomers } from "./lib/api/customers";
+import { fetchMenuCategories, fetchMenuProducts } from "./lib/api/menu";
 import {
   getPushPublicKey,
   removePushSubscription,
@@ -37,7 +38,7 @@ import {
   getTicketStatusClass,
   getTicketStatusLabel,
 } from "./utils/formatters";
-import { isIosDevice, isStandaloneDisplay, urlBase64ToUint8Array } from "./utils/pushUtils";
+import { urlBase64ToUint8Array } from "./utils/pushUtils";
 
 const APP_ICONS = {
   launcher: "OS",
@@ -129,17 +130,23 @@ export default function App() {
   const [orders, setOrders] = useState([]);
   const [tickets, setTickets] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [menuCategories, setMenuCategories] = useState([]);
+  const [menuProducts, setMenuProducts] = useState([]);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ticketsLoading, setTicketsLoading] = useState(false);
   const [customersLoading, setCustomersLoading] = useState(false);
+  const [orderBuilderLoading, setOrderBuilderLoading] = useState(false);
   const [ordersError, setOrdersError] = useState("");
   const [ticketsError, setTicketsError] = useState("");
   const [customersError, setCustomersError] = useState("");
+  const [orderBuilderError, setOrderBuilderError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [activeApp, setActiveApp] = useState("launcher");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [clickCollectSection, setClickCollectSection] = useState("orders");
+  const [isOrderBuilderOpen, setIsOrderBuilderOpen] = useState(false);
+  const [selectedMenuCategoryId, setSelectedMenuCategoryId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [ticketSearchQuery, setTicketSearchQuery] = useState("");
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
@@ -191,7 +198,6 @@ export default function App() {
     () => orderedOrderIds.findIndex((entry) => entry === String(selectedOrder?.id || "")),
     [orderedOrderIds, selectedOrder]
   );
-  const shouldShowIosInstallHelp = isIosDevice() && !isStandaloneDisplay();
   const filteredTickets = useMemo(() => {
     const filteredBySearch = tickets.filter((entry) =>
       matchesTicketQuery(entry, ticketSearchQuery)
@@ -227,6 +233,12 @@ export default function App() {
       ),
     [tickets]
   );
+  const filteredMenuProducts = useMemo(() => {
+    if (!selectedMenuCategoryId) return menuProducts;
+    return menuProducts.filter(
+      (entry) => String(entry?.categoryId || entry?.category?.id || "") === String(selectedMenuCategoryId)
+    );
+  }, [menuProducts, selectedMenuCategoryId]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) {
@@ -667,6 +679,43 @@ export default function App() {
     scrollToTop();
   }
 
+  function handleCreateOrder() {
+    setIsOrderBuilderOpen((current) => !current);
+    if (menuCategories.length === 0 || menuProducts.length === 0) {
+      loadOrderBuilderData();
+    }
+  }
+
+  async function loadOrderBuilderData() {
+    setOrderBuilderLoading(true);
+    setOrderBuilderError("");
+
+    try {
+      const [nextCategories, nextProducts] = await Promise.all([
+        fetchMenuCategories(),
+        fetchMenuProducts(),
+      ]);
+
+      const normalizedCategories = Array.isArray(nextCategories) ? nextCategories : [];
+      const normalizedProducts = Array.isArray(nextProducts) ? nextProducts : [];
+      setMenuCategories(normalizedCategories);
+      setMenuProducts(normalizedProducts);
+      setSelectedMenuCategoryId((current) => {
+        if (
+          current &&
+          normalizedCategories.some((entry) => String(entry.id) === String(current))
+        ) {
+          return current;
+        }
+        return normalizedCategories[0]?.id || null;
+      });
+    } catch (error) {
+      setOrderBuilderError(error.message || "Impossible de charger le menu admin.");
+    } finally {
+      setOrderBuilderLoading(false);
+    }
+  }
+
   function toggleMenu() {
     setIsMenuOpen((current) => !current);
   }
@@ -836,16 +885,6 @@ export default function App() {
           </section>
         ) : null}
 
-        {shouldShowIosInstallHelp ? (
-          <section className="install-card compact-install-card">
-            <strong>Installer l'app sur iPhone</strong>
-            <p>
-              Ouvre le site dans Safari, touche Partager puis Ajouter a l'ecran d'accueil.
-              L'app gardera ensuite son rendu mobile natif.
-            </p>
-          </section>
-        ) : null}
-
         {statusMessage ? <p className="inline-success">{statusMessage}</p> : null}
 
         {activeApp === "launcher" ? (
@@ -924,6 +963,78 @@ export default function App() {
                 </div>
               </section>
             </section>
+
+            {clickCollectSection === "orders" ? (
+              <section className="click-collect-actions-row">
+                <button
+                  type="button"
+                  className="primary-button add-order-button add-order-button-highlight"
+                  onClick={handleCreateOrder}
+                >
+                  Ajouter une commande
+                </button>
+              </section>
+            ) : null}
+
+            {clickCollectSection === "orders" && isOrderBuilderOpen ? (
+              <section className="order-builder-card panel-card">
+                <div className="column-head">
+                  <div>
+                    <p className="eyebrow">Nouveau ticket</p>
+                    <h3>Menu categories plats</h3>
+                  </div>
+                  <button
+                    type="button"
+                    className="ghost-button compact-button"
+                    onClick={() => setIsOrderBuilderOpen(false)}
+                  >
+                    Fermer
+                  </button>
+                </div>
+
+                {orderBuilderError ? <p className="inline-error">{orderBuilderError}</p> : null}
+
+                {orderBuilderLoading ? (
+                  <div className="subtle-empty-state">Chargement du menu...</div>
+                ) : (
+                  <>
+                    <div className="compact-filter-row category-picker-row">
+                      {menuCategories.map((category) => (
+                        <button
+                          key={category.id}
+                          type="button"
+                          className={`switcher-pill ${
+                            String(selectedMenuCategoryId) === String(category.id) ? "active" : ""
+                          }`}
+                          onClick={() => setSelectedMenuCategoryId(category.id)}
+                        >
+                          {category.name}
+                        </button>
+                      ))}
+                    </div>
+
+                    {menuCategories.length === 0 ? (
+                      <div className="subtle-empty-state">Aucune categorie active.</div>
+                    ) : filteredMenuProducts.length === 0 ? (
+                      <div className="subtle-empty-state">Aucun plat dans cette categorie.</div>
+                    ) : (
+                      <div className="menu-products-list">
+                        {filteredMenuProducts.map((product) => (
+                          <button
+                            key={product.id}
+                            type="button"
+                            className="menu-product-row"
+                            onClick={() => window.open(PUBLIC_ORDER_URL, "_blank", "noopener,noreferrer")}
+                          >
+                            {product.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </section>
+            ) : null}
 
             <section className="toolbar app-toolbar panel-card">
               {clickCollectSection === "orders" ? (

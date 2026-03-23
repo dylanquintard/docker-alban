@@ -546,6 +546,43 @@ button {
   align-items: center;
 }
 
+.click-collect-actions-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.add-order-button {
+  min-width: 220px;
+}
+
+.add-order-button-highlight {
+  box-shadow: 0 16px 32px rgba(245, 184, 75, 0.22);
+}
+
+.order-builder-card {
+  display: grid;
+  gap: 12px;
+}
+
+.category-picker-row {
+  align-items: center;
+}
+
+.menu-products-list {
+  display: grid;
+  gap: 8px;
+}
+
+.menu-product-row {
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
 .stretch-pill {
   width: 100%;
   min-height: 48px;
@@ -851,6 +888,15 @@ button {
 
   .click-collect-topbar {
     grid-template-columns: 1fr;
+  }
+
+  .click-collect-actions-row {
+    justify-content: stretch;
+  }
+
+  .add-order-button {
+    width: 100%;
+    min-width: 0;
   }
 }
 

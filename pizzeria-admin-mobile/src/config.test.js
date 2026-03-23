@@ -24,10 +24,12 @@ describe("mobile config", () => {
   it("uses explicit API and stream URLs when provided", async () => {
     vi.stubEnv("VITE_API_BASE_URL", "https://api.example.com/api/");
     vi.stubEnv("VITE_REALTIME_STREAM_URL", "https://stream.example.com/realtime/");
+    vi.stubEnv("VITE_PUBLIC_ORDER_URL", "https://example.com/order/");
 
     const config = await loadConfigModule();
     expect(config.API_BASE_URL).toBe("https://api.example.com/api");
     expect(config.REALTIME_STREAM_URL).toBe("https://stream.example.com/realtime");
+    expect(config.PUBLIC_ORDER_URL).toBe("https://example.com/order");
   });
 
   it("builds API URL from configured base", async () => {
@@ -42,6 +44,7 @@ describe("mobile config", () => {
   it("uses current hostname in non-production mode to support LAN mobile testing", async () => {
     vi.stubEnv("VITE_API_BASE_URL", "");
     vi.stubEnv("VITE_REALTIME_STREAM_URL", "");
+    vi.stubEnv("VITE_PUBLIC_ORDER_URL", "");
     global.window = {
       location: {
         protocol: "http:",
@@ -52,11 +55,13 @@ describe("mobile config", () => {
     const config = await loadConfigModule();
     expect(config.API_BASE_URL).toBe("http://192.168.1.24:5000/api");
     expect(config.REALTIME_STREAM_URL).toBe("http://192.168.1.24:5000/api/realtime/stream");
+    expect(config.PUBLIC_ORDER_URL).toBe("http://192.168.1.24:8000/order");
   });
 
   it("falls back to same-origin /api on non-local domains when no env is provided", async () => {
     vi.stubEnv("VITE_API_BASE_URL", "");
     vi.stubEnv("VITE_REALTIME_STREAM_URL", "");
+    vi.stubEnv("VITE_PUBLIC_ORDER_URL", "");
     global.window = {
       location: {
         origin: "https://admin.example.com",
@@ -68,5 +73,6 @@ describe("mobile config", () => {
     const config = await loadConfigModule();
     expect(config.API_BASE_URL).toBe("https://admin.example.com/api");
     expect(config.REALTIME_STREAM_URL).toBe("https://admin.example.com/api/realtime/stream");
+    expect(config.PUBLIC_ORDER_URL).toBe("https://example.com/order");
   });
 });
