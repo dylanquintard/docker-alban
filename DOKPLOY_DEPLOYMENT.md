@@ -11,6 +11,7 @@ Services inclus :
 - `backend`
 - `backend-worker`
 - `frontend`
+- `admin-web` pour la nouvelle V2 web en parallele si vous souhaitez la tester
 - `admin-mobile`
 
 Service exclu pour cette phase :
@@ -21,6 +22,7 @@ Hypotheses de domaines :
 
 - site public : `https://alban.flow-os.fr`
 - API : `https://api.alban.flow-os.fr`
+- admin web V2 : `https://admin-web.alban.flow-os.fr`
 - admin mobile : `https://admin.alban.flow-os.fr`
 
 Fichier d'environnement de base :
@@ -42,6 +44,7 @@ Valide localement :
 - la stack Compose est valide
 - les images buildent
 - `postgres`, `redis`, `backend`, `backend-worker`, `frontend`, `admin-mobile` demarrent ensemble
+- `admin-web` peut maintenant etre build et deploye en parallele du front public
 - la base Docker a bien recu le dump `pizzeria_db_layr.dump`
 - les checks de sante repondent
 
@@ -93,8 +96,9 @@ Doivent rester ainsi :
 - `AUTH_COOKIE_SAMESITE=lax`
 - `PUBLIC_FRONTEND_URL=https://alban.flow-os.fr`
 - `PUBLIC_BACKEND_URL=https://api.alban.flow-os.fr`
+- `PUBLIC_ADMIN_WEB_URL=https://admin-web.alban.flow-os.fr`
 - `PUBLIC_ADMIN_URL=https://admin.alban.flow-os.fr`
-- `BACKEND_CORS_ORIGINS=https://alban.flow-os.fr,https://admin.alban.flow-os.fr`
+- `BACKEND_CORS_ORIGINS=https://alban.flow-os.fr,https://admin-web.alban.flow-os.fr,https://admin.alban.flow-os.fr`
 
 ### 3. Volumes et persistance
 
@@ -117,6 +121,7 @@ Configurer ces domaines :
 
 - `frontend` vers `alban.flow-os.fr` sur le port conteneur `8000`
 - `backend` vers `api.alban.flow-os.fr` sur le port conteneur `5000`
+- `admin-web` vers `admin-web.alban.flow-os.fr` sur le port conteneur `4174`
 - `admin-mobile` vers `admin.alban.flow-os.fr` sur le port conteneur `80`
 
 Ne pas attacher de domaine a :
@@ -207,6 +212,17 @@ Dans Dokploy, ajouter ces domaines :
 
 ### Domaine 3
 
+- Host : `admin-web.alban.flow-os.fr`
+- Service : `admin-web`
+- Container Port : `4174`
+- HTTPS : active
+- Certificate : `letsencrypt`
+- Path : vide
+- Internal Path : vide
+- Strip Path : desactive
+
+### Domaine 4
+
 - Host : `admin.alban.flow-os.fr`
 - Service : `admin-mobile`
 - Container Port : `80`
@@ -282,6 +298,7 @@ Checks HTTP :
 - `https://api.alban.flow-os.fr/readyz` doit renvoyer `200`
 - `https://alban.flow-os.fr` doit charger
 - `https://admin.alban.flow-os.fr` doit charger
+- `https://admin-web.alban.flow-os.fr` doit charger si vous deployeez deja la V2
 
 Checks metier :
 
@@ -318,6 +335,7 @@ Passer en `GO` uniquement si tout est vrai :
 - les secrets ont ete remplaces
 - `backend` repond `healthz` et `readyz`
 - `frontend` et `admin-mobile` chargent correctement
+- `admin-web` charge correctement si la V2 web est activee
 - les donnees sont presentes si vous restaurez le dump
 - le login admin fonctionne
 - les images/upload publics fonctionnent
