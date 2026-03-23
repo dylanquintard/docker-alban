@@ -1342,8 +1342,10 @@ export default function App() {
                 <article className="detail-card detail-modal-card">
                   <div className="detail-head">
                     <div>
-                      <p className="eyebrow">Commande active</p>
-                      <h2>Commande #{selectedOrder.id}</h2>
+                      <h2>
+                        Commande #{selectedOrder.id} - {getStatusLabel(selectedWorkflowStatus)}
+                      </h2>
+                      <p className="muted-copy compact-copy">Selection commande</p>
                       <p className="muted-copy compact-copy">
                         {selectedOrder.timeSlot?.location?.name || "Lieu non renseigne"} Â·{" "}
                         {selectedOrder.timeSlot?.startTime
@@ -1360,35 +1362,6 @@ export default function App() {
                       >
                         <BackTriggerIcon alt="Fermer le detail de commande" />
                       </button>
-                      <div className="inline-nav">
-                        <button
-                          type="button"
-                          className="ghost-icon-button"
-                          onClick={() => navigateSelection(-1)}
-                          disabled={selectedOrderIndex <= 0}
-                        >
-                          &lt;
-                        </button>
-                        <span>
-                          {selectedOrderIndex >= 0
-                            ? `${selectedOrderIndex + 1}/${orderedOrderIds.length}`
-                            : "--"}
-                        </span>
-                        <button
-                          type="button"
-                          className="ghost-icon-button"
-                          onClick={() => navigateSelection(1)}
-                          disabled={
-                            selectedOrderIndex < 0 ||
-                            selectedOrderIndex >= orderedOrderIds.length - 1
-                          }
-                        >
-                          &gt;
-                        </button>
-                      </div>
-                      <span className={`status-pill ${selectedWorkflowStatus.toLowerCase()}`}>
-                        {getStatusLabel(selectedWorkflowStatus)}
-                      </span>
                     </div>
                   </div>
 
