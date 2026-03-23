@@ -139,6 +139,22 @@ async function withMockedBackendFetch(run) {
   }
 }
 
+async function withCustomMockedFetch(implementation, run) {
+  const originalFetch = global.fetch;
+  let fetchCount = 0;
+
+  global.fetch = async (...args) => {
+    fetchCount += 1;
+    return implementation(...args);
+  };
+
+  try {
+    await run(() => fetchCount);
+  } finally {
+    global.fetch = originalFetch;
+  }
+}
+
 test("health endpoint stays available", async () => {
   await withServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/healthz`);
@@ -249,6 +265,42 @@ test("sitemap endpoint reuses cached sitemap data between immediate requests", a
           const secondResponse = await requestServer(baseUrl, "/sitemap.xml");
           assert.equal(secondResponse.status, 200);
           assert.equal(getFetchCount(), fetchesAfterFirstRequest);
+        });
+      });
+    }
+  );
+});
+
+test("sitemap endpoint prefers backend sitemap entries over local fallback when backend is available", async () => {
+  await withTemporaryEnv(
+    {
+      SEO_BACKEND_API_URL: "https://backend.example/api",
+      CANONICAL_SITE_URL: "https://www.example.com",
+    },
+    async () => {
+      await withCustomMockedFetch(async (url) => {
+        const target = String(url || "");
+
+        if (target.endsWith("/sitemap.xml")) {
+          return createMockResponse({
+            text:
+              '<?xml version="1.0" encoding="UTF-8"?>' +
+              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
+              "<url><loc>https://backend.example/</loc></url>" +
+              "<url><loc>https://backend.example/pizza-yutz</loc></url>" +
+              "</urlset>",
+          });
+        }
+
+        throw new Error(`Unexpected fetch: ${target}`);
+      }, async (getFetchCount) => {
+        await withServer(async (baseUrl) => {
+          const response = await requestServer(baseUrl, "/sitemap.xml");
+          assert.equal(response.status, 200);
+          assert.equal(response.headers["x-sitemap-source"], "backend");
+          assert.match(response.body, /https:\/\/backend\.example\/pizza-yutz/i);
+          assert.doesNotMatch(response.body, /https:\/\/www\.example\.com/i);
+          assert.equal(getFetchCount(), 1);
         });
       });
     }

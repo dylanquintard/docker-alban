@@ -646,16 +646,23 @@ async function getSitemapPayload(req) {
         const locs = extractSitemapLocs(xmlPayload).map((entry) => normalizeAbsoluteHttpUrl(entry)).filter(Boolean);
         if (locs.length > 0) {
           backendLocs.push(...locs);
+          break;
         }
       } catch (_error) {
         // Keep trying other sitemap candidates and local fallback.
       }
     }
 
+    if (backendLocs.length > 0) {
+      sitemapCache.xml = buildSitemapXml(backendLocs);
+      sitemapCache.sourceLabel = "backend";
+      sitemapCache.expiresAt = Date.now() + SITEMAP_CACHE_TTL_MS;
+      return sitemapCache;
+    }
+
     const cache = await refreshSeoCacheIfNeeded();
     const localLocs = buildLocalSitemapUrls(req, cache);
-    const mergedLocs = [...new Set([...backendLocs, ...localLocs])];
-    if (mergedLocs.length === 0) {
+    if (localLocs.length === 0) {
       if (sitemapCache.xml) {
         sitemapCache.expiresAt = Date.now() + Math.min(SITEMAP_CACHE_TTL_MS, 15000);
         return sitemapCache;
@@ -663,13 +670,8 @@ async function getSitemapPayload(req) {
       throw new Error("SITEMAP_UNAVAILABLE");
     }
 
-    sitemapCache.xml = buildSitemapXml(mergedLocs);
-    sitemapCache.sourceLabel =
-      backendLocs.length > 0 && localLocs.length > 0
-        ? "backend+local"
-        : backendLocs.length > 0
-          ? "backend"
-          : "local";
+    sitemapCache.xml = buildSitemapXml(localLocs);
+    sitemapCache.sourceLabel = "local";
     sitemapCache.expiresAt = Date.now() + SITEMAP_CACHE_TTL_MS;
 
     return sitemapCache;
