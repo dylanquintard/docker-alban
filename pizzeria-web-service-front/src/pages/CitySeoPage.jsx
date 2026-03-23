@@ -473,7 +473,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
 
   const averageLabel = useMemo(() => {
     const average = Number(reviewsPayload.summary?.averageRating || 0);
-    if (!average) return "0.0";
+    if (!average) return "5.0";
     return average.toFixed(1);
   }, [reviewsPayload.summary?.averageRating]);
 
@@ -667,10 +667,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
                   </p>
                 </div>
                 <div className="rounded-2xl border border-saffron/25 bg-saffron/10 px-3 py-2 text-right">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-saffron">
-                    {tr("Moyenne", "Average")}
-                  </p>
-                  <p className="mt-1 text-lg font-bold text-white">{averageLabel}/5</p>
+                  <p className="text-lg font-bold text-white">{averageLabel}/5</p>
                 </div>
               </div>
 
