@@ -77,6 +77,7 @@ export default function App() {
   const [customersError, setCustomersError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [activeApp, setActiveApp] = useState("launcher");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [clickCollectSection, setClickCollectSection] = useState("orders");
   const [searchQuery, setSearchQuery] = useState("");
   const [ticketSearchQuery, setTicketSearchQuery] = useState("");
@@ -474,6 +475,7 @@ export default function App() {
       setCustomers([]);
       setSelectedOrderId(null);
       setActiveApp("launcher");
+      setIsMenuOpen(false);
       setClickCollectSection("orders");
     }
   }
@@ -586,6 +588,7 @@ export default function App() {
 
   function handleOpenApp(nextApp, options = {}) {
     setActiveApp(nextApp);
+    setIsMenuOpen(false);
     if (nextApp === "clickCollect" && options.section) {
       setClickCollectSection(options.section);
     }
@@ -594,12 +597,17 @@ export default function App() {
 
   function handleHomeNavigation() {
     setActiveApp("launcher");
+    setIsMenuOpen(false);
     scrollToTop();
   }
 
   function handleClickCollectSectionChange(nextSection) {
     setClickCollectSection(nextSection);
     scrollToTop();
+  }
+
+  function toggleMenu() {
+    setIsMenuOpen((current) => !current);
   }
 
   if (session.state === "loading") {
@@ -693,67 +701,90 @@ export default function App() {
           </div>
 
           <div className="topbar-actions topbar-actions-mobile">
-            {activeApp !== "launcher" ? (
-              <button
-                type="button"
-                className="ghost-button compact-button"
-                onClick={handleHomeNavigation}
-              >
-                Accueil
-              </button>
+            {activeApp === "clickCollect" ? (
+              <div className="date-switcher compact">
+                <button
+                  type="button"
+                  className="ghost-icon-button"
+                  onClick={() =>
+                    setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, -1) }))
+                  }
+                >
+                  &lt;
+                </button>
+                <span>{filters.date}</span>
+                <button
+                  type="button"
+                  className="ghost-icon-button"
+                  onClick={() =>
+                    setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, 1) }))
+                  }
+                >
+                  &gt;
+                </button>
+              </div>
             ) : null}
-            <div className="date-switcher compact">
-              <button
-                type="button"
-                className="ghost-icon-button"
-                onClick={() =>
-                  setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, -1) }))
-                }
-              >
-                &lt;
-              </button>
-              <span>{filters.date}</span>
-              <button
-                type="button"
-                className="ghost-icon-button"
-                onClick={() =>
-                  setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, 1) }))
-                }
-              >
-                &gt;
-              </button>
-            </div>
-            <button type="button" className="ghost-button compact-button" onClick={handleLogout}>
-              Sortir
+            <button type="button" className="ghost-button compact-button" onClick={toggleMenu}>
+              Menu
             </button>
           </div>
         </header>
 
-        <section className="status-strip mobile-status-strip">
-          <div className="status-strip-item">
-            <span>Temps reel</span>
-            <strong className={`status-pill ${streamConnected ? "success" : "warning"}`}>
-              {streamConnected ? "Connecte" : "Reconnexion"}
-            </strong>
-          </div>
-          <div className="status-strip-item">
-            <span>Notifications</span>
-            <strong
-              className={`status-pill ${pushState === "subscribed" ? "success" : "neutral"}`}
-            >
-              {getPushStateLabel(pushState)}
-            </strong>
-          </div>
-          {pushState !== "subscribed" ? (
-            <button
-              type="button"
-              className="ghost-button compact-button"
-              onClick={handleEnableNotifications}
-            >
-              Activer le push
+        {isMenuOpen ? (
+          <section className="menu-panel panel-card">
+            {activeApp !== "launcher" ? (
+              <button type="button" className="ghost-button compact-button" onClick={handleHomeNavigation}>
+                Retour a l'accueil
+              </button>
+            ) : null}
+            <button type="button" className="ghost-button compact-button" onClick={handleLogout}>
+              Deconnecter
             </button>
-          ) : null}
+          </section>
+        ) : null}
+
+        <section className="summary-strip panel-card">
+          <article className="summary-chip">
+            <span>Commandes actives</span>
+            <strong>{statusCounters.COMPLETED}</strong>
+          </article>
+          <article className="summary-chip">
+            <span>Tickets a suivre</span>
+            <strong>{ticketCounters.error + ticketCounters.warning}</strong>
+          </article>
+          <article className="summary-chip">
+            <span>Clients charges</span>
+            <strong>{customers.length}</strong>
+          </article>
         </section>
+
+        {activeApp === "clickCollect" ? (
+          <section className="status-strip mobile-status-strip">
+            <div className="status-strip-item">
+              <span>Temps reel</span>
+              <strong className={`status-pill ${streamConnected ? "success" : "warning"}`}>
+                {streamConnected ? "Connecte" : "Reconnexion"}
+              </strong>
+            </div>
+            <div className="status-strip-item">
+              <span>Notifications</span>
+              <strong
+                className={`status-pill ${pushState === "subscribed" ? "success" : "neutral"}`}
+              >
+                {getPushStateLabel(pushState)}
+              </strong>
+            </div>
+            {pushState !== "subscribed" ? (
+              <button
+                type="button"
+                className="ghost-button compact-button"
+                onClick={handleEnableNotifications}
+              >
+                Activer le push
+              </button>
+            ) : null}
+          </section>
+        ) : null}
 
         {shouldShowIosInstallHelp ? (
           <section className="install-card compact-install-card">
@@ -769,31 +800,6 @@ export default function App() {
 
         {activeApp === "launcher" ? (
           <>
-            <section className="launcher-hero panel-card">
-              <div>
-                <p className="eyebrow">Systeme mobile</p>
-                <h2>Choisissez une application</h2>
-                <p className="intro-copy compact-copy">
-                  Cette interface reste volontairement bornee au format mobile et tablette.
-                  Chaque bloc ouvre une app metier claire plutot qu'un grand panel melange.
-                </p>
-              </div>
-              <div className="launcher-mini-stats">
-                <article className="mini-stat-card">
-                  <span>Commandes actives</span>
-                  <strong>{statusCounters.COMPLETED}</strong>
-                </article>
-                <article className="mini-stat-card">
-                  <span>Tickets a suivre</span>
-                  <strong>{ticketCounters.error + ticketCounters.warning}</strong>
-                </article>
-                <article className="mini-stat-card">
-                  <span>Clients charges</span>
-                  <strong>{customers.length}</strong>
-                </article>
-              </div>
-            </section>
-
             <section className="apps-grid">
               <button
                 type="button"
@@ -831,23 +837,6 @@ export default function App() {
                 </div>
               </button>
             </section>
-
-            <section className="quick-actions-row">
-              <button
-                type="button"
-                className="ghost-button quick-action-button"
-                onClick={() => handleOpenApp("clickCollect", { section: "tickets" })}
-              >
-                Aller aux tickets
-              </button>
-              <button
-                type="button"
-                className="ghost-button quick-action-button"
-                onClick={() => handleOpenApp("customerInfo")}
-              >
-                Chercher un client
-              </button>
-            </section>
           </>
         ) : null}
 
@@ -866,46 +855,6 @@ export default function App() {
                   <span className="status-pill neutral">{ticketCounters.total} tickets</span>
                 </div>
               </div>
-
-              <section className="section-overview-grid">
-                {clickCollectSection === "orders" ? (
-                  <>
-                    <article className="glance-card">
-                      <span>En cours</span>
-                      <strong>{statusCounters.COMPLETED}</strong>
-                      <p>File de production active</p>
-                    </article>
-                    <article className="glance-card">
-                      <span>Validees</span>
-                      <strong>{statusCounters.VALIDATE}</strong>
-                      <p>Commandes deja confirmees</p>
-                    </article>
-                    <article className="glance-card">
-                      <span>Tickets a suivre</span>
-                      <strong>{ticketCounters.error + ticketCounters.warning}</strong>
-                      <p>Impressions a surveiller</p>
-                    </article>
-                  </>
-                ) : (
-                  <>
-                    <article className="glance-card glance-card-danger">
-                      <span>Erreurs</span>
-                      <strong>{ticketCounters.error}</strong>
-                      <p>Action immediate</p>
-                    </article>
-                    <article className="glance-card glance-card-warning">
-                      <span>A surveiller</span>
-                      <strong>{ticketCounters.warning}</strong>
-                      <p>Reprises possibles</p>
-                    </article>
-                    <article className="glance-card glance-card-success">
-                      <span>OK</span>
-                      <strong>{ticketCounters.healthy}</strong>
-                      <p>Flux d'impression stable</p>
-                    </article>
-                  </>
-                )}
-              </section>
 
               <section className="mobile-menu-switcher compact-switcher">
                 <button

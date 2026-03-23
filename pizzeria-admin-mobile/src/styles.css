@@ -363,7 +363,6 @@ button {
 
 .status-strip,
 .toolbar,
-.launcher-hero,
 .app-shell-card {
   background: rgba(255, 255, 255, 0.04);
 }
@@ -422,15 +421,7 @@ button {
   color: var(--muted);
 }
 
-.launcher-hero {
-  display: grid;
-  gap: 16px;
-}
-
-.launcher-mini-stats,
 .apps-grid,
-.quick-actions-row,
-.section-overview-grid,
 .customer-info-grid,
 .detail-grid,
 .detail-footer,
@@ -443,31 +434,6 @@ button {
 .detail-items {
   display: grid;
   gap: 12px;
-}
-
-.launcher-mini-stats {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.mini-stat-card {
-  padding: 14px;
-  border-radius: 18px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.mini-stat-card span {
-  display: block;
-  color: var(--muted);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.mini-stat-card strong {
-  display: block;
-  margin-top: 10px;
-  font-size: 26px;
 }
 
 .apps-grid {
@@ -501,14 +467,6 @@ button {
   color: var(--text);
 }
 
-.quick-actions-row {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.quick-action-button {
-  width: 100%;
-}
-
 .app-shell-head {
   justify-content: space-between;
   align-items: flex-start;
@@ -525,54 +483,6 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.section-overview-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 4px 0 2px;
-}
-
-.glance-card {
-  padding: 14px;
-  border-radius: 18px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.045);
-}
-
-.glance-card span {
-  display: block;
-  color: var(--muted);
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.glance-card strong {
-  display: block;
-  margin-top: 10px;
-  font-size: 28px;
-  line-height: 1;
-}
-
-.glance-card p {
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.glance-card-danger {
-  border-color: rgba(240, 122, 111, 0.24);
-  background: rgba(240, 122, 111, 0.08);
-}
-
-.glance-card-warning {
-  border-color: rgba(255, 207, 112, 0.24);
-  background: rgba(255, 207, 112, 0.08);
-}
-
-.glance-card-success {
-  border-color: rgba(111, 212, 164, 0.22);
-  background: rgba(111, 212, 164, 0.08);
 }
 
 .app-toolbar {
@@ -726,6 +636,41 @@ button {
   text-align: center;
 }
 
+.menu-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.summary-chip {
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.summary-chip span {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.summary-chip strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 22px;
+  line-height: 1;
+}
+
 .action-button-main,
 .action-button-cancel {
   width: 100%;
@@ -776,13 +721,11 @@ button {
   }
 
   .apps-grid,
-  .launcher-mini-stats,
-  .quick-actions-row,
-  .section-overview-grid,
   .orders-layout,
   .detail-grid,
   .detail-footer,
-  .customer-info-grid {
+  .customer-info-grid,
+  .summary-strip {
     grid-template-columns: 1fr;
   }
 
@@ -826,8 +769,7 @@ button {
   .date-switcher,
   .search-field,
   .filter-select,
-  .ghost-button,
-  .quick-action-button {
+  .ghost-button {
     width: 100%;
   }
 
