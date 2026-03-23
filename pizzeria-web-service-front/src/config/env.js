@@ -19,41 +19,6 @@ const normalizeBrandLogoUrl = (value) => {
   return "";
 };
 
-const isLoopbackOrPrivateHostname = (hostname) => {
-  const normalizedHost = String(hostname || "").trim().toLowerCase();
-  if (!normalizedHost) return false;
-
-  if (
-    normalizedHost === "localhost" ||
-    normalizedHost === "127.0.0.1" ||
-    normalizedHost === "::1" ||
-    normalizedHost === "host.docker.internal"
-  ) {
-    return true;
-  }
-
-  if (normalizedHost.endsWith(".local")) {
-    return true;
-  }
-
-  return (
-    /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(normalizedHost) ||
-    /^192\.168\.\d{1,3}\.\d{1,3}$/.test(normalizedHost) ||
-    /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(normalizedHost)
-  );
-};
-
-const isAllowedProductionApiUrl = (value) => {
-  if (!value) return false;
-
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "https:" || isLoopbackOrPrivateHostname(parsed.hostname);
-  } catch {
-    return false;
-  }
-};
-
 const clientEnv =
   typeof import.meta !== "undefined" && import.meta.env ? import.meta.env : {};
 const nodeEnv =
@@ -86,10 +51,8 @@ if (isProduction) {
     throw new Error("VITE_API_BASE_URL is required in production.");
   }
 
-  if (!isAllowedProductionApiUrl(configuredApiBaseUrl)) {
-    throw new Error(
-      "VITE_API_BASE_URL must use HTTPS in production unless it targets a local development host."
-    );
+  if (!configuredApiBaseUrl.startsWith("https://")) {
+    throw new Error("VITE_API_BASE_URL must use HTTPS in production.");
   }
 }
 
