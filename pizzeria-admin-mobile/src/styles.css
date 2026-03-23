@@ -246,6 +246,10 @@ button {
   display: block;
 }
 
+.menu-trigger-image-flipped {
+  transform: scaleX(-1);
+}
+
 .menu-trigger-fallback {
   font-size: 22px;
   line-height: 1;
@@ -368,6 +372,11 @@ button {
   border-color: rgba(245, 184, 75, 0.42);
   background: rgba(245, 184, 75, 0.15);
   color: #ffe5ad;
+}
+
+.status-filter-pill {
+  padding: 7px 10px;
+  font-size: 9px;
 }
 
 .inline-error,

@@ -105,14 +105,14 @@ function MenuTriggerIcon() {
   );
 }
 
-function BackTriggerIcon({ alt = "Retour a l'accueil" }) {
+function BackTriggerIcon({ alt = "Retour a l'accueil", flipped = false }) {
   const [hasError, setHasError] = useState(false);
 
   return !hasError ? (
     <img
       src={BACK_ICON}
       alt={alt}
-      className="menu-trigger-image"
+      className={`menu-trigger-image ${flipped ? "menu-trigger-image-flipped" : ""}`}
       onError={() => setHasError(true)}
     />
   ) : (
@@ -942,8 +942,9 @@ export default function App() {
                     onClick={() =>
                       setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, -1) }))
                     }
+                    aria-label="Jour precedent"
                   >
-                    &lt;
+                    <BackTriggerIcon alt="Jour precedent" />
                   </button>
                   <span>{filters.date}</span>
                   <button
@@ -952,8 +953,9 @@ export default function App() {
                     onClick={() =>
                       setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, 1) }))
                     }
+                    aria-label="Jour suivant"
                   >
-                    &gt;
+                    <BackTriggerIcon alt="Jour suivant" flipped />
                   </button>
                 </div>
               </section>
@@ -1047,7 +1049,7 @@ export default function App() {
                     <div className="compact-filter-row">
                       <button
                         type="button"
-                        className={`switcher-pill ${filters.status === "IN_PROGRESS" ? "active" : ""}`}
+                        className={`switcher-pill status-filter-pill ${filters.status === "IN_PROGRESS" ? "active" : ""}`}
                         onClick={() =>
                           setFilters((current) => ({ ...current, status: "IN_PROGRESS" }))
                         }
@@ -1056,7 +1058,7 @@ export default function App() {
                       </button>
                       <button
                         type="button"
-                        className={`switcher-pill ${filters.status === "PRINTED" ? "active" : ""}`}
+                        className={`switcher-pill status-filter-pill ${filters.status === "PRINTED" ? "active" : ""}`}
                         onClick={() =>
                           setFilters((current) => ({ ...current, status: "PRINTED" }))
                         }
@@ -1065,7 +1067,7 @@ export default function App() {
                       </button>
                       <button
                         type="button"
-                        className={`switcher-pill ${filters.status === "VALIDATE" ? "active" : ""}`}
+                        className={`switcher-pill status-filter-pill ${filters.status === "VALIDATE" ? "active" : ""}`}
                         onClick={() =>
                           setFilters((current) => ({ ...current, status: "VALIDATE" }))
                         }
@@ -1074,7 +1076,7 @@ export default function App() {
                       </button>
                       <button
                         type="button"
-                        className={`switcher-pill ${filters.status === "CANCELED" ? "active" : ""}`}
+                        className={`switcher-pill status-filter-pill ${filters.status === "CANCELED" ? "active" : ""}`}
                         onClick={() =>
                           setFilters((current) => ({ ...current, status: "CANCELED" }))
                         }
@@ -1351,8 +1353,9 @@ export default function App() {
                           className="ghost-icon-button"
                           onClick={() => navigateSelection(-1)}
                           disabled={selectedOrderIndex <= 0}
+                          aria-label="Commande precedente"
                         >
-                          &lt;
+                          <BackTriggerIcon alt="Commande precedente" />
                         </button>
                         <span>
                           {selectedOrderIndex >= 0
@@ -1367,8 +1370,9 @@ export default function App() {
                             selectedOrderIndex < 0 ||
                             selectedOrderIndex >= orderedOrderIds.length - 1
                           }
+                          aria-label="Commande suivante"
                         >
-                          &gt;
+                          <BackTriggerIcon alt="Commande suivante" flipped />
                         </button>
                       </div>
                     </div>
