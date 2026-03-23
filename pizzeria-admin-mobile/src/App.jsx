@@ -762,29 +762,6 @@ export default function App() {
           </div>
 
           <div className="topbar-actions topbar-actions-mobile">
-            {activeApp === "clickCollect" ? (
-              <div className="date-switcher compact">
-                <button
-                  type="button"
-                  className="ghost-icon-button"
-                  onClick={() =>
-                    setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, -1) }))
-                  }
-                >
-                  &lt;
-                </button>
-                <span>{filters.date}</span>
-                <button
-                  type="button"
-                  className="ghost-icon-button"
-                  onClick={() =>
-                    setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, 1) }))
-                  }
-                >
-                  &gt;
-                </button>
-              </div>
-            ) : null}
             <div className="menu-dropdown-shell">
               {activeApp !== "launcher" ? (
                 <button
@@ -856,6 +833,32 @@ export default function App() {
                 Activer le push
               </button>
             ) : null}
+          </section>
+        ) : null}
+
+        {activeApp === "clickCollect" ? (
+          <section className="date-row">
+            <div className="date-switcher compact">
+              <button
+                type="button"
+                className="ghost-icon-button"
+                onClick={() =>
+                  setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, -1) }))
+                }
+              >
+                &lt;
+              </button>
+              <span>{filters.date}</span>
+              <button
+                type="button"
+                className="ghost-icon-button"
+                onClick={() =>
+                  setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, 1) }))
+                }
+              >
+                &gt;
+              </button>
+            </div>
           </section>
         ) : null}
 

@@ -268,6 +268,11 @@ button {
   font-weight: 700;
 }
 
+.date-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
 .login-form {
   display: grid;
   gap: 16px;
