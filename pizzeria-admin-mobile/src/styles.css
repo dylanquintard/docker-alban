@@ -141,6 +141,14 @@ button {
   letter-spacing: 0.08em;
 }
 
+.app-icon-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
+}
+
 .launcher-badge {
   width: 52px;
   height: 52px;
@@ -208,6 +216,16 @@ button {
 
 .topbar-actions-mobile {
   flex-wrap: wrap;
+}
+
+.menu-dropdown-shell {
+  position: relative;
+}
+
+.menu-trigger.active {
+  border-color: rgba(245, 184, 75, 0.42);
+  background: rgba(245, 184, 75, 0.12);
+  color: #ffe5ad;
 }
 
 .date-switcher {
@@ -637,9 +655,57 @@ button {
 }
 
 .menu-panel {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 20;
+  width: min(280px, calc(100vw - 28px));
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 22px;
+  background: rgba(17, 23, 31, 0.96);
+}
+
+.menu-panel-head p {
+  margin: 0;
+}
+
+.menu-panel-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.menu-action-button {
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.menu-action-button span,
+.menu-action-button strong {
+  display: block;
+}
+
+.menu-action-button span {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.menu-action-button strong {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.menu-action-button-danger {
+  border-color: rgba(240, 122, 111, 0.22);
+  background: rgba(240, 122, 111, 0.08);
 }
 
 .summary-strip {
@@ -743,6 +809,14 @@ button {
   .app-badge-row {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .menu-dropdown-shell {
+    width: 100%;
+  }
+
+  .menu-panel {
+    width: 100%;
   }
 }
 

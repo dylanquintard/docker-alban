@@ -45,6 +45,11 @@ const APP_ICONS = {
   customerInfo: "CI",
 };
 
+const APP_LOGOS = {
+  clickCollect: "/logo_click_collect.png",
+  customerInfo: "/logo_infos_clients.png",
+};
+
 const APP_COPY = {
   clickCollect: {
     title: "Click&Collect",
@@ -59,6 +64,25 @@ const APP_COPY = {
       "Retrouvez rapidement les clients et leurs infos utiles deja presentes quand le service accelere.",
   },
 };
+
+function AppLauncherIcon({ alt, fallback, muted = false, src }) {
+  const [hasError, setHasError] = useState(false);
+
+  return (
+    <span className={`app-icon-badge ${muted ? "app-icon-badge-muted" : ""}`}>
+      {!hasError && src ? (
+        <img
+          src={src}
+          alt={alt}
+          className="app-icon-image"
+          onError={() => setHasError(true)}
+        />
+      ) : (
+        fallback
+      )}
+    </span>
+  );
+}
 
 export default function App() {
   const [session, setSession] = useState({ state: "loading", user: null });
@@ -724,24 +748,51 @@ export default function App() {
                 </button>
               </div>
             ) : null}
-            <button type="button" className="ghost-button compact-button" onClick={toggleMenu}>
-              Menu
-            </button>
+            <div className="menu-dropdown-shell">
+              <button
+                type="button"
+                className={`ghost-button compact-button menu-trigger ${isMenuOpen ? "active" : ""}`}
+                onClick={toggleMenu}
+                aria-expanded={isMenuOpen ? "true" : "false"}
+                aria-haspopup="menu"
+              >
+                Menu
+              </button>
+
+              {isMenuOpen ? (
+                <section className="menu-panel panel-card" role="menu">
+                  <div className="menu-panel-head">
+                    <p className="eyebrow">Navigation</p>
+                    <p className="muted-copy compact-copy">{session.user?.email || session.user?.name}</p>
+                  </div>
+
+                  <div className="menu-panel-actions">
+                    {activeApp !== "launcher" ? (
+                      <button
+                        type="button"
+                        className="menu-action-button"
+                        onClick={handleHomeNavigation}
+                        role="menuitem"
+                      >
+                        <span>Accueil</span>
+                        <strong>Retour a l'accueil</strong>
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="menu-action-button menu-action-button-danger"
+                      onClick={handleLogout}
+                      role="menuitem"
+                    >
+                      <span>Session</span>
+                      <strong>Deconnecter</strong>
+                    </button>
+                  </div>
+                </section>
+              ) : null}
+            </div>
           </div>
         </header>
-
-        {isMenuOpen ? (
-          <section className="menu-panel panel-card">
-            {activeApp !== "launcher" ? (
-              <button type="button" className="ghost-button compact-button" onClick={handleHomeNavigation}>
-                Retour a l'accueil
-              </button>
-            ) : null}
-            <button type="button" className="ghost-button compact-button" onClick={handleLogout}>
-              Deconnecter
-            </button>
-          </section>
-        ) : null}
 
         <section className="summary-strip panel-card">
           <article className="summary-chip">
@@ -806,7 +857,11 @@ export default function App() {
                 className="app-launch-card"
                 onClick={() => handleOpenApp("clickCollect", { section: "orders" })}
               >
-                <span className="app-icon-badge">{APP_ICONS.clickCollect}</span>
+                <AppLauncherIcon
+                  alt="Logo Click&Collect"
+                  fallback={APP_ICONS.clickCollect}
+                  src={APP_LOGOS.clickCollect}
+                />
                 <div className="app-launch-copy">
                   <p className="eyebrow">{APP_COPY.clickCollect.subtitle}</p>
                   <h2>{APP_COPY.clickCollect.title}</h2>
@@ -823,9 +878,12 @@ export default function App() {
                 className="app-launch-card"
                 onClick={() => handleOpenApp("customerInfo")}
               >
-                <span className="app-icon-badge app-icon-badge-muted">
-                  {APP_ICONS.customerInfo}
-                </span>
+                <AppLauncherIcon
+                  alt="Logo Infos Clients"
+                  fallback={APP_ICONS.customerInfo}
+                  muted
+                  src={APP_LOGOS.customerInfo}
+                />
                 <div className="app-launch-copy">
                   <p className="eyebrow">{APP_COPY.customerInfo.subtitle}</p>
                   <h2>{APP_COPY.customerInfo.title}</h2>
