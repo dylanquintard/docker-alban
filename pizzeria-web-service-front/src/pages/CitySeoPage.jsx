@@ -590,7 +590,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
           Pizza {cityDisplay}
         </h1>
         <p className="max-w-3xl text-sm text-stone-300 sm:text-base">
-          Retrouvez ci-dessous les adresses et horaires d'ouverture actuellement publies pour {cityDisplay}.
+          Retrouvez ci-dessous les horaires de couvertures pour {cityDisplay}.
         </p>
       </header>
 
@@ -617,16 +617,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
           <section className="glass-panel min-h-[420px] p-6">
             <div className="max-w-2xl space-y-3">
               <p className="text-xs uppercase tracking-[0.24em] text-saffron">
-                {tr("Contenu local", "Local content")}
-              </p>
-              <h2 className="text-lg font-bold text-white">
-                {tr("Zone reservee aux futurs paragraphes", "Reserved space for future paragraphs")}
-              </h2>
-              <p className="text-sm text-stone-300">
-                {tr(
-                  "Cette colonne reste volontairement libre pour accueillir plus tard les paragraphes pilotes depuis l'admin site-info.",
-                  "This column intentionally stays open for future paragraphs managed from the site-info admin."
-                )}
+                {cityDisplay}
               </p>
             </div>
           </section>
@@ -674,9 +665,6 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
                   <p className="text-xs uppercase tracking-[0.24em] text-saffron">
                     {tr("Avis clients", "Customer reviews")}
                   </p>
-                  <h2 className="mt-2 text-lg font-bold text-white">
-                    {tr("Avis de cette location", "Reviews for this location")}
-                  </h2>
                 </div>
                 <div className="rounded-2xl border border-saffron/25 bg-saffron/10 px-3 py-2 text-right">
                   <p className="text-[10px] uppercase tracking-[0.18em] text-saffron">
