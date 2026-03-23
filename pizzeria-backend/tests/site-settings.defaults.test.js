@@ -1,7 +1,10 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { DEFAULT_SITE_SETTINGS } = require("../src/services/site-settings.service");
+const {
+  DEFAULT_SITE_SETTINGS,
+  SITE_SETTINGS_SUPPORTS_LOCAL_SEO,
+} = require("../src/services/site-settings.service");
 
 test("site settings defaults no longer expose legacy Pizza Truck branding", () => {
   assert.equal(DEFAULT_SITE_SETTINGS.siteName, "Camion Pizza Italienne");
@@ -14,4 +17,8 @@ test("site settings defaults no longer hardcode Metz in generic service area cop
   assert.doesNotMatch(DEFAULT_SITE_SETTINGS.siteDescription.fr, /Metz/i);
   assert.doesNotMatch(DEFAULT_SITE_SETTINGS.home.heroSubtitle.fr, /Metz/i);
   assert.equal(DEFAULT_SITE_SETTINGS.order.showMenuProductImages, true);
+});
+
+test("site settings Prisma compatibility flag reflects current generated client", () => {
+  assert.equal(typeof SITE_SETTINGS_SUPPORTS_LOCAL_SEO, "boolean");
 });

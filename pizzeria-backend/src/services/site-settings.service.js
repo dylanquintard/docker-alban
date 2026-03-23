@@ -1,8 +1,18 @@
+const { Prisma } = require("@prisma/client");
 const prisma = require("../lib/prisma");
 const { normalizePublicMediaUrl } = require("../utils/media-url");
 
 const SITE_SETTINGS_SINGLETON_ID = 1;
 const ANNOUNCEMENT_VARIANTS = new Set(["info", "alert", "success"]);
+const SITE_SETTING_MODEL = Prisma.dmmf.datamodel.models.find(
+  (model) => model.name === "SiteSetting"
+);
+const SITE_SETTING_FIELDS = new Set(
+  Array.isArray(SITE_SETTING_MODEL?.fields)
+    ? SITE_SETTING_MODEL.fields.map((field) => field.name)
+    : []
+);
+const SITE_SETTINGS_SUPPORTS_LOCAL_SEO = SITE_SETTING_FIELDS.has("localSeo");
 
 const DEFAULT_SITE_SETTINGS = Object.freeze({
   siteName: "Camion Pizza Italienne",
@@ -469,7 +479,7 @@ function formatSiteSettingsRecord(record) {
 }
 
 function buildPersistedPayload(settings) {
-  return {
+  const payload = {
     siteName: settings.siteName,
     siteTagline: settings.siteTagline,
     siteDescription: settings.siteDescription,
@@ -478,13 +488,20 @@ function buildPersistedPayload(settings) {
     seo: settings.seo,
     home: settings.home,
     blog: settings.blog,
-    localSeo: settings.localSeo,
     contactPage: settings.contactPage,
     order: settings.order,
     footer: settings.footer,
     announcement: settings.announcement,
     pizzaPage: settings.pizzaPage,
   };
+
+  // Some deployed environments still run a Prisma client generated before
+  // `localSeo` existed on SiteSetting. Do not block unrelated settings saves.
+  if (SITE_SETTINGS_SUPPORTS_LOCAL_SEO) {
+    payload.localSeo = settings.localSeo;
+  }
+
+  return payload;
 }
 
 function getNestedValue(source, path) {
@@ -1024,6 +1041,7 @@ async function translateSiteSettingsToEnglish(payload) {
 
 module.exports = {
   DEFAULT_SITE_SETTINGS,
+  SITE_SETTINGS_SUPPORTS_LOCAL_SEO,
   getAdminSiteSettings,
   getPublicSiteSettings,
   translateSiteSettingsToEnglish,
