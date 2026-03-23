@@ -268,11 +268,6 @@ button {
   font-weight: 700;
 }
 
-.date-row {
-  display: flex;
-  justify-content: flex-start;
-}
-
 .login-form {
   display: grid;
   gap: 16px;
@@ -542,6 +537,24 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.click-collect-topbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(220px, 1.2fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.stretch-pill {
+  width: 100%;
+  min-height: 48px;
+}
+
+.stretch-date-switcher {
+  width: 100%;
+  justify-content: space-between;
+  min-height: 48px;
 }
 
 .app-toolbar {
@@ -834,6 +847,10 @@ button {
 
   .menu-panel {
     width: 100%;
+  }
+
+  .click-collect-topbar {
+    grid-template-columns: 1fr;
   }
 }
 

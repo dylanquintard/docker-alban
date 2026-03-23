@@ -836,32 +836,6 @@ export default function App() {
           </section>
         ) : null}
 
-        {activeApp === "clickCollect" ? (
-          <section className="date-row">
-            <div className="date-switcher compact">
-              <button
-                type="button"
-                className="ghost-icon-button"
-                onClick={() =>
-                  setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, -1) }))
-                }
-              >
-                &lt;
-              </button>
-              <span>{filters.date}</span>
-              <button
-                type="button"
-                className="ghost-icon-button"
-                onClick={() =>
-                  setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, 1) }))
-                }
-              >
-                &gt;
-              </button>
-            </div>
-          </section>
-        ) : null}
-
         {shouldShowIosInstallHelp ? (
           <section className="install-card compact-install-card">
             <strong>Installer l'app sur iPhone</strong>
@@ -912,36 +886,42 @@ export default function App() {
         {activeApp === "clickCollect" ? (
           <>
             <section className="app-shell-card panel-card">
-              <div className="app-shell-head">
-                <div>
-                  <p className="eyebrow">{APP_COPY.clickCollect.subtitle}</p>
-                  <h2>{APP_COPY.clickCollect.title}</h2>
-                  <p className="muted-copy compact-copy">{APP_COPY.clickCollect.description}</p>
-                  <p className="muted-copy compact-copy">Service du {filters.date}</p>
-                </div>
-                <div className="app-badge-row">
-                  <span className="status-pill neutral">{statusCounters.COMPLETED} commandes actives</span>
-                  <span className="status-pill neutral">
-                    {ticketCounters.error + ticketCounters.warning} tickets a suivre
-                  </span>
-                </div>
-              </div>
-
-              <section className="mobile-menu-switcher compact-switcher">
+              <section className="click-collect-topbar">
                 <button
                   type="button"
-                  className={`switcher-pill ${clickCollectSection === "orders" ? "active" : ""}`}
+                  className={`switcher-pill stretch-pill ${clickCollectSection === "orders" ? "active" : ""}`}
                   onClick={() => handleClickCollectSectionChange("orders")}
                 >
                   Commandes
                 </button>
                 <button
                   type="button"
-                  className={`switcher-pill ${clickCollectSection === "tickets" ? "active" : ""}`}
+                  className={`switcher-pill stretch-pill ${clickCollectSection === "tickets" ? "active" : ""}`}
                   onClick={() => handleClickCollectSectionChange("tickets")}
                 >
                   Tickets
                 </button>
+                <div className="date-switcher compact stretch-date-switcher">
+                  <button
+                    type="button"
+                    className="ghost-icon-button"
+                    onClick={() =>
+                      setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, -1) }))
+                    }
+                  >
+                    &lt;
+                  </button>
+                  <span>{filters.date}</span>
+                  <button
+                    type="button"
+                    className="ghost-icon-button"
+                    onClick={() =>
+                      setFilters((current) => ({ ...current, date: shiftIsoDate(current.date, 1) }))
+                    }
+                  >
+                    &gt;
+                  </button>
+                </div>
               </section>
             </section>
 
