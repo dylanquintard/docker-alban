@@ -35,6 +35,7 @@ export default function FeaturedPizzaSuggestions({
   products = [],
   tr,
   compact = false,
+  showProductImages = true,
   showAddButton = false,
   onAddProduct,
   getCanCustomize,
@@ -66,8 +67,12 @@ export default function FeaturedPizzaSuggestions({
             key={product.id}
             className={`rounded-2xl border border-white/10 bg-charcoal/35 ${compact ? "p-3" : "p-4"}`}
           >
-            <div className={`flex items-start ${compact ? "" : "gap-3 sm:gap-4"}`}>
-              {!compact ? (
+            <div
+              className={`flex items-start ${
+                !compact && showProductImages ? "gap-3 sm:gap-4" : ""
+              }`}
+            >
+              {!compact && showProductImages ? (
                 <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/25 sm:h-24 sm:w-24">
                   {String(product?.thumbnailUrl || product?.imageUrl || "").trim() ? (
                     <img

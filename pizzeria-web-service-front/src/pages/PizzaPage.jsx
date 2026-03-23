@@ -20,6 +20,7 @@ function extractGalleryTimestampFromUrl(value) {
 export default function PizzaPage() {
   const { tr, language } = useLanguage();
   const { settings } = useSiteSettings();
+  const showMenuProductImages = settings?.order?.showMenuProductImages !== false;
 
   const [products, setProducts] = useState([]);
 
@@ -143,7 +144,7 @@ export default function PizzaPage() {
           className="my-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-5 sm:px-5"
         >
           <div className="flex items-stretch gap-4 sm:gap-5">
-            <div className="flex w-1/2 pr-1 sm:pr-2">
+            <div className={showMenuProductImages ? "flex w-1/2 pr-1 sm:pr-2" : "flex w-full"}>
               <div className="h-full w-full rounded-2xl border border-white/12 bg-gradient-to-br from-charcoal/85 via-black/50 to-charcoal/70 p-4 shadow-[0_14px_40px_rgba(0,0,0,0.22)] sm:p-5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-saffron/90 sm:text-[11px]">
                   {tr("Recettes artisanales", "Handcrafted recipes")}
@@ -152,14 +153,16 @@ export default function PizzaPage() {
                   {pizzaSectionTitle}
                 </h2>
                 <div className="mt-3 h-px bg-gradient-to-r from-saffron/70 via-white/30 to-transparent" />
-                <p className="mt-3 min-h-[8.5rem] whitespace-pre-line text-[0.98rem] leading-relaxed text-stone-200 sm:min-h-[9.25rem] sm:text-[1.06rem]">
+                <p className="mt-3 whitespace-pre-line text-[0.98rem] leading-relaxed text-stone-200 sm:text-[1.06rem]">
                   {pizzaSectionDescription}
                 </p>
               </div>
             </div>
-            <div className="flex w-1/2 max-w-[50%]">
-              <PizzaSpotlightGallery images={pizzaGalleryImages} />
-            </div>
+            {showMenuProductImages ? (
+              <div className="flex w-1/2 max-w-[50%]">
+                <PizzaSpotlightGallery images={pizzaGalleryImages} />
+              </div>
+            ) : null}
           </div>
         </section>
       </section>
@@ -174,7 +177,11 @@ export default function PizzaPage() {
             "A featured selection curated by the team. Order online in just a few clicks."
           )}
         </p>
-        <FeaturedPizzaSuggestions products={featuredProducts} tr={tr} />
+        <FeaturedPizzaSuggestions
+          products={featuredProducts}
+          tr={tr}
+          showProductImages={showMenuProductImages}
+        />
       </section>
 
       <PageFaqSection

@@ -1643,6 +1643,7 @@ export default function Order() {
                 products={featuredProducts}
                 tr={tr}
                 compact
+                showProductImages={showMenuProductImages}
                 showAddButton
                 getCanCustomize={(product) => Boolean(product?.isCustomizable)}
                 onAddProduct={(product) =>

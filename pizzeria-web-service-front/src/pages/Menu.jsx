@@ -142,7 +142,12 @@ export default function Menu() {
           <h2 className="text-lg font-bold uppercase tracking-[0.08em] text-saffron">
             {tr("Suggestions", "Suggestions")}
           </h2>
-          <FeaturedPizzaSuggestions products={featuredProducts} tr={tr} compact />
+          <FeaturedPizzaSuggestions
+            products={featuredProducts}
+            tr={tr}
+            compact
+            showProductImages={showMenuProductImages}
+          />
         </section>
       ) : null}
 
