@@ -1,0 +1,14 @@
+{
+  "name": "Camion Pizza Italienne",
+  "short_name": "Pizzeria",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32 48x48 64x64",
+      "type": "image/x-icon"
+    }
+  ],
+  "theme_color": "#12100d",
+  "background_color": "#12100d",
+  "display": "standalone"
+}

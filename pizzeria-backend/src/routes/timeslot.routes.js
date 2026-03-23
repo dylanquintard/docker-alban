@@ -1,0 +1,59 @@
+const express = require("express");
+const router = express.Router();
+const timeSlotController = require("../controllers/timeslot.controller");
+const { authMiddleware, adminMiddleware } = require("../middlewares/auth");
+
+router.get("/public-weekly-settings", timeSlotController.getPublicWeeklySettings);
+
+router.get(
+  "/weekly-settings",
+  authMiddleware,
+  adminMiddleware,
+  timeSlotController.getWeeklySettings
+);
+router.get(
+  "/concrete-slots",
+  authMiddleware,
+  adminMiddleware,
+  timeSlotController.getConcreteSlotsForService
+);
+router.put(
+  "/weekly-settings/:dayOfWeek",
+  authMiddleware,
+  adminMiddleware,
+  timeSlotController.upsertWeeklySetting
+);
+router.delete(
+  "/weekly-settings/:dayOfWeek/service",
+  authMiddleware,
+  adminMiddleware,
+  timeSlotController.removeWeeklyService
+);
+router.get(
+  "/closures",
+  authMiddleware,
+  adminMiddleware,
+  timeSlotController.listTruckClosures
+);
+router.post(
+  "/closures",
+  authMiddleware,
+  adminMiddleware,
+  timeSlotController.createTruckClosure
+);
+router.delete(
+  "/closures/:closureId",
+  authMiddleware,
+  adminMiddleware,
+  timeSlotController.deleteTruckClosure
+);
+router.patch(
+  "/concrete-slots/active",
+  authMiddleware,
+  adminMiddleware,
+  timeSlotController.updateConcreteSlotActiveState
+);
+
+router.get("/availability", authMiddleware, timeSlotController.getPickupAvailability);
+
+module.exports = router;

@@ -1,0 +1,302 @@
+@config "../../tailwind.public.config.js";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --app-text: #f5f5f4;
+    --app-bg-color: #12100d;
+    --brand-heading: #f8fafc;
+    --brand-body: #f1f5f9;
+    --brand-muted: #a8b0bb;
+    --brand-accent: #f4b731;
+    --brand-accent-hover: #f7c752;
+    --brand-border: rgba(244, 183, 49, 0.45);
+    --surface-elevated: rgba(255, 255, 255, 0.06);
+    --surface-border: rgba(255, 255, 255, 0.16);
+    --app-bg-image:
+      radial-gradient(1100px 520px at -12% -20%, rgba(244, 183, 49, 0.22), transparent 62%),
+      radial-gradient(860px 420px at 112% -8%, rgba(217, 75, 31, 0.18), transparent 58%),
+      linear-gradient(180deg, #1f1712 0%, #12100d 38%, #0d0b09 100%);
+  }
+
+  html[data-theme="light"] {
+    color-scheme: light;
+    --app-text: #1a1817;
+    --app-bg-color: #f6ebdd;
+    --brand-heading: #3a261c;
+    --brand-body: #1a1817;
+    --brand-muted: #6f5b4e;
+    --brand-accent: #b2332e;
+    --brand-accent-hover: #9c2d29;
+    --brand-border: rgba(178, 51, 46, 0.45);
+    --surface-elevated: rgba(255, 255, 255, 0.8);
+    --surface-border: rgba(26, 24, 23, 0.1);
+    --app-bg-image:
+      radial-gradient(980px 500px at -12% -16%, rgba(178, 51, 46, 0.12), transparent 62%),
+      radial-gradient(760px 320px at 112% -8%, rgba(94, 107, 63, 0.1), transparent 58%),
+      linear-gradient(180deg, #fbf2e6 0%, #f7ecdf 56%, #f3e6d7 100%);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply min-h-screen font-body antialiased;
+    color: var(--app-text);
+    background-color: var(--app-bg-color);
+    background-image: var(--app-bg-image);
+  }
+
+  section[id] {
+    scroll-margin-top: 6.5rem;
+  }
+
+  ::selection {
+    @apply bg-saffron text-charcoal;
+  }
+}
+
+@layer components {
+  .app-header {
+    @apply border-b border-saffron/20 bg-charcoal/90 backdrop-blur-xl;
+  }
+
+  html[data-theme="light"] .app-header {
+    border-color: rgba(26, 24, 23, 0.1);
+    background-color: rgba(246, 235, 221, 0.95);
+  }
+
+  html[data-theme="light"] .app-header a,
+  html[data-theme="light"] .app-header button,
+  html[data-theme="light"] .app-header select {
+    color: var(--brand-heading);
+  }
+
+  html[data-theme="light"] .app-header select option {
+    color: var(--brand-heading);
+  }
+
+  .section-shell {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .glass-panel {
+    @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md;
+  }
+
+  .admin-card {
+    @apply min-w-0 overflow-x-auto rounded-2xl border border-white/10 bg-white/5 p-3 text-stone-100 shadow-card backdrop-blur-sm sm:p-5;
+  }
+
+  .admin-card table {
+    @apply w-full min-w-[680px] text-sm;
+  }
+
+  .admin-card thead tr {
+    @apply border-b border-white/15 text-left text-stone-300;
+  }
+
+  .admin-card tbody tr {
+    @apply border-b border-white/10;
+  }
+
+  .admin-card th,
+  .admin-card td {
+    @apply px-2 py-2 align-top sm:px-3 sm:py-3;
+  }
+
+  .admin-card input,
+  .admin-card select,
+  .admin-card textarea {
+    @apply w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-400 focus:border-saffron focus:outline-none focus:ring-2 focus:ring-saffron/20;
+  }
+
+  .admin-card :where(button) {
+    @apply rounded-lg bg-saffron px-3 py-2 text-xs font-semibold text-charcoal transition hover:bg-yellow-300;
+  }
+
+  .chip {
+    @apply inline-flex min-h-6 items-center rounded-full border border-saffron/55 bg-saffron/15 px-2.5 text-[11px] font-bold uppercase tracking-wide text-saffron;
+  }
+
+  .avatar-badge {
+    @apply border border-white/20 bg-charcoal text-saffron;
+  }
+
+  .theme-light-keep-white {
+    color: inherit;
+  }
+
+  .theme-light-keep-dark {
+    color: inherit;
+  }
+
+  .order-cart-shell {
+    @apply border border-white/10 bg-charcoal/75 text-stone-100;
+  }
+
+  .order-cart-item {
+    @apply border border-white/15 bg-black/35 text-stone-100;
+  }
+
+  html[data-theme="light"] .glass-panel,
+  html[data-theme="light"] .admin-card,
+  html[data-theme="light"] .bg-white\/5,
+  html[data-theme="light"] .bg-charcoal\/95,
+  html[data-theme="light"] .bg-charcoal\/90,
+  html[data-theme="light"] .bg-charcoal\/70,
+  html[data-theme="light"] .bg-charcoal\/60,
+  html[data-theme="light"] .bg-charcoal\/45,
+  html[data-theme="light"] .bg-charcoal\/35,
+  html[data-theme="light"] .bg-black\/20,
+  html[data-theme="light"] .bg-black\/30,
+  html[data-theme="light"] .bg-black\/35 {
+    background-color: var(--surface-elevated) !important;
+    border-color: var(--surface-border) !important;
+    box-shadow: 0 12px 30px rgba(26, 24, 23, 0.08);
+    backdrop-filter: blur(8px);
+  }
+
+  html[data-theme="light"] .border-white\/10,
+  html[data-theme="light"] .border-white\/15,
+  html[data-theme="light"] .border-white\/20,
+  html[data-theme="light"] .border-white\/25 {
+    border-color: var(--surface-border) !important;
+  }
+
+  html[data-theme="light"] .text-white,
+  html[data-theme="light"] .text-stone-100,
+  html[data-theme="light"] .text-stone-200,
+  html[data-theme="light"] .text-stone-300,
+  html[data-theme="light"] .text-stone-400 {
+    color: var(--brand-body) !important;
+  }
+
+  html[data-theme="light"] .text-stone-500,
+  html[data-theme="light"] .text-stone-600 {
+    color: var(--brand-muted) !important;
+  }
+
+  html[data-theme="light"] .text-saffron {
+    color: var(--brand-accent) !important;
+  }
+
+  html[data-theme="light"] .text-emerald-200,
+  html[data-theme="light"] .text-emerald-300 {
+    color: #166534 !important;
+  }
+
+  html[data-theme="light"] .text-red-200,
+  html[data-theme="light"] .text-red-300 {
+    color: #b91c1c !important;
+  }
+
+  html[data-theme="light"] .text-amber-200,
+  html[data-theme="light"] .text-amber-300 {
+    color: #92400e !important;
+  }
+
+  html[data-theme="light"] .text-sky-200 {
+    color: #075985 !important;
+  }
+
+  html[data-theme="light"] .bg-saffron {
+    background-color: var(--brand-accent) !important;
+    color: #ffffff !important;
+  }
+
+  html[data-theme="light"] .hover\:bg-yellow-300:hover,
+  html[data-theme="light"] .hover\:bg-amber-300:hover {
+    background-color: var(--brand-accent-hover) !important;
+  }
+
+  html[data-theme="light"] .border-saffron\/40,
+  html[data-theme="light"] .border-saffron\/50,
+  html[data-theme="light"] .border-saffron\/55,
+  html[data-theme="light"] .border-saffron\/70 {
+    border-color: var(--brand-border) !important;
+  }
+
+  html[data-theme="light"] .bg-saffron\/10,
+  html[data-theme="light"] .bg-saffron\/15 {
+    background-color: rgba(178, 51, 46, 0.1) !important;
+  }
+
+  html[data-theme="light"] .bg-oven-glow {
+    background-image: linear-gradient(
+      145deg,
+      rgba(251, 241, 228, 0.96) 0%,
+      rgba(255, 255, 255, 0.94) 52%,
+      rgba(243, 230, 215, 0.96) 100%
+    );
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+
+  html[data-theme="light"] .avatar-badge {
+    border-color: rgba(58, 38, 28, 0.2);
+    background-color: #3a261c;
+    color: #f7ecdf;
+  }
+
+  html[data-theme="light"] .theme-light-keep-white {
+    color: #ffffff !important;
+  }
+
+  html[data-theme="light"] .theme-light-keep-dark {
+    color: var(--brand-heading) !important;
+  }
+
+  html[data-theme="light"] .order-page .order-cart-shell {
+    background-color: var(--surface-elevated) !important;
+    border-color: var(--surface-border) !important;
+    color: var(--brand-body) !important;
+    box-shadow: 0 12px 30px rgba(26, 24, 23, 0.08);
+  }
+
+  html[data-theme="light"] .order-page .order-cart-item {
+    background-color: rgba(250, 246, 239, 0.94) !important;
+    border-color: rgba(26, 24, 23, 0.1) !important;
+    color: var(--brand-body) !important;
+  }
+
+  html[data-theme="light"] .order-page .order-cart-shell p,
+  html[data-theme="light"] .order-page .order-cart-shell span,
+  html[data-theme="light"] .order-page .order-cart-shell h2,
+  html[data-theme="light"] .order-page .order-cart-shell h3,
+  html[data-theme="light"] .order-page .order-cart-shell strong,
+  html[data-theme="light"] .order-page .order-cart-shell button {
+    color: var(--brand-body) !important;
+  }
+
+  html[data-theme="light"] .order-page .text-emerald-200,
+  html[data-theme="light"] .order-page .text-emerald-300 {
+    color: #166534 !important;
+  }
+
+  html[data-theme="light"] .order-page .text-red-200,
+  html[data-theme="light"] .order-page .text-red-300 {
+    color: #b91c1c !important;
+  }
+
+  html[data-theme="light"] .order-page .text-amber-200,
+  html[data-theme="light"] .order-page .text-amber-300 {
+    color: #92400e !important;
+  }
+
+  html[data-theme="light"] input,
+  html[data-theme="light"] select,
+  html[data-theme="light"] textarea {
+    color: var(--brand-body);
+  }
+
+  html[data-theme="light"] .chip {
+    border-color: rgba(178, 51, 46, 0.18);
+    background-color: rgba(255, 255, 255, 0.72);
+    color: var(--brand-accent);
+  }
+}

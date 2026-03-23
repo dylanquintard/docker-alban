@@ -1,0 +1,258 @@
+name: pizzeria-platform
+
+services:
+  postgres:
+    image: postgres:16-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pizzeria}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7-bookworm
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    build:
+      context: ./pizzeria-backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["sh", "-c", "npm run prisma:migrate:deploy && npm run start"]
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-pizzeria}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      SHUTDOWN_TIMEOUT_MS: ${SHUTDOWN_TIMEOUT_MS:-10000}
+      CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:8000,http://localhost:4173}
+      FRONTEND_SITE_URL: ${PUBLIC_FRONTEND_URL:-http://localhost:8000}
+      UPLOAD_PUBLIC_BASE_URL: ${PUBLIC_BACKEND_URL:-http://localhost:5000}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      ENABLE_HSTS: ${ENABLE_HSTS:-false}
+      HSTS_MAX_AGE: ${HSTS_MAX_AGE:-31536000}
+      AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-pizzeria_auth}
+      CSRF_COOKIE_NAME: ${CSRF_COOKIE_NAME:-pizzeria_csrf}
+      CSRF_HEADER_NAME: ${CSRF_HEADER_NAME:-x-csrf-token}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      AUTH_COOKIE_SAMESITE: ${AUTH_COOKIE_SAMESITE:-lax}
+      AUTH_COOKIE_MAX_AGE: ${AUTH_COOKIE_MAX_AGE:-604800000}
+      UPLOAD_DIR: /app/uploads
+      UPLOAD_MAX_MB: ${UPLOAD_MAX_MB:-5}
+      RATE_LIMIT_BACKEND: ${RATE_LIMIT_BACKEND:-redis}
+      REDIS_URL: redis://redis:6379
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      CONTACT_RECIPIENT_EMAIL: ${CONTACT_RECIPIENT_EMAIL:-}
+      PASSWORD_RESET_URL_BASE: ${PASSWORD_RESET_URL_BASE:-}
+      VERIFICATION_STRICT_DELIVERY: ${VERIFICATION_STRICT_DELIVERY:-false}
+      DEFAULT_COUNTRY_DIAL_CODE: ${DEFAULT_COUNTRY_DIAL_CODE:-+33}
+      EMAIL_OTP_TTL_MINUTES: ${EMAIL_OTP_TTL_MINUTES:-10}
+      PASSWORD_RESET_TTL_MINUTES: ${PASSWORD_RESET_TTL_MINUTES:-30}
+      EMAIL_OTP_DEBUG_LOGGING: ${EMAIL_OTP_DEBUG_LOGGING:-false}
+      EXPOSE_EMAIL_OTP_IN_RESPONSE: ${EXPOSE_EMAIL_OTP_IN_RESPONSE:-false}
+      CONTACT_DEBUG_LOGGING: ${CONTACT_DEBUG_LOGGING:-false}
+      SITEMAP_CACHE_SECONDS: ${SITEMAP_CACHE_SECONDS:-300}
+      WEB_PUSH_VAPID_PUBLIC_KEY: ${WEB_PUSH_VAPID_PUBLIC_KEY:-}
+      WEB_PUSH_VAPID_PRIVATE_KEY: ${WEB_PUSH_VAPID_PRIVATE_KEY:-}
+      WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT:-mailto:admin@example.invalid}
+      PRINT_SCHEDULER_ENABLED: "false"
+      PRINT_SCHEDULER_INTERVAL_MS: ${PRINT_SCHEDULER_INTERVAL_MS:-2000}
+      PRINT_JOB_LOCK_MS: ${PRINT_JOB_LOCK_MS:-60000}
+      PRINT_RETRY_BASE_SECONDS: ${PRINT_RETRY_BASE_SECONDS:-5}
+      PRINT_RETRY_MAX_SECONDS: ${PRINT_RETRY_MAX_SECONDS:-300}
+      PRINT_DEFAULT_MAX_ATTEMPTS: ${PRINT_DEFAULT_MAX_ATTEMPTS:-5}
+      PRINT_AGENT_OFFLINE_AFTER_MS: ${PRINT_AGENT_OFFLINE_AFTER_MS:-30000}
+      PRINT_JOB_RETENTION_HOURS: ${PRINT_JOB_RETENTION_HOURS:-24}
+      PRINT_JOB_CLEANUP_INTERVAL_MS: ${PRINT_JOB_CLEANUP_INTERVAL_MS:-60000}
+      PRINT_READY_ALERT_AFTER_MINUTES: ${PRINT_READY_ALERT_AFTER_MINUTES:-5}
+      PRINT_READY_FAIL_AFTER_MINUTES: ${PRINT_READY_FAIL_AFTER_MINUTES:-10}
+      PRINT_REPRINT_READY_FAIL_AFTER_MINUTES: ${PRINT_REPRINT_READY_FAIL_AFTER_MINUTES:-10}
+      ARCHIVED_USER_EMAIL: ${ARCHIVED_USER_EMAIL:-archived-user@local.invalid}
+      ARCHIVED_USER_NAME: ${ARCHIVED_USER_NAME:-Client supprime}
+      ARCHIVED_USER_PHONE: ${ARCHIVED_USER_PHONE:-+33100000000}
+    volumes:
+      - backend_uploads:/app/uploads
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:5000/healthz').then((res)=>process.exit(res.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  backend-worker:
+    build:
+      context: ./pizzeria-backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    command: ["npm", "run", "worker"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-pizzeria}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:8000,http://localhost:4173}
+      FRONTEND_SITE_URL: ${PUBLIC_FRONTEND_URL:-http://localhost:8000}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      ENABLE_HSTS: ${ENABLE_HSTS:-false}
+      HSTS_MAX_AGE: ${HSTS_MAX_AGE:-31536000}
+      AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-pizzeria_auth}
+      CSRF_COOKIE_NAME: ${CSRF_COOKIE_NAME:-pizzeria_csrf}
+      CSRF_HEADER_NAME: ${CSRF_HEADER_NAME:-x-csrf-token}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      AUTH_COOKIE_SAMESITE: ${AUTH_COOKIE_SAMESITE:-lax}
+      AUTH_COOKIE_MAX_AGE: ${AUTH_COOKIE_MAX_AGE:-604800000}
+      UPLOAD_DIR: /app/uploads
+      UPLOAD_MAX_MB: ${UPLOAD_MAX_MB:-5}
+      UPLOAD_PUBLIC_BASE_URL: ${PUBLIC_BACKEND_URL:-http://localhost:5000}
+      RATE_LIMIT_BACKEND: ${RATE_LIMIT_BACKEND:-redis}
+      REDIS_URL: redis://redis:6379
+      PRINT_SCHEDULER_ENABLED: "true"
+      PRINT_SCHEDULER_INTERVAL_MS: ${PRINT_SCHEDULER_INTERVAL_MS:-2000}
+      PRINT_JOB_LOCK_MS: ${PRINT_JOB_LOCK_MS:-60000}
+      PRINT_RETRY_BASE_SECONDS: ${PRINT_RETRY_BASE_SECONDS:-5}
+      PRINT_RETRY_MAX_SECONDS: ${PRINT_RETRY_MAX_SECONDS:-300}
+      PRINT_DEFAULT_MAX_ATTEMPTS: ${PRINT_DEFAULT_MAX_ATTEMPTS:-5}
+      PRINT_AGENT_OFFLINE_AFTER_MS: ${PRINT_AGENT_OFFLINE_AFTER_MS:-30000}
+      PRINT_JOB_RETENTION_HOURS: ${PRINT_JOB_RETENTION_HOURS:-24}
+      PRINT_JOB_CLEANUP_INTERVAL_MS: ${PRINT_JOB_CLEANUP_INTERVAL_MS:-60000}
+      PRINT_READY_ALERT_AFTER_MINUTES: ${PRINT_READY_ALERT_AFTER_MINUTES:-5}
+      PRINT_READY_FAIL_AFTER_MINUTES: ${PRINT_READY_FAIL_AFTER_MINUTES:-10}
+      PRINT_REPRINT_READY_FAIL_AFTER_MINUTES: ${PRINT_REPRINT_READY_FAIL_AFTER_MINUTES:-10}
+
+  frontend:
+    build:
+      context: ./pizzeria-web-service-front
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${PUBLIC_BACKEND_URL:-http://localhost:5000}/api
+        VITE_SITE_URL: ${PUBLIC_FRONTEND_URL:-http://localhost:8000}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      PORT: 8000
+      SEO_BACKEND_API_URL: ${INTERNAL_API_BASE_URL:-http://backend:5000/api}
+      CANONICAL_SITE_URL: ${PUBLIC_FRONTEND_URL:-http://localhost:8000}
+      SEO_ROBOTS_SITEMAP_URL: ${PUBLIC_BACKEND_URL:-http://localhost:5000}/sitemap.xml
+      SEO_CACHE_TTL_MS: ${SEO_CACHE_TTL_MS:-300000}
+      SEO_FORCE_REFRESH_MIN_INTERVAL_MS: ${SEO_FORCE_REFRESH_MIN_INTERVAL_MS:-15000}
+      SEO_FETCH_TIMEOUT_MS: ${SEO_FETCH_TIMEOUT_MS:-6000}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8000/healthz').then((res)=>process.exit(res.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  admin-mobile:
+    build:
+      context: ./pizzeria-admin-mobile
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${PUBLIC_BACKEND_URL:-http://localhost:5000}/api
+        VITE_REALTIME_STREAM_URL: ${PUBLIC_BACKEND_URL:-http://localhost:5000}/api/realtime/stream
+        VITE_SW_VERSION: ${VITE_SW_VERSION:-}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  print-agent:
+    profiles: ["print-agent"]
+    build:
+      context: ./pizzeria-print-agent
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      API_BASE_URL: ${PRINT_AGENT_API_BASE_URL:-http://backend:5000}
+      AGENT_CODE: ${PRINT_AGENT_CODE:-agent-kitchen}
+      AGENT_NAME: ${PRINT_AGENT_NAME:-Kitchen Agent}
+      AGENT_TOKEN: ${PRINT_AGENT_TOKEN:-}
+      PRINTER_CODE: ${PRINTER_CODE:-kitchen_main}
+      PRINTER_IP: ${PRINTER_IP:-192.168.1.50}
+      PRINTER_PORT: ${PRINTER_PORT:-9100}
+      PRINTERS_JSON: ${PRINTERS_JSON:-}
+      POLL_MS: ${PRINT_AGENT_POLL_MS:-3000}
+      HEARTBEAT_MS: ${PRINT_AGENT_HEARTBEAT_MS:-10000}
+      REQUEST_TIMEOUT_MS: ${PRINT_AGENT_REQUEST_TIMEOUT_MS:-10000}
+      SOCKET_TIMEOUT_MS: ${PRINT_AGENT_SOCKET_TIMEOUT_MS:-5000}
+      SQLITE_PATH: /app/data/agent.db
+      LOCAL_HTTP_HOST: 0.0.0.0
+      LOCAL_HTTP_PORT: 3000
+      LOCAL_ADMIN_TOKEN: ${PRINT_AGENT_LOCAL_ADMIN_TOKEN:-change-me}
+      LOG_LEVEL: ${PRINT_AGENT_LOG_LEVEL:-info}
+    volumes:
+      - print_agent_data:/app/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then((res)=>process.exit(res.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_uploads:
+  print_agent_data:

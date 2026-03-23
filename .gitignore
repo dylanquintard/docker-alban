@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.production.dokploy.example
+!**/.env.example
+!**/.env.production.example
+
+# Build and coverage artifacts
+dist/
+build/
+coverage/
+
+# Runtime data
+uploads/
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+
+# Local Docker dump payloads
+docker/postgres/dumps/*
+!docker/postgres/dumps/.gitkeep

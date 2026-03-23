@@ -1,0 +1,33 @@
+services:
+  - type: worker
+    name: pizzeria-print-agent
+    runtime: node
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_BASE_URL
+        sync: false
+      - key: AGENT_CODE
+        sync: false
+      - key: AGENT_NAME
+        sync: false
+      - key: AGENT_TOKEN
+        sync: false
+      - key: PRINTERS_JSON
+        sync: false
+      - key: PRINTER_CODE
+        sync: false
+      - key: PRINTER_IP
+        sync: false
+      - key: PRINTER_PORT
+        sync: false
+      - key: SQLITE_PATH
+        value: ./data/agent.db
+      - key: LOCAL_HTTP_HOST
+        value: 127.0.0.1
+      - key: LOCAL_HTTP_PORT
+        value: "3000"
+      - key: LOCAL_ADMIN_TOKEN
+        sync: false

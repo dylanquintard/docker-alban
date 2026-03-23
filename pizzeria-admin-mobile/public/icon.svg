@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title>Admin Pizzeria</title>
+  <desc>Icône carrée sombre avec une part de pizza et la lettre A.</desc>
+  <rect width="256" height="256" rx="56" fill="#13110f"/>
+  <path d="M62 176c13-56 71-112 132-118-4 56-60 114-117 132-7 2-13-5-15-14Z" fill="#f6c44f"/>
+  <path d="M126 83c22 8 42 29 50 53" fill="none" stroke="#8a3f18" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="128" cy="118" r="8" fill="#d8502f"/>
+  <circle cx="154" cy="133" r="8" fill="#d8502f"/>
+  <circle cx="110" cy="143" r="8" fill="#d8502f"/>
+  <path d="M76 196h24l8-22h37l8 22h24l-38-112h-25Zm37-42 13-39 13 39Z" fill="#f7f1e8"/>
+</svg>

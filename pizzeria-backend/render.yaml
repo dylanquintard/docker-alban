@@ -1,0 +1,54 @@
+services:
+  - type: web
+    name: pizzeria-backend
+    runtime: node
+    buildCommand: npm ci && npm run build
+    startCommand: npm run prisma:migrate:deploy && npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "5000"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: FRONTEND_SITE_URL
+        sync: false
+      - key: RATE_LIMIT_BACKEND
+        value: redis
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pizzeria-backend-redis
+          property: connectionString
+      - key: PRINT_SCHEDULER_ENABLED
+        value: "false"
+
+  - type: worker
+    name: pizzeria-backend-print-worker
+    runtime: node
+    buildCommand: npm ci && npm run build
+    startCommand: npm run worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: RATE_LIMIT_BACKEND
+        value: redis
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pizzeria-backend-redis
+          property: connectionString
+      - key: PRINT_SCHEDULER_ENABLED
+        value: "true"
+
+  - type: redis
+    name: pizzeria-backend-redis
+    plan: starter

@@ -1,0 +1,24 @@
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  backend:
+    ports:
+      - "5000:5000"
+
+  frontend:
+    ports:
+      - "8000:8000"
+
+  admin-mobile:
+    ports:
+      - "4173:80"
+
+  print-agent:
+    ports:
+      - "3000:3000"

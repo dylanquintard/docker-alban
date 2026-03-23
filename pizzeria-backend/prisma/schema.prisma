@@ -1,0 +1,486 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  name          String
+  firstName     String?
+  lastName      String?
+  phone         String
+  email         String    @unique
+  password      String
+  emailVerified Boolean   @default(false)
+  phoneVerified Boolean   @default(false)
+  emailOtpCode  String?
+  phoneOtpCode  String?
+  otpExpiresAt  DateTime?
+  passwordResetTokenHash String?
+  passwordResetExpiresAt DateTime?
+  role          Role      @default(CLIENT)
+  orders        Order[]
+  reviews       OrderReview[]
+  orderActivities OrderActivity[] @relation("OrderActivityActor")
+  webPushSubscriptions WebPushSubscription[]
+}
+
+model Category {
+  id                       Int          @id @default(autoincrement())
+  name                     String
+  kind                     CategoryKind @default(PRODUCT)
+  description              String?
+  sortOrder                Int          @default(0)
+  active                   Boolean      @default(true)
+  customerCanCustomize     Boolean      @default(false)
+  products                 Product[]
+  ingredients              Ingredient[]
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime     @updatedAt
+
+  @@unique([name, kind])
+  @@index([active, kind, sortOrder])
+}
+
+model Product {
+  id          Int                 @id @default(autoincrement())
+  name        String
+  description String
+  basePrice   Decimal             @db.Decimal(10, 2)
+  imageUrl    String?
+  thumbnailUrl String?
+  imageAlt    String?
+  categoryId  Int?
+  category    Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  ingredients ProductIngredient[]
+  orderItems  OrderItem[]
+
+  @@index([categoryId], map: "Pizza_categoryId_idx")
+  @@map("Pizza")
+}
+
+model Ingredient {
+  id         Int                 @id @default(autoincrement())
+  name       String
+  price      Decimal             @db.Decimal(10, 2)
+  isExtra    Boolean             @default(true)
+  isBaseIngredient Boolean       @default(false)
+  active     Boolean             @default(true)
+  categoryId Int?
+  category   Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  products   ProductIngredient[]
+
+  @@index([categoryId])
+}
+
+model ProductIngredient {
+  id           Int        @id @default(autoincrement())
+  productId    Int        @map("pizzaId")
+  ingredientId Int
+  isBase       Boolean    @default(false)
+  isAfterCooking Boolean  @default(false)
+  isRecommended Boolean   @default(false)
+  product      Product    @relation(fields: [productId], references: [id])
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@unique([productId, ingredientId], map: "PizzaIngredient_pizzaId_ingredientId_key")
+  @@map("PizzaIngredient")
+}
+
+model Location {
+  id           Int        @id @default(autoincrement())
+  name         String
+  addressLine1 String
+  addressLine2 String?
+  postalCode   String
+  city         String
+  country      String     @default("France")
+  latitude     Decimal?   @db.Decimal(9, 6)
+  longitude    Decimal?   @db.Decimal(9, 6)
+  notes        String?
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  timeSlots    TimeSlot[]
+  printers     Printer[]
+
+  @@index([active, name])
+}
+
+model TimeSlot {
+  id            Int       @id @default(autoincrement())
+  startTime     DateTime
+  endTime       DateTime
+  maxPizzas     Int
+  currentPizzas Int       @default(0)
+  active        Boolean   @default(true)
+  serviceDate   DateTime
+  locationId    Int?
+  agentId       Int?
+  location      Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  agent         PrintAgent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  orders        Order[]
+
+  @@index([serviceDate])
+  @@index([active, startTime])
+  @@index([locationId])
+  @@index([agentId])
+  @@index([locationId, serviceDate, startTime])
+  @@index([agentId, serviceDate, startTime])
+}
+
+model Order {
+  id           Int         @id @default(autoincrement())
+  user         User        @relation(fields: [userId], references: [id])
+  userId       Int
+  timeSlot     TimeSlot?   @relation(fields: [timeSlotId], references: [id])
+  timeSlotId   Int?
+  customerNote String?
+  items        OrderItem[]
+  total        Decimal     @db.Decimal(10, 2)
+  status       OrderStatus @default(PENDING)
+  createdAt    DateTime    @default(now())
+  printJobs    PrintJob[]
+  review       OrderReview?
+  activities   OrderActivity[]
+
+  @@index([userId])
+  @@index([userId, status, createdAt])
+  @@index([status, createdAt])
+  @@index([timeSlotId, status])
+}
+
+model OrderActivity {
+  id          Int       @id @default(autoincrement())
+  orderId      Int
+  actorUserId  Int?
+  action      String
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actor       User?     @relation("OrderActivityActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([orderId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+}
+
+model OrderReview {
+  id        Int      @id @default(autoincrement())
+  orderId    Int     @unique
+  userId     Int
+  rating     Int
+  comment    String  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id             Int      @id @default(autoincrement())
+  order          Order    @relation(fields: [orderId], references: [id])
+  orderId        Int
+  product        Product? @relation(fields: [productId], references: [id], onDelete: SetNull, map: "OrderItem_pizzaId_fkey")
+  productId      Int?     @map("pizzaId")
+  quantity       Int
+  unitPrice      Decimal  @db.Decimal(10, 2)
+  customizations Json
+
+  @@index([orderId])
+  @@index([orderId, productId], map: "OrderItem_orderId_pizzaId_idx")
+}
+
+model HomeGalleryImage {
+  id           Int      @id @default(autoincrement())
+  title        String?
+  description  String?
+  imageUrl     String
+  thumbnailUrl String?
+  altText      String?
+  sortOrder    Int      @default(0)
+  active       Boolean  @default(true)
+  isHomeBackground Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([active, sortOrder])
+  @@index([active, isHomeBackground, sortOrder])
+}
+
+model BlogArticle {
+  id          Int             @id @default(autoincrement())
+  title       String
+  slug        String          @unique
+  description String          @db.Text
+  metaTitle   String?
+  metaDescription String?     @db.Text
+  published   Boolean         @default(true)
+  publishedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  paragraphs  BlogParagraph[]
+  images      BlogImage[]
+
+  @@index([published, publishedAt, updatedAt])
+}
+
+model BlogParagraph {
+  id        Int         @id @default(autoincrement())
+  articleId Int
+  sortOrder Int         @default(0)
+  title     String
+  content   String      @db.Text
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  article   BlogArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId, sortOrder])
+}
+
+model BlogImage {
+  id           Int         @id @default(autoincrement())
+  articleId    Int
+  sortOrder    Int         @default(0)
+  imageUrl     String
+  thumbnailUrl String?
+  altText      String?
+  caption      String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  article      BlogArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId, sortOrder])
+}
+
+model SiteSetting {
+  id              Int      @id @default(1)
+  siteName        String   @default("Camion Pizza Italienne")
+  siteTagline     Json?
+  siteDescription Json?
+  contact         Json?
+  social          Json?
+  seo             Json?
+  home            Json?
+  blog            Json?
+  contactPage     Json?
+  order           Json?
+  footer          Json?
+  announcement    Json?
+  pizzaPage       Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model PageFaq {
+  id         Int      @id @default(autoincrement())
+  targetPath String
+  question   String
+  answer     String   @db.Text
+  sortOrder  Int      @default(0)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([targetPath, active, sortOrder])
+  @@index([targetPath, sortOrder])
+}
+
+model WebPushSubscription {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  endpoint       String   @unique
+  p256dh         String
+  auth           String
+  userAgent      String?
+  active         Boolean  @default(true)
+  lastNotifiedAt DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, active])
+  @@index([active, updatedAt])
+}
+
+model PrintAgent {
+  id              Int               @id @default(autoincrement())
+  code            String            @unique
+  name            String
+  tokenHash       String
+  status          PrintAgentStatus  @default(OFFLINE)
+  lastHeartbeatAt DateTime?
+  lastSeenIp      String?
+  version         String?
+  metadata        Json?
+  printers        Printer[]
+  claimedJobs     PrintJob[]        @relation("ClaimedPrintJobs")
+  timeSlots       TimeSlot[]
+  closures        PrintAgentClosure[]
+  attempts        PrintJobAttempt[]
+  logs            PrintLog[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+model PrintAgentClosure {
+  id          Int        @id @default(autoincrement())
+  agentId     Int
+  startDate   DateTime
+  endDate     DateTime
+  reason      String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  agent       PrintAgent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, startDate, endDate])
+}
+
+model Printer {
+  id             Int                   @id @default(autoincrement())
+  code           String                @unique
+  name           String
+  model          String?
+  paperWidthMm   Int                   @default(80)
+  connectionType PrinterConnectionType @default(ETHERNET)
+  ipAddress      String?
+  port           Int                   @default(9100)
+  isActive       Boolean               @default(true)
+  agentId        Int?
+  locationId     Int?
+  agent          PrintAgent?           @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  location       Location?             @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  jobs           PrintJob[]
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@index([isActive, locationId])
+  @@index([agentId])
+}
+
+model PrintJob {
+  id               String            @id @default(uuid())
+  orderId          Int
+  printerId        Int
+  jobType          PrintJobType      @default(ORDER_TICKET)
+  status           PrintJobStatus    @default(PENDING)
+  priority         Int               @default(50)
+  scheduledAt      DateTime
+  nextRetryAt      DateTime?
+  claimedAt        DateTime?
+  lockedUntil      DateTime?
+  claimedByAgentId Int?
+  claimToken       String?
+  attemptCount     Int               @default(0)
+  maxAttempts      Int               @default(5)
+  printedAt        DateTime?
+  failedAt         DateTime?
+  cancelledAt      DateTime?
+  lastErrorCode    String?
+  lastErrorMessage String?
+  reprintOfJobId   String?
+  idempotencyKey   String            @unique
+  payload          Json
+  order            Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  printer          Printer           @relation(fields: [printerId], references: [id], onDelete: Restrict)
+  claimedByAgent   PrintAgent?       @relation("ClaimedPrintJobs", fields: [claimedByAgentId], references: [id], onDelete: SetNull)
+  reprintOfJob     PrintJob?         @relation("PrintJobReprints", fields: [reprintOfJobId], references: [id], onDelete: SetNull)
+  reprints         PrintJob[]        @relation("PrintJobReprints")
+  attempts         PrintJobAttempt[]
+  logs             PrintLog[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([status, scheduledAt, nextRetryAt, priority, createdAt])
+  @@index([status, printedAt])
+  @@index([claimedByAgentId, status, lockedUntil])
+  @@index([orderId, createdAt])
+}
+
+model PrintJobAttempt {
+  id              Int         @id @default(autoincrement())
+  jobId           String
+  agentId         Int?
+  startedAt       DateTime    @default(now())
+  endedAt         DateTime?
+  success         Boolean?
+  errorCode       String?
+  errorMessage    String?
+  printerResponse Json?
+  job             PrintJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  agent           PrintAgent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  @@index([jobId, startedAt])
+}
+
+model PrintLog {
+  id        Int           @id @default(autoincrement())
+  jobId     String?
+  agentId   Int?
+  level     PrintLogLevel
+  event     String
+  payload   Json?
+  createdAt DateTime      @default(now())
+  job       PrintJob?     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  agent     PrintAgent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  @@index([jobId, createdAt])
+  @@index([agentId, createdAt])
+}
+
+enum OrderStatus {
+  PENDING
+  FINALIZED
+  COMPLETED
+  VALIDATE
+  CANCELED
+}
+
+enum Role {
+  CLIENT
+  ADMIN
+}
+
+enum CategoryKind {
+  PRODUCT
+  INGREDIENT
+}
+
+enum PrintAgentStatus {
+  ONLINE
+  OFFLINE
+  DEGRADED
+}
+
+enum PrinterConnectionType {
+  ETHERNET
+  USB
+}
+
+enum PrintJobStatus {
+  PENDING
+  READY
+  CLAIMED
+  PRINTING
+  PRINTED
+  FAILED
+  RETRY_WAITING
+  CANCELLED
+}
+
+enum PrintJobType {
+  ORDER_TICKET
+}
+
+enum PrintLogLevel {
+  INFO
+  WARN
+  ERROR
+}
