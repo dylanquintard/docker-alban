@@ -3,11 +3,7 @@ FROM node:22-bookworm-slim AS build
 WORKDIR /app/pizzeria-admin-web
 
 COPY pizzeria-admin-web/package*.json ./
-COPY pizzeria-web-service-front/package*.json ../pizzeria-web-service-front/
-
-RUN npm install \
-  && cd ../pizzeria-web-service-front \
-  && npm install
+RUN npm install
 
 COPY pizzeria-admin-web ./
 COPY pizzeria-web-service-front ../pizzeria-web-service-front
