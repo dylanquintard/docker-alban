@@ -841,6 +841,17 @@ export default function App() {
                   </div>
 
                   <div className="menu-panel-actions">
+                    {activeApp === "clickCollect" && pushState !== "subscribed" ? (
+                      <button
+                        type="button"
+                        className="menu-action-button"
+                        onClick={handleEnableNotifications}
+                        role="menuitem"
+                      >
+                        <span>Notifications</span>
+                        <strong>Activer le push</strong>
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       className="menu-action-button menu-action-button-danger"
@@ -856,34 +867,6 @@ export default function App() {
             </div>
           </div>
         </header>
-
-        {activeApp === "clickCollect" ? (
-          <section className="status-strip mobile-status-strip">
-            <div className="status-strip-item">
-              <span>Temps reel</span>
-              <strong className={`status-pill ${streamConnected ? "success" : "warning"}`}>
-                {streamConnected ? "Connecte" : "Reconnexion"}
-              </strong>
-            </div>
-            <div className="status-strip-item">
-              <span>Notifications</span>
-              <strong
-                className={`status-pill ${pushState === "subscribed" ? "success" : "neutral"}`}
-              >
-                {getPushStateLabel(pushState)}
-              </strong>
-            </div>
-            {pushState !== "subscribed" ? (
-              <button
-                type="button"
-                className="ghost-button compact-button"
-                onClick={handleEnableNotifications}
-              >
-                Activer le push
-              </button>
-            ) : null}
-          </section>
-        ) : null}
 
         {statusMessage ? <p className="inline-success">{statusMessage}</p> : null}
 
@@ -1036,110 +1019,112 @@ export default function App() {
               </section>
             ) : null}
 
-            <section className="toolbar app-toolbar panel-card">
-              {clickCollectSection === "orders" ? (
-                <>
-                  <label className="search-field">
-                    <input
-                      type="search"
-                      value={searchQuery}
-                      onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder="Commande, client, telephone..."
-                    />
-                  </label>
+            {!(clickCollectSection === "orders" && isOrderBuilderOpen) ? (
+              <section className="toolbar app-toolbar panel-card">
+                {clickCollectSection === "orders" ? (
+                  <>
+                    <label className="search-field">
+                      <input
+                        type="search"
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        placeholder="Commande, client, telephone..."
+                      />
+                    </label>
 
-                  <div className="compact-filter-row">
+                    <div className="compact-filter-row">
+                      <button
+                        type="button"
+                        className={`switcher-pill ${filters.status === "IN_PROGRESS" ? "active" : ""}`}
+                        onClick={() =>
+                          setFilters((current) => ({ ...current, status: "IN_PROGRESS" }))
+                        }
+                      >
+                        En cours {statusCounters.COMPLETED}
+                      </button>
+                      <button
+                        type="button"
+                        className={`switcher-pill ${filters.status === "PRINTED" ? "active" : ""}`}
+                        onClick={() =>
+                          setFilters((current) => ({ ...current, status: "PRINTED" }))
+                        }
+                      >
+                        Finalisees {statusCounters.FINALIZED}
+                      </button>
+                      <button
+                        type="button"
+                        className={`switcher-pill ${filters.status === "VALIDATE" ? "active" : ""}`}
+                        onClick={() =>
+                          setFilters((current) => ({ ...current, status: "VALIDATE" }))
+                        }
+                      >
+                        Validees {statusCounters.VALIDATE}
+                      </button>
+                      <button
+                        type="button"
+                        className={`switcher-pill ${filters.status === "CANCELED" ? "active" : ""}`}
+                        onClick={() =>
+                          setFilters((current) => ({ ...current, status: "CANCELED" }))
+                        }
+                      >
+                        Annulees {statusCounters.CANCELED}
+                      </button>
+                    </div>
+
                     <button
                       type="button"
-                      className={`switcher-pill ${filters.status === "IN_PROGRESS" ? "active" : ""}`}
-                      onClick={() =>
-                        setFilters((current) => ({ ...current, status: "IN_PROGRESS" }))
-                      }
+                      className="ghost-button compact-button"
+                      onClick={() => loadOrders({ silent: true })}
+                      disabled={isRefreshing}
                     >
-                      En cours {statusCounters.COMPLETED}
+                      {isRefreshing ? "Actualisation..." : "Rafraichir"}
                     </button>
+                  </>
+                ) : null}
+
+                {clickCollectSection === "tickets" ? (
+                  <>
+                    <label className="search-field">
+                      <input
+                        type="search"
+                        value={ticketSearchQuery}
+                        onChange={(event) => setTicketSearchQuery(event.target.value)}
+                        placeholder="Commande, imprimante, client..."
+                      />
+                    </label>
+
+                    <select
+                      className="filter-select"
+                      value={ticketFilter}
+                      onChange={(event) => setTicketFilter(event.target.value)}
+                    >
+                      <option value="attention">Prioritaires</option>
+                      <option value="error">Erreurs</option>
+                      <option value="healthy">OK</option>
+                      <option value="all">Tous</option>
+                    </select>
+
                     <button
                       type="button"
-                      className={`switcher-pill ${filters.status === "PRINTED" ? "active" : ""}`}
-                      onClick={() =>
-                        setFilters((current) => ({ ...current, status: "PRINTED" }))
-                      }
+                      className="ghost-button compact-button"
+                      onClick={() => loadTickets({ silent: true })}
+                      disabled={ticketsLoading}
                     >
-                      Finalisees {statusCounters.FINALIZED}
+                      {ticketsLoading ? "Actualisation..." : "Rafraichir"}
                     </button>
-                    <button
-                      type="button"
-                      className={`switcher-pill ${filters.status === "VALIDATE" ? "active" : ""}`}
-                      onClick={() =>
-                        setFilters((current) => ({ ...current, status: "VALIDATE" }))
-                      }
-                    >
-                      Validees {statusCounters.VALIDATE}
-                    </button>
-                    <button
-                      type="button"
-                      className={`switcher-pill ${filters.status === "CANCELED" ? "active" : ""}`}
-                      onClick={() =>
-                        setFilters((current) => ({ ...current, status: "CANCELED" }))
-                      }
-                    >
-                      Annulees {statusCounters.CANCELED}
-                    </button>
-                  </div>
+                  </>
+                ) : null}
+              </section>
+            ) : null}
 
-                  <button
-                    type="button"
-                    className="ghost-button compact-button"
-                    onClick={() => loadOrders({ silent: true })}
-                    disabled={isRefreshing}
-                  >
-                    {isRefreshing ? "Actualisation..." : "Rafraichir"}
-                  </button>
-                </>
-              ) : null}
-
-              {clickCollectSection === "tickets" ? (
-                <>
-                  <label className="search-field">
-                    <input
-                      type="search"
-                      value={ticketSearchQuery}
-                      onChange={(event) => setTicketSearchQuery(event.target.value)}
-                      placeholder="Commande, imprimante, client..."
-                    />
-                  </label>
-
-                  <select
-                    className="filter-select"
-                    value={ticketFilter}
-                    onChange={(event) => setTicketFilter(event.target.value)}
-                  >
-                    <option value="attention">Prioritaires</option>
-                    <option value="error">Erreurs</option>
-                    <option value="healthy">OK</option>
-                    <option value="all">Tous</option>
-                  </select>
-
-                  <button
-                    type="button"
-                    className="ghost-button compact-button"
-                    onClick={() => loadTickets({ silent: true })}
-                    disabled={ticketsLoading}
-                  >
-                    {ticketsLoading ? "Actualisation..." : "Rafraichir"}
-                  </button>
-                </>
-              ) : null}
-            </section>
-
-            {ordersError && clickCollectSection === "orders" ? (
+            {ordersError && clickCollectSection === "orders" && !isOrderBuilderOpen ? (
               <p className="inline-error">{ordersError}</p>
             ) : null}
             {ticketsError && clickCollectSection === "tickets" ? (
               <p className="inline-error">{ticketsError}</p>
             ) : null}
 
-            {clickCollectSection === "orders" ? (
+            {clickCollectSection === "orders" && !isOrderBuilderOpen ? (
               <section className="orders-layout mobile-orders-layout">
                 <section className="orders-column panel-card">
                   <div className="column-head">
