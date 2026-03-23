@@ -50,6 +50,8 @@ const APP_LOGOS = {
   customerInfo: "/logo_infos_clients.png",
 };
 
+const MENU_ICON = "/params.png";
+
 const APP_COPY = {
   clickCollect: {
     title: "Click&Collect",
@@ -80,6 +82,23 @@ function AppLauncherIcon({ alt, fallback, muted = false, src }) {
       ) : (
         fallback
       )}
+    </span>
+  );
+}
+
+function MenuTriggerIcon() {
+  const [hasError, setHasError] = useState(false);
+
+  return !hasError ? (
+    <img
+      src={MENU_ICON}
+      alt="Ouvrir le menu"
+      className="menu-trigger-image"
+      onError={() => setHasError(true)}
+    />
+  ) : (
+    <span className="menu-trigger-fallback" aria-hidden="true">
+      ≡
     </span>
   );
 }
@@ -755,8 +774,9 @@ export default function App() {
                 onClick={toggleMenu}
                 aria-expanded={isMenuOpen ? "true" : "false"}
                 aria-haspopup="menu"
+                aria-label="Ouvrir le menu"
               >
-                Menu
+                <MenuTriggerIcon />
               </button>
 
               {isMenuOpen ? (

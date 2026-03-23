@@ -228,6 +228,28 @@ button {
   color: #ffe5ad;
 }
 
+.menu-trigger {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-trigger-image {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
+
+.menu-trigger-fallback {
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 700;
+}
+
 .date-switcher {
   display: inline-flex;
   align-items: center;
