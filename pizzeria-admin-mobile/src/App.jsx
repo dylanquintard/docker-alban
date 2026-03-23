@@ -105,13 +105,13 @@ function MenuTriggerIcon() {
   );
 }
 
-function BackTriggerIcon() {
+function BackTriggerIcon({ alt = "Retour a l'accueil" }) {
   const [hasError, setHasError] = useState(false);
 
   return !hasError ? (
     <img
       src={BACK_ICON}
-      alt="Retour a l'accueil"
+      alt={alt}
       className="menu-trigger-image"
       onError={() => setHasError(true)}
     />
@@ -146,6 +146,7 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [clickCollectSection, setClickCollectSection] = useState("orders");
   const [isOrderBuilderOpen, setIsOrderBuilderOpen] = useState(false);
+  const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false);
   const [selectedMenuCategoryId, setSelectedMenuCategoryId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [ticketSearchQuery, setTicketSearchQuery] = useState("");
@@ -302,6 +303,12 @@ export default function App() {
       setSelectedOrderId(filteredOrders[0].id);
     }
   }, [filteredOrders, selectedOrderId]);
+
+  useEffect(() => {
+    if (!selectedOrder) {
+      setIsOrderDetailOpen(false);
+    }
+  }, [selectedOrder]);
 
   useEffect(() => {
     if (
@@ -547,6 +554,7 @@ export default function App() {
       setTickets([]);
       setCustomers([]);
       setSelectedOrderId(null);
+      setIsOrderDetailOpen(false);
       setActiveApp("launcher");
       setIsMenuOpen(false);
       setClickCollectSection("orders");
@@ -662,6 +670,7 @@ export default function App() {
   function handleOpenApp(nextApp, options = {}) {
     setActiveApp(nextApp);
     setIsMenuOpen(false);
+    setIsOrderDetailOpen(false);
     if (nextApp === "clickCollect" && options.section) {
       setClickCollectSection(options.section);
     }
@@ -671,15 +680,18 @@ export default function App() {
   function handleHomeNavigation() {
     setActiveApp("launcher");
     setIsMenuOpen(false);
+    setIsOrderDetailOpen(false);
     scrollToTop();
   }
 
   function handleClickCollectSectionChange(nextSection) {
     setClickCollectSection(nextSection);
+    setIsOrderDetailOpen(false);
     scrollToTop();
   }
 
   function handleCreateOrder() {
+    setIsOrderDetailOpen(false);
     setIsOrderBuilderOpen((current) => !current);
     if (menuCategories.length === 0 || menuProducts.length === 0) {
       loadOrderBuilderData();
@@ -1159,7 +1171,10 @@ export default function App() {
                                 className={`order-card ${
                                   String(selectedOrderId) === String(order.id) ? "selected" : ""
                                 }`}
-                                onClick={() => setSelectedOrderId(order.id)}
+                                onClick={() => {
+                                  setSelectedOrderId(order.id);
+                                  setIsOrderDetailOpen(true);
+                                }}
                               >
                                 <div className="order-card-head">
                                   <strong>{getOrderDisplayName(order)}</strong>
@@ -1314,6 +1329,143 @@ export default function App() {
                   )}
                 </div>
               </section>
+            ) : null}
+
+            {clickCollectSection === "orders" && isOrderDetailOpen && selectedOrder ? (
+              <div className="detail-modal-shell" role="dialog" aria-modal="true">
+                <button
+                  type="button"
+                  className="detail-modal-backdrop"
+                  onClick={() => setIsOrderDetailOpen(false)}
+                  aria-label="Fermer le detail de commande"
+                />
+                <article className="detail-card detail-modal-card">
+                  <div className="detail-head">
+                    <div>
+                      <p className="eyebrow">Commande active</p>
+                      <h2>Commande #{selectedOrder.id}</h2>
+                      <p className="muted-copy compact-copy">
+                        {selectedOrder.timeSlot?.location?.name || "Lieu non renseigne"} Â·{" "}
+                        {selectedOrder.timeSlot?.startTime
+                          ? formatTimeLabel(selectedOrder.timeSlot.startTime)
+                          : "Heure non renseignee"}
+                      </p>
+                    </div>
+                    <div className="detail-head-actions">
+                      <button
+                        type="button"
+                        className="ghost-icon-button detail-close-button"
+                        onClick={() => setIsOrderDetailOpen(false)}
+                        aria-label="Fermer le detail de commande"
+                      >
+                        <BackTriggerIcon alt="Fermer le detail de commande" />
+                      </button>
+                      <div className="inline-nav">
+                        <button
+                          type="button"
+                          className="ghost-icon-button"
+                          onClick={() => navigateSelection(-1)}
+                          disabled={selectedOrderIndex <= 0}
+                        >
+                          &lt;
+                        </button>
+                        <span>
+                          {selectedOrderIndex >= 0
+                            ? `${selectedOrderIndex + 1}/${orderedOrderIds.length}`
+                            : "--"}
+                        </span>
+                        <button
+                          type="button"
+                          className="ghost-icon-button"
+                          onClick={() => navigateSelection(1)}
+                          disabled={
+                            selectedOrderIndex < 0 ||
+                            selectedOrderIndex >= orderedOrderIds.length - 1
+                          }
+                        >
+                          &gt;
+                        </button>
+                      </div>
+                      <span className={`status-pill ${selectedWorkflowStatus.toLowerCase()}`}>
+                        {getStatusLabel(selectedWorkflowStatus)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="detail-grid">
+                    <div className="detail-block">
+                      <span>Client</span>
+                      <strong>{getOrderDisplayName(selectedOrder)}</strong>
+                      <p>{selectedOrder.user?.phone || selectedOrder.user?.email || "Contact non renseigne"}</p>
+                    </div>
+
+                    <div className="detail-block">
+                      <span>Retrait</span>
+                      <strong>
+                        {selectedOrder.timeSlot?.location?.name || "Lieu non renseigne"}
+                      </strong>
+                      <p>
+                        {selectedOrder.timeSlot?.startTime
+                          ? formatTimeLabel(selectedOrder.timeSlot.startTime)
+                          : "Creneau non renseigne"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="detail-items">
+                    {(selectedOrder.items || []).map((item) => (
+                      <div key={item.id} className="detail-item-row">
+                        <div>
+                          <strong>
+                            {item.quantity}x {item.product?.name || "Produit"}
+                          </strong>
+                          {item.addedIngredients?.length ? (
+                            <p>+ {item.addedIngredients.map((entry) => entry.name).join(", ")}</p>
+                          ) : null}
+                          {item.removedIngredients?.length ? (
+                            <p>- {item.removedIngredients.map((entry) => entry.name).join(", ")}</p>
+                          ) : null}
+                        </div>
+                        <span>{formatPrice(item.unitPrice * item.quantity)}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="detail-footer">
+                    {selectedOrder.customerNote ? (
+                      <div className="detail-block compact-detail-block">
+                        <span>Note</span>
+                        <p>{selectedOrder.customerNote}</p>
+                      </div>
+                    ) : null}
+                    <div className="detail-block compact-detail-block">
+                      <span>Total</span>
+                      <strong>{formatPrice(selectedOrder.total)}</strong>
+                    </div>
+                  </div>
+
+                  <div className="action-row">
+                    {canValidate ? (
+                      <button
+                        type="button"
+                        className="primary-button action-button-main"
+                        onClick={() => handleStatusAction("VALIDATE")}
+                      >
+                        Valider la commande
+                      </button>
+                    ) : null}
+                    {canCancel ? (
+                      <button
+                        type="button"
+                        className="danger-button action-button-cancel"
+                        onClick={() => handleStatusAction("CANCELED")}
+                      >
+                        Annuler la commande
+                      </button>
+                    ) : null}
+                  </div>
+                </article>
+              </div>
             ) : null}
 
             {clickCollectSection === "tickets" ? (
