@@ -5,7 +5,7 @@ const blogService = require("./blog.service");
 const SPECIAL_CITY_PATHS = {
   moselle: "/camion-pizza-moselle",
 };
-const BLOCKED_CITY_SLUGS = new Set(["metz", "thionville"]);
+const BLOCKED_CITY_SLUGS = new Set(["thionville"]);
 
 const STATIC_PATHS = [
   "/",

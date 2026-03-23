@@ -3,7 +3,7 @@ export const DEFAULT_TOUR_CITIES = ["Thionville", "Moselle"];
 const SPECIAL_CITY_PATHS = {
   moselle: "/camion-pizza-moselle",
 };
-export const BLOCKED_LOCAL_CITY_SLUGS = Object.freeze(["metz"]);
+export const BLOCKED_LOCAL_CITY_SLUGS = Object.freeze([]);
 
 export const FIXED_LOCAL_CITY_SLUGS = Object.freeze(Object.keys(SPECIAL_CITY_PATHS));
 

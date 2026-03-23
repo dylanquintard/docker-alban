@@ -16,7 +16,7 @@ const FIXED_CITY_CATALOG = [
   { slug: "thionville", label: "Thionville" },
   { slug: "moselle", label: "Moselle" },
 ];
-const BLOCKED_CITY_SLUGS = new Set(["metz"]);
+const BLOCKED_CITY_SLUGS = new Set();
 const FIXED_CITY_SLUGS = new Set(FIXED_CITY_CATALOG.map((item) => item.slug));
 
 const DEFAULT_SITE_SETTINGS = Object.freeze({
