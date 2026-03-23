@@ -15,10 +15,6 @@ services:
     ports:
       - "8000:8000"
 
-  admin-web:
-    ports:
-      - "4174:4174"
-
   admin-mobile:
     ports:
       - "4173:80"

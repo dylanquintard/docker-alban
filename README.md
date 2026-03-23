@@ -4,7 +4,6 @@ Cette racine orchestre les 4 projets du dossier :
 
 - `pizzeria-backend` : API Express + Prisma + uploads + worker d'impression.
 - `pizzeria-web-service-front` : front public React/Vite servi par un serveur Node SEO.
-- `pizzeria-admin-web` : nouveau panel admin web V2, compact et mobile-friendly.
 - `pizzeria-admin-mobile` : PWA admin mobile React/Vite servie par Nginx.
 - `pizzeria-print-agent` : agent local pour imprimantes ESC/POS, avec spool SQLite.
 
@@ -17,7 +16,6 @@ Le socle Docker couvre :
 - `backend` pour l'API HTTP.
 - `backend-worker` pour le scheduler d'impression.
 - `frontend` pour le site public.
-- `admin-web` pour le nouveau back-office web V2.
 - `admin-mobile` pour l'interface mobile admin.
 - `print-agent` en service optionnel via le profil `print-agent`.
 
@@ -42,7 +40,6 @@ Acces local par defaut :
 
 - site public : `http://localhost:8000`
 - API backend : `http://localhost:5000`
-- admin web V2 : `http://localhost:4174`
 - admin mobile : `http://localhost:4173`
 - sante print agent : `http://localhost:3000/health`
 
@@ -84,7 +81,6 @@ Le deploiement sur Dokploy est realiste pour :
 - `backend`
 - `backend-worker`
 - `frontend`
-- `admin-web`
 - `admin-mobile`
 
 Le `print-agent` n'est deployable sur Dokploy que si le serveur Dokploy peut joindre les imprimantes du reseau local en TCP (`9100`) et si cette topologie est volontaire. Dans la plupart des cas, le bon schema est :
@@ -103,7 +99,6 @@ Dans votre cas, ce fichier est deja pre-rempli avec :
 
 - site public : `https://alban.flow-os.fr`
 - API : `https://api.alban.flow-os.fr`
-- admin web V2 : `https://admin-web.alban.flow-os.fr`
 - admin mobile : `https://admin.alban.flow-os.fr`
 
 Guide de deploiement complet :
@@ -130,7 +125,6 @@ Ports internes a utiliser dans Dokploy Domains :
 
 - `frontend` : `8000`
 - `backend` : `5000`
-- `admin-web` : `4174`
 - `admin-mobile` : `80`
 
 Important pour Dokploy :
