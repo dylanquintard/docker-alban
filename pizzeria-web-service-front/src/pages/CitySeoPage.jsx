@@ -594,6 +594,24 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
         </p>
       </header>
 
+      <section className="glass-panel p-6">
+        <h2 className="text-lg font-bold text-white">Commander votre pizza</h2>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link
+            to="/menu"
+            className="rounded-full bg-saffron px-4 py-2 text-xs font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300"
+          >
+            Voir le menu des pizzas
+          </Link>
+          <Link
+            to="/planing"
+            className="rounded-full border border-white/30 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+          >
+            Consulter les horaires d'ouvertures du camion pizza
+          </Link>
+        </div>
+      </section>
+
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
         <div className="space-y-6">
           <section className="glass-panel min-h-[420px] p-6">
@@ -619,9 +637,6 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
             <h2 className="text-lg font-bold text-white">Adresses et horaires d'ouverture</h2>
             {locationScheduleCards.length > 0 ? (
               <>
-                <p className="mt-3 text-sm text-stone-300">
-                  Les horaires affiches ci-dessous sont directement relies aux adresses actives de cette location.
-                </p>
                 <ul className="mt-3 space-y-2">
                   {locationScheduleCards.map((entry) => (
                     <li
@@ -715,24 +730,6 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
             </section>
           ) : null}
         </aside>
-      </section>
-
-      <section className="glass-panel p-6">
-        <h2 className="text-lg font-bold text-white">Commander votre pizza</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Link
-            to="/menu"
-            className="rounded-full bg-saffron px-4 py-2 text-xs font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300"
-          >
-            Voir le menu des pizzas
-          </Link>
-          <Link
-            to="/planing"
-            className="rounded-full border border-white/30 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
-          >
-            Consulter les horaires d'ouvertures du camion pizza
-          </Link>
-        </div>
       </section>
     </div>
   );
