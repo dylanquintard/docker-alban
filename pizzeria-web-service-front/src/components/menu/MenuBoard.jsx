@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { buildIngredientSummaryParts as buildSharedIngredientSummaryParts } from "../../utils/menuIngredientSummary";
 
 function formatPrice(value) {
   const numeric = Number(value);
@@ -151,7 +152,7 @@ function CategorySection({ group, tr, variant = "default", showProductImages = f
       <div>
         {group.items.map((product) => (
           (() => {
-            const ingredientSummary = buildIngredientSummaryParts(product, tr);
+            const ingredientSummary = buildSharedIngredientSummaryParts(product, tr);
             const productImageUrl = String(product?.thumbnailUrl || product?.imageUrl || "").trim();
             return (
           <article
@@ -229,14 +230,10 @@ function CategorySection({ group, tr, variant = "default", showProductImages = f
                     ) : null}
                     {ingredientSummary.classicText && ingredientSummary.afterText ? <span> / </span> : null}
                     {ingredientSummary.afterText ? (
-                      <span className="text-saffron italic">{ingredientSummary.afterText}</span>
-                    ) : null}
-                    {(ingredientSummary.classicText || ingredientSummary.afterText) &&
-                    ingredientSummary.recommendedText ? (
-                      <span> </span>
-                    ) : null}
-                    {ingredientSummary.recommendedText ? (
-                      <span className="text-emerald-300 italic">{ingredientSummary.recommendedText}</span>
+                      <>
+                        <span className="text-saffron italic">{ingredientSummary.afterLabel}</span>
+                        <span>: {ingredientSummary.afterText}</span>
+                      </>
                     ) : null}
                   </p>
                 ) : null}

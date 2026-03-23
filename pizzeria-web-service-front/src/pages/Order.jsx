@@ -19,6 +19,7 @@ import { useRealtimeEvents } from "../hooks/useRealtimeEvents";
 import { buildBaseFoodEstablishmentJsonLd } from "../seo/jsonLd";
 import { DEFAULT_SITE_SETTINGS, getLocalizedSiteText } from "../site/siteSettings";
 import { getLocationDisplayName } from "../utils/location";
+import { buildIngredientSummaryParts as buildSharedIngredientSummaryParts } from "../utils/menuIngredientSummary";
 import { getActiveRecommendedSupplements } from "../utils/orderCustomizations";
 
 const FOCUSABLE_SELECTOR =
@@ -1687,7 +1688,7 @@ export default function Order() {
 
                   <div>
                     {visibleMenuGroup.items.map((product) => {
-                      const ingredientSummary = buildIngredientSummaryParts(product, tr);
+                      const ingredientSummary = buildSharedIngredientSummaryParts(product, tr);
                       const productImageUrl = String(product?.thumbnailUrl || product?.imageUrl || "").trim();
                       return (
                       <div key={product.id} className="border-b border-white/10 py-3 last:border-b-0 sm:py-4">
@@ -1754,18 +1755,12 @@ export default function Order() {
                                   <span> / </span>
                                 ) : null}
                                 {ingredientSummary.afterText ? (
-                                  <span className="text-saffron italic">
-                                    {ingredientSummary.afterText}
-                                  </span>
-                                ) : null}
-                                {(ingredientSummary.classicText || ingredientSummary.afterText) &&
-                                ingredientSummary.recommendedText ? (
-                                  <span> </span>
-                                ) : null}
-                                {ingredientSummary.recommendedText ? (
-                                  <span className="text-emerald-300 italic">
-                                    {ingredientSummary.recommendedText}
-                                  </span>
+                                  <>
+                                    <span className="text-saffron italic">
+                                      {ingredientSummary.afterLabel}
+                                    </span>
+                                    <span>: {ingredientSummary.afterText}</span>
+                                  </>
                                 ) : null}
                               </p>
                             )}

@@ -1,3 +1,5 @@
+import { buildIngredientSummaryParts as buildSharedIngredientSummaryParts } from "../../utils/menuIngredientSummary";
+
 function formatPrice(value) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric.toFixed(2) : "0.00";
@@ -53,28 +55,11 @@ export default function FeaturedPizzaSuggestions({
   return (
     <div className={`grid ${compact ? "gap-3 md:grid-cols-2" : "gap-4 md:grid-cols-2"}`}>
       {products.map((product) => {
-        const ingredients = splitIngredientsByCookingPhase(product);
+        const ingredientSummary = buildSharedIngredientSummaryParts(product, translate);
         const canCustomize =
           typeof getCanCustomize === "function"
             ? Boolean(getCanCustomize(product))
             : Boolean(product?.isCustomizable);
-        const classicText = ingredients.classic.length > 0 ? ingredients.classic.join(" - ") : "";
-        const afterText =
-          ingredients.afterCooking.length > 0
-            ? `${translate("Apres cuisson", "After cooking")}: ${ingredients.afterCooking.join(" - ")}`
-            : "";
-        const recommendedText =
-          ingredients.recommendedSupplements.length > 0
-            ? `[ ${translate("Supplement", "Supplement")}: ${ingredients.recommendedSupplements
-                .map((item) => {
-                  const numericPrice = Number(item?.price);
-                  const priceText = Number.isFinite(numericPrice)
-                    ? `${numericPrice.toFixed(2)} EUR`
-                    : "? EUR";
-                  return `"${item?.name || ""}" + ${priceText}`;
-                })
-                .join(" - ")} ]`
-            : "";
 
         return (
           <article
@@ -147,17 +132,20 @@ export default function FeaturedPizzaSuggestions({
                     {product.description}
                   </p>
                 ) : null}
-                {classicText || afterText || recommendedText ? (
+                {ingredientSummary ? (
                   <p
                     className={`mt-0.5 uppercase text-stone-400 ${
                       compact ? "text-[8px] tracking-[0.1em] sm:text-[10px]" : "text-[9px] tracking-[0.11em] sm:text-[11px]"
                     }`}
                   >
-                    {classicText ? <span>{classicText}</span> : null}
-                    {classicText && afterText ? <span> / </span> : null}
-                    {afterText ? <span className="text-saffron italic">{afterText}</span> : null}
-                    {(classicText || afterText) && recommendedText ? <span> </span> : null}
-                    {recommendedText ? <span className="text-emerald-300 italic">{recommendedText}</span> : null}
+                    {ingredientSummary.classicText ? <span>{ingredientSummary.classicText}</span> : null}
+                    {ingredientSummary.classicText && ingredientSummary.afterText ? <span> / </span> : null}
+                    {ingredientSummary.afterText ? (
+                      <>
+                        <span className="text-saffron italic">{ingredientSummary.afterLabel}</span>
+                        <span>: {ingredientSummary.afterText}</span>
+                      </>
+                    ) : null}
                   </p>
                 ) : null}
               </div>
