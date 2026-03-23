@@ -216,6 +216,8 @@ button {
 
 .menu-dropdown-shell {
   position: relative;
+  display: grid;
+  gap: 8px;
 }
 
 .menu-trigger.active {
@@ -231,6 +233,10 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.back-trigger {
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .menu-trigger-image {
@@ -484,40 +490,35 @@ button {
 }
 
 .apps-grid-icons {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .app-icon-launcher {
   display: grid;
   justify-items: center;
-  gap: 10px;
-  padding: 8px 6px 4px;
+  gap: 8px;
+  padding: 6px 4px 2px;
   border: 0;
   background: transparent;
   color: var(--text);
 }
 
 .app-icon-launcher .app-icon-badge {
-  width: 78px;
-  height: 78px;
-  border-radius: 24px;
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
 }
 
-.app-icon-label,
-.app-icon-meta {
+.app-icon-label {
   display: block;
   text-align: center;
 }
 
 .app-icon-label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-}
-
-.app-icon-meta {
-  color: var(--muted);
-  font-size: 12px;
+  line-height: 1.3;
 }
 
 .app-shell-head {
@@ -743,35 +744,6 @@ button {
   background: rgba(240, 122, 111, 0.08);
 }
 
-.summary-strip {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  padding: 10px 12px;
-}
-
-.summary-chip {
-  padding: 10px 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.summary-chip span {
-  display: block;
-  color: var(--muted);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.summary-chip strong {
-  display: block;
-  margin-top: 8px;
-  font-size: 22px;
-  line-height: 1;
-}
-
 .action-button-main,
 .action-button-cancel {
   width: 100%;
@@ -826,9 +798,12 @@ button {
   .orders-layout,
   .detail-grid,
   .detail-footer,
-  .customer-info-grid,
-  .summary-strip {
+  .customer-info-grid {
     grid-template-columns: 1fr;
+  }
+
+  .apps-grid-icons {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .detail-card {
@@ -849,6 +824,7 @@ button {
 
   .menu-dropdown-shell {
     width: 100%;
+    justify-items: stretch;
   }
 
   .menu-panel {
@@ -884,8 +860,12 @@ button {
   }
 
   .app-icon-launcher .app-icon-badge {
-    width: 72px;
-    height: 72px;
+    width: 64px;
+    height: 64px;
+  }
+
+  .apps-grid-icons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .mobile-menu-switcher {

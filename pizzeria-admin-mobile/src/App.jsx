@@ -51,6 +51,7 @@ const APP_LOGOS = {
 };
 
 const MENU_ICON = "/params.png";
+const BACK_ICON = "/back.png";
 
 const APP_COPY = {
   clickCollect: {
@@ -99,6 +100,23 @@ function MenuTriggerIcon() {
   ) : (
     <span className="menu-trigger-fallback" aria-hidden="true">
       ≡
+    </span>
+  );
+}
+
+function BackTriggerIcon() {
+  const [hasError, setHasError] = useState(false);
+
+  return !hasError ? (
+    <img
+      src={BACK_ICON}
+      alt="Retour a l'accueil"
+      className="menu-trigger-image"
+      onError={() => setHasError(true)}
+    />
+  ) : (
+    <span className="menu-trigger-fallback" aria-hidden="true">
+      ←
     </span>
   );
 }
@@ -768,6 +786,16 @@ export default function App() {
               </div>
             ) : null}
             <div className="menu-dropdown-shell">
+              {activeApp !== "launcher" ? (
+                <button
+                  type="button"
+                  className="ghost-button compact-button menu-trigger back-trigger"
+                  onClick={handleHomeNavigation}
+                  aria-label="Retour a l'accueil"
+                >
+                  <BackTriggerIcon />
+                </button>
+              ) : null}
               <button
                 type="button"
                 className={`ghost-button compact-button menu-trigger ${isMenuOpen ? "active" : ""}`}
@@ -787,17 +815,6 @@ export default function App() {
                   </div>
 
                   <div className="menu-panel-actions">
-                    {activeApp !== "launcher" ? (
-                      <button
-                        type="button"
-                        className="menu-action-button"
-                        onClick={handleHomeNavigation}
-                        role="menuitem"
-                      >
-                        <span>Accueil</span>
-                        <strong>Retour a l'accueil</strong>
-                      </button>
-                    ) : null}
                     <button
                       type="button"
                       className="menu-action-button menu-action-button-danger"
@@ -813,21 +830,6 @@ export default function App() {
             </div>
           </div>
         </header>
-
-        <section className="summary-strip panel-card">
-          <article className="summary-chip">
-            <span>Commandes actives</span>
-            <strong>{statusCounters.COMPLETED}</strong>
-          </article>
-          <article className="summary-chip">
-            <span>Tickets a suivre</span>
-            <strong>{ticketCounters.error + ticketCounters.warning}</strong>
-          </article>
-          <article className="summary-chip">
-            <span>Clients charges</span>
-            <strong>{customers.length}</strong>
-          </article>
-        </section>
 
         {activeApp === "clickCollect" ? (
           <section className="status-strip mobile-status-strip">
@@ -872,13 +874,6 @@ export default function App() {
         {activeApp === "launcher" ? (
           <>
             <section className="launcher-apps-section panel-card">
-              <div className="launcher-section-head">
-                <p className="eyebrow">Applications</p>
-                <p className="muted-copy compact-copy">
-                  Touchez une icone pour ouvrir l'app mobile correspondante.
-                </p>
-              </div>
-
               <section className="apps-grid apps-grid-icons">
                 <button
                   type="button"
@@ -891,7 +886,6 @@ export default function App() {
                     src={APP_LOGOS.clickCollect}
                   />
                   <span className="app-icon-label">{APP_COPY.clickCollect.title}</span>
-                  <span className="app-icon-meta">{statusCounters.COMPLETED} en cours</span>
                 </button>
 
                 <button
@@ -906,7 +900,6 @@ export default function App() {
                     src={APP_LOGOS.customerInfo}
                   />
                   <span className="app-icon-label">{APP_COPY.customerInfo.title}</span>
-                  <span className="app-icon-meta">Recherche rapide</span>
                 </button>
               </section>
             </section>
@@ -924,8 +917,10 @@ export default function App() {
                   <p className="muted-copy compact-copy">Service du {filters.date}</p>
                 </div>
                 <div className="app-badge-row">
-                  <span className="status-pill neutral">{statusCounters.total} commandes</span>
-                  <span className="status-pill neutral">{ticketCounters.total} tickets</span>
+                  <span className="status-pill neutral">{statusCounters.COMPLETED} commandes actives</span>
+                  <span className="status-pill neutral">
+                    {ticketCounters.error + ticketCounters.warning} tickets a suivre
+                  </span>
                 </div>
               </div>
 
