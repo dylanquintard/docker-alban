@@ -6,4 +6,4 @@ Disallow: /register
 Disallow: /order
 Disallow: /profile
 Disallow: /userorders
-Sitemap: https://api-alban.eazytoolz.site/sitemap.xml
+Sitemap: /sitemap.xml

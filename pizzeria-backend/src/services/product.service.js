@@ -1,5 +1,6 @@
 const prisma = require("../lib/prisma");
 const { normalizeCustomizations } = require("../utils/customizations");
+const { normalizePublicMediaUrl } = require("../utils/media-url");
 
 const CATEGORY_KINDS = {
   PRODUCT: "PRODUCT",
@@ -141,10 +142,20 @@ async function ensureCategoryKind(categoryId, expectedKind) {
   }
 }
 
+function normalizeProductMedia(product) {
+  if (!product || typeof product !== "object") return product;
+
+  return {
+    ...product,
+    imageUrl: normalizePublicMediaUrl(product.imageUrl),
+    thumbnailUrl: normalizePublicMediaUrl(product.thumbnailUrl),
+  };
+}
+
 async function getAllProducts(filters = {}) {
   const categoryId = parseNullablePositiveInt(filters.categoryId, "categoryId");
 
-  return prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where: {
       categoryId: categoryId === undefined ? undefined : categoryId,
     },
@@ -156,6 +167,8 @@ async function getAllProducts(filters = {}) {
     },
     orderBy: [{ categoryId: "asc" }, { name: "asc" }],
   });
+
+  return products.map(normalizeProductMedia);
 }
 
 async function getProductById(id) {
@@ -172,7 +185,7 @@ async function getProductById(id) {
   });
 
   if (!product) throw new Error("Product not found");
-  return product;
+  return normalizeProductMedia(product);
 }
 
 async function createProduct(data) {
@@ -184,7 +197,7 @@ async function createProduct(data) {
     await ensureCategoryKind(categoryId, CATEGORY_KINDS.PRODUCT);
   }
 
-  return prisma.product.create({
+  const product = await prisma.product.create({
     data: {
       name,
       description: typeof data.description === "string" ? data.description.trim() : "",
@@ -196,6 +209,8 @@ async function createProduct(data) {
     },
     include: { category: true },
   });
+
+  return normalizeProductMedia(product);
 }
 
 async function updateProduct(id, data) {
@@ -208,7 +223,7 @@ async function updateProduct(id, data) {
     await ensureCategoryKind(categoryId, CATEGORY_KINDS.PRODUCT);
   }
 
-  return prisma.product.update({
+  const product = await prisma.product.update({
     where: { id: productId },
     data: {
       name: typeof data.name === "string" ? data.name.trim() : undefined,
@@ -225,6 +240,8 @@ async function updateProduct(id, data) {
     },
     include: { category: true },
   });
+
+  return normalizeProductMedia(product);
 }
 
 async function deleteProduct(id) {

@@ -1,4 +1,5 @@
 const prisma = require("../lib/prisma");
+const { normalizePublicMediaUrl } = require("../utils/media-url");
 
 const SITE_SETTINGS_SINGLETON_ID = 1;
 const ANNOUNCEMENT_VARIANTS = new Set(["info", "alert", "success"]);
@@ -271,15 +272,21 @@ function formatSiteSettingsRecord(record) {
         "seo.defaultMetaDescription"
       ),
       defaultOgImageUrl:
-        normalizeString(source.seo?.defaultOgImageUrl, "seo.defaultOgImageUrl") ??
-        defaults.seo.defaultOgImageUrl,
+        normalizePublicMediaUrl(
+          normalizeString(source.seo?.defaultOgImageUrl, "seo.defaultOgImageUrl") ??
+            defaults.seo.defaultOgImageUrl
+        ),
       headerLogoUrl:
-        normalizeString(source.seo?.headerLogoUrl, "seo.headerLogoUrl") ??
-        defaults.seo.headerLogoUrl,
+        normalizePublicMediaUrl(
+          normalizeString(source.seo?.headerLogoUrl, "seo.headerLogoUrl") ??
+            defaults.seo.headerLogoUrl
+        ),
       faviconUrl:
-        normalizeString(source.seo?.faviconUrl, "seo.faviconUrl") ??
-        normalizeString(source.seo?.headerLogoUrl, "seo.headerLogoUrl") ??
-        defaults.seo.faviconUrl,
+        normalizePublicMediaUrl(
+          normalizeString(source.seo?.faviconUrl, "seo.faviconUrl") ??
+            normalizeString(source.seo?.headerLogoUrl, "seo.headerLogoUrl") ??
+            defaults.seo.faviconUrl
+        ),
       canonicalSiteUrl:
         normalizeString(source.seo?.canonicalSiteUrl, "seo.canonicalSiteUrl") ??
         defaults.seo.canonicalSiteUrl,

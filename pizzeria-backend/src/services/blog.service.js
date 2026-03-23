@@ -1,4 +1,5 @@
 const prisma = require("../lib/prisma");
+const { normalizePublicMediaUrl } = require("../utils/media-url");
 
 const RESERVED_BLOG_SLUGS = new Set([
   "",
@@ -176,8 +177,8 @@ function formatBlogParagraph(paragraph, image = null) {
 function formatBlogImage(image) {
   return {
     id: image.id,
-    imageUrl: image.imageUrl,
-    thumbnailUrl: image.thumbnailUrl,
+    imageUrl: normalizePublicMediaUrl(image.imageUrl),
+    thumbnailUrl: normalizePublicMediaUrl(image.thumbnailUrl),
     altText: image.altText,
     caption: image.caption,
     sortOrder: image.sortOrder,
@@ -557,10 +558,10 @@ async function getSeoBlogArticles() {
     path: `/${article.slug}`,
     title: getArticleMetaTitle(article) || article.title,
     description: getArticleMetaDescription(article) || article.description,
-    image: article?.images?.[0]
+      image: article?.images?.[0]
       ? {
-          imageUrl: article.images[0].imageUrl,
-          thumbnailUrl: article.images[0].thumbnailUrl,
+          imageUrl: normalizePublicMediaUrl(article.images[0].imageUrl),
+          thumbnailUrl: normalizePublicMediaUrl(article.images[0].thumbnailUrl),
           altText: article.images[0].altText,
         }
       : null,

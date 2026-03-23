@@ -4,6 +4,7 @@ const path = require("path");
 const sharp = require("sharp");
 const prisma = require("../lib/prisma");
 const { UPLOAD_DIR } = require("../lib/env");
+const { normalizePublicMediaUrl } = require("../utils/media-url");
 
 const GALLERY_DIRECTORY = path.join(UPLOAD_DIR, "gallery");
 const GALLERY_THUMB_DIRECTORY = path.join(GALLERY_DIRECTORY, "thumbs");
@@ -49,6 +50,16 @@ function parseOptionalString(value) {
   if (typeof value !== "string") throw new Error("Invalid string field");
   const normalized = value.trim();
   return normalized || null;
+}
+
+function normalizeGalleryImage(record) {
+  if (!record || typeof record !== "object") return record;
+
+  return {
+    ...record,
+    imageUrl: normalizePublicMediaUrl(record.imageUrl),
+    thumbnailUrl: normalizePublicMediaUrl(record.thumbnailUrl),
+  };
 }
 
 function buildGeneratedFilename() {
@@ -156,10 +167,12 @@ async function getGalleryImages(filters = {}) {
   const active = parseOptionalBoolean(filters.active);
   const where = active === undefined ? undefined : { active };
 
-  return prisma.homeGalleryImage.findMany({
+  const images = await prisma.homeGalleryImage.findMany({
     where,
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
   });
+
+  return images.map(normalizeGalleryImage);
 }
 
 async function createGalleryImage(data) {
@@ -179,7 +192,7 @@ async function createGalleryImage(data) {
       });
     }
 
-    return tx.homeGalleryImage.create({
+    const image = await tx.homeGalleryImage.create({
       data: {
         imageUrl,
         thumbnailUrl: parseOptionalString(data.thumbnailUrl) ?? imageUrl,
@@ -191,6 +204,8 @@ async function createGalleryImage(data) {
         isHomeBackground: isHomeBackground ?? false,
       },
     });
+
+    return normalizeGalleryImage(image);
   });
 }
 
@@ -222,7 +237,7 @@ async function updateGalleryImage(id, data) {
       });
     }
 
-    return tx.homeGalleryImage.update({
+    const image = await tx.homeGalleryImage.update({
       where: { id: imageId },
       data: {
         imageUrl: data.imageUrl !== undefined ? parseImageUrl(data.imageUrl) : undefined,
@@ -235,6 +250,8 @@ async function updateGalleryImage(id, data) {
         isHomeBackground: nextIsHomeBackground,
       },
     });
+
+    return normalizeGalleryImage(image);
   });
 }
 
@@ -242,13 +259,15 @@ async function activateGalleryImage(id, active) {
   const imageId = parsePositiveInt(id, "id");
   const isActive = parseOptionalBoolean(active, "active") ?? false;
 
-  return prisma.homeGalleryImage.update({
+  const image = await prisma.homeGalleryImage.update({
     where: { id: imageId },
     data: {
       active: isActive,
       isHomeBackground: isActive ? undefined : false,
     },
   });
+
+  return normalizeGalleryImage(image);
 }
 
 async function setHomeBackground(id) {
@@ -263,13 +282,15 @@ async function setHomeBackground(id) {
       where: { isHomeBackground: true },
       data: { isHomeBackground: false },
     });
-    return tx.homeGalleryImage.update({
+    const image = await tx.homeGalleryImage.update({
       where: { id: imageId },
       data: {
         isHomeBackground: true,
         active: true,
       },
     });
+
+    return normalizeGalleryImage(image);
   });
 }
 
@@ -282,7 +303,7 @@ async function deleteGalleryImage(id) {
     removeLocalUploadIfPresent(deleted.imageUrl),
     removeLocalUploadIfPresent(deleted.thumbnailUrl),
   ]);
-  return deleted;
+  return normalizeGalleryImage(deleted);
 }
 
 module.exports = {
