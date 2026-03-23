@@ -5,13 +5,6 @@ function formatPrice(value) {
   return Number.isNaN(numeric) ? value : numeric.toFixed(2);
 }
 
-function normalizeText(value) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
-
 function getCategoryWeight(category) {
   return category.items?.length || category.products?.length || 1;
 }
@@ -128,15 +121,7 @@ export function buildMenuGroups(categories, products, tr) {
 
   const visibleGroups = grouped.filter((bucket) => bucket.items.length > 0);
 
-  return visibleGroups
-    .map((bucket, index) => ({ bucket, index }))
-    .sort((left, right) => {
-      const leftPriority = normalizeText(left.bucket.title).includes("pizza") ? 0 : 1;
-      const rightPriority = normalizeText(right.bucket.title).includes("pizza") ? 0 : 1;
-      if (leftPriority !== rightPriority) return leftPriority - rightPriority;
-      return left.index - right.index;
-    })
-    .map(({ bucket }) => bucket);
+  return visibleGroups;
 }
 
 function CategorySection({ group, tr, variant = "default", showProductImages = false }) {

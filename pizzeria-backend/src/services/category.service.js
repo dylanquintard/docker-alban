@@ -51,9 +51,18 @@ function parseName(value) {
   return value.trim();
 }
 
+function parseCategorySortBy(value) {
+  if (value === undefined || value === null || value === "") return "manual";
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === "createdat") return "createdAt";
+  if (normalized === "manual") return "manual";
+  throw new Error("sortBy must be manual or createdAt");
+}
+
 async function getCategories(filters = {}) {
   const active = parseOptionalBoolean(filters.active);
   const kind = parseCategoryKind(filters.kind, { required: false });
+  const sortBy = parseCategorySortBy(filters.sortBy);
   const where =
     active === undefined && kind === undefined
       ? undefined
@@ -64,7 +73,10 @@ async function getCategories(filters = {}) {
 
   return prisma.category.findMany({
     where,
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    orderBy:
+      sortBy === "createdAt"
+        ? [{ createdAt: "asc" }, { id: "asc" }]
+        : [{ sortOrder: "asc" }, { name: "asc" }],
   });
 }
 

@@ -1112,7 +1112,7 @@ export default function Order() {
       try {
         const [productResult, categoryResult, ingredientResult, locationResult] = await Promise.allSettled([
           getAllProductsClient(),
-          getCategories({ active: true, kind: "PRODUCT" }),
+          getCategories({ active: true, kind: "PRODUCT", sortBy: "createdAt" }),
           getAllIngredients(token, { active: true }),
           getLocations({ active: true }),
         ]);
@@ -1333,14 +1333,7 @@ export default function Order() {
 
     return grouped
       .filter((entry) => entry.items.length > 0)
-      .map((entry, index) => ({ entry, index }))
-      .sort((left, right) => {
-        const leftPriority = normalizeText(left.entry.title).includes("pizza") ? 0 : 1;
-        const rightPriority = normalizeText(right.entry.title).includes("pizza") ? 0 : 1;
-        if (leftPriority !== rightPriority) return leftPriority - rightPriority;
-        return left.index - right.index;
-      })
-      .map(({ entry }) => ({
+      .map((entry) => ({
         ...entry,
         isPizzaCategory: isPizzaCategoryLabel(entry.title),
         items: sortProductsByPrice(entry.items).map((product) => ({

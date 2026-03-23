@@ -232,7 +232,7 @@ export default function Home() {
         const [productData, categoryData, galleryData, weeklySettingsData] =
           await Promise.all([
             getAllProductsClient(),
-            getCategories({ active: true, kind: "PRODUCT" }),
+            getCategories({ active: true, kind: "PRODUCT", sortBy: "createdAt" }),
             shouldLoadHeroMedia ? getPublicGallery({ active: true }) : Promise.resolve([]),
             getPublicWeeklySettings(),
           ]);

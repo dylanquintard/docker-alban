@@ -25,4 +25,22 @@ describe("buildMenuGroups", () => {
     expect(groups[1].items).toHaveLength(1);
     expect(groups[1].items[0].name).toBe("Tiramisu");
   });
+
+  it("preserves the incoming category order", () => {
+    const groups = buildMenuGroups(
+      [
+        { id: 10, name: "Desserts", description: "" },
+        { id: 11, name: "Pizzas", description: "" },
+      ],
+      [
+        { id: 201, name: "Tiramisu", categoryId: 10 },
+        { id: 202, name: "Margherita", categoryId: 11 },
+      ],
+      tr
+    );
+
+    expect(groups).toHaveLength(2);
+    expect(groups[0].title).toBe("Desserts");
+    expect(groups[1].title).toBe("Pizzas");
+  });
 });

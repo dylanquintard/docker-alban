@@ -25,7 +25,7 @@ export default function Menu() {
       try {
         const [productData, categoryData] = await Promise.all([
           getAllProductsClient(),
-          getCategories({ active: true, kind: "PRODUCT" }),
+          getCategories({ active: true, kind: "PRODUCT", sortBy: "createdAt" }),
         ]);
 
         if (!cancelled) {
