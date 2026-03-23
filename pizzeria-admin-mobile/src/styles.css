@@ -105,7 +105,6 @@ button {
 .mobile-os-brand,
 .customer-card-head,
 .app-shell-head,
-.app-launch-meta,
 .order-card-head,
 .slot-header,
 .detail-head,
@@ -171,7 +170,6 @@ button {
 .muted-copy,
 .intro-copy,
 .compact-copy,
-.app-launch-copy p,
 .hint-card p,
 .install-card p,
 .detail-item-row p {
@@ -203,10 +201,8 @@ button {
 
 .mobile-os-topbar h1,
 .login-card h1,
-.launcher-hero h2,
 .app-shell-head h2,
-.detail-head h2,
-.app-launch-copy h2 {
+.detail-head h2 {
   margin: 0;
 }
 
@@ -306,8 +302,7 @@ button {
 .danger-button,
 .ghost-button,
 .ghost-icon-button,
-.switcher-pill,
-.app-launch-card {
+.switcher-pill {
   border: 0;
   transition: 180ms ease;
 }
@@ -332,8 +327,7 @@ button {
 .danger-button,
 .ghost-button,
 .ghost-icon-button,
-.switcher-pill,
-.app-launch-card {
+.switcher-pill {
   background: var(--panel-soft);
   color: var(--text);
   border: 1px solid var(--border);
@@ -480,31 +474,50 @@ button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.app-launch-card {
-  text-align: left;
-  padding: 18px;
-  border-radius: 28px;
+.launcher-apps-section {
   display: grid;
-  gap: 16px;
-  align-content: start;
+  gap: 14px;
 }
 
-.app-launch-copy h2 {
-  font-size: 1.35rem;
-}
-
-.app-launch-copy p {
+.launcher-section-head p {
   margin: 0;
-  line-height: 1.55;
 }
 
-.app-launch-meta {
-  justify-content: space-between;
-  color: var(--muted);
+.apps-grid-icons {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.app-launch-meta strong {
+.app-icon-launcher {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 8px 6px 4px;
+  border: 0;
+  background: transparent;
   color: var(--text);
+}
+
+.app-icon-launcher .app-icon-badge {
+  width: 78px;
+  height: 78px;
+  border-radius: 24px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+}
+
+.app-icon-label,
+.app-icon-meta {
+  display: block;
+  text-align: center;
+}
+
+.app-icon-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.app-icon-meta {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .app-shell-head {
@@ -809,6 +822,7 @@ button {
   }
 
   .apps-grid,
+  .apps-grid-icons,
   .orders-layout,
   .detail-grid,
   .detail-footer,
@@ -867,6 +881,11 @@ button {
   .filter-select,
   .ghost-button {
     width: 100%;
+  }
+
+  .app-icon-launcher .app-icon-badge {
+    width: 72px;
+    height: 72px;
   }
 
   .mobile-menu-switcher {

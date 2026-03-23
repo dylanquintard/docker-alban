@@ -871,49 +871,44 @@ export default function App() {
 
         {activeApp === "launcher" ? (
           <>
-            <section className="apps-grid">
-              <button
-                type="button"
-                className="app-launch-card"
-                onClick={() => handleOpenApp("clickCollect", { section: "orders" })}
-              >
-                <AppLauncherIcon
-                  alt="Logo Click&Collect"
-                  fallback={APP_ICONS.clickCollect}
-                  src={APP_LOGOS.clickCollect}
-                />
-                <div className="app-launch-copy">
-                  <p className="eyebrow">{APP_COPY.clickCollect.subtitle}</p>
-                  <h2>{APP_COPY.clickCollect.title}</h2>
-                  <p>{APP_COPY.clickCollect.description}</p>
-                </div>
-                <div className="app-launch-meta">
-                  <span>{statusCounters.COMPLETED} en cours</span>
-                  <strong>Ouvrir</strong>
-                </div>
-              </button>
+            <section className="launcher-apps-section panel-card">
+              <div className="launcher-section-head">
+                <p className="eyebrow">Applications</p>
+                <p className="muted-copy compact-copy">
+                  Touchez une icone pour ouvrir l'app mobile correspondante.
+                </p>
+              </div>
 
-              <button
-                type="button"
-                className="app-launch-card"
-                onClick={() => handleOpenApp("customerInfo")}
-              >
-                <AppLauncherIcon
-                  alt="Logo Infos Clients"
-                  fallback={APP_ICONS.customerInfo}
-                  muted
-                  src={APP_LOGOS.customerInfo}
-                />
-                <div className="app-launch-copy">
-                  <p className="eyebrow">{APP_COPY.customerInfo.subtitle}</p>
-                  <h2>{APP_COPY.customerInfo.title}</h2>
-                  <p>{APP_COPY.customerInfo.description}</p>
-                </div>
-                <div className="app-launch-meta">
-                  <span>Recherche rapide</span>
-                  <strong>Ouvrir</strong>
-                </div>
-              </button>
+              <section className="apps-grid apps-grid-icons">
+                <button
+                  type="button"
+                  className="app-icon-launcher"
+                  onClick={() => handleOpenApp("clickCollect", { section: "orders" })}
+                >
+                  <AppLauncherIcon
+                    alt="Logo Click&Collect"
+                    fallback={APP_ICONS.clickCollect}
+                    src={APP_LOGOS.clickCollect}
+                  />
+                  <span className="app-icon-label">{APP_COPY.clickCollect.title}</span>
+                  <span className="app-icon-meta">{statusCounters.COMPLETED} en cours</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="app-icon-launcher"
+                  onClick={() => handleOpenApp("customerInfo")}
+                >
+                  <AppLauncherIcon
+                    alt="Logo Infos Clients"
+                    fallback={APP_ICONS.customerInfo}
+                    muted
+                    src={APP_LOGOS.customerInfo}
+                  />
+                  <span className="app-icon-label">{APP_COPY.customerInfo.title}</span>
+                  <span className="app-icon-meta">Recherche rapide</span>
+                </button>
+              </section>
             </section>
           </>
         ) : null}
