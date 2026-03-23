@@ -43,19 +43,17 @@ export function buildIngredientSummaryParts(product, tr) {
   }
 
   const recommendationLabel = tr("Supplement", "Extra");
-  const classicSegments = [...classic];
-
-  if (recommendedSupplements.length > 0) {
-    classicSegments.push(
-      `${recommendationLabel}: ${recommendedSupplements
-        .map((item) => formatRecommendedSupplement(item))
-        .join(" - ")}`
-    );
-  }
+  const recommendedText =
+    recommendedSupplements.length > 0
+      ? `${recommendationLabel}: ${recommendedSupplements
+          .map((item) => formatRecommendedSupplement(item))
+          .join(" - ")}`
+      : "";
 
   return {
-    classicText: classicSegments.join(" - "),
+    classicText: classic.join(" - "),
     afterLabel: tr("Apres cuisson", "After cooking"),
     afterText: afterCooking.length > 0 ? afterCooking.join(" - ") : "",
+    recommendedText,
   };
 }

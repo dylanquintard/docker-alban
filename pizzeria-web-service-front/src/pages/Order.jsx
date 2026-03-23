@@ -1746,7 +1746,7 @@ export default function Order() {
 
                             {product.description && <p className="mt-1 text-sm text-stone-300">{product.description}</p>}
 
-                            {ingredientSummary && (
+                            {(ingredientSummary?.classicText || ingredientSummary?.afterText) && (
                               <p className="mt-0.5 break-words text-[8.5px] uppercase leading-relaxed tracking-[0.08em] text-stone-400 sm:text-[11px] sm:tracking-[0.13em]">
                                 {ingredientSummary.classicText ? (
                                   <span>{ingredientSummary.classicText}</span>
@@ -1764,6 +1764,11 @@ export default function Order() {
                                 ) : null}
                               </p>
                             )}
+                            {ingredientSummary?.recommendedText ? (
+                              <p className="mt-1 break-words text-[8.5px] uppercase italic leading-relaxed tracking-[0.08em] text-emerald-300 sm:text-[11px] sm:tracking-[0.13em]">
+                                {ingredientSummary.recommendedText}
+                              </p>
+                            ) : null}
                           </div>
                         </div>
                       </div>

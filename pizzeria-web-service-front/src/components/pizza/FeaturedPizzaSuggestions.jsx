@@ -132,7 +132,7 @@ export default function FeaturedPizzaSuggestions({
                     {product.description}
                   </p>
                 ) : null}
-                {ingredientSummary ? (
+                {ingredientSummary?.classicText || ingredientSummary?.afterText ? (
                   <p
                     className={`mt-0.5 uppercase text-stone-400 ${
                       compact ? "text-[8px] tracking-[0.1em] sm:text-[10px]" : "text-[9px] tracking-[0.11em] sm:text-[11px]"
@@ -146,6 +146,15 @@ export default function FeaturedPizzaSuggestions({
                         <span>: {ingredientSummary.afterText}</span>
                       </>
                     ) : null}
+                  </p>
+                ) : null}
+                {ingredientSummary?.recommendedText ? (
+                  <p
+                    className={`mt-1 uppercase italic text-emerald-300 ${
+                      compact ? "text-[8px] tracking-[0.1em] sm:text-[10px]" : "text-[9px] tracking-[0.11em] sm:text-[11px]"
+                    }`}
+                  >
+                    {ingredientSummary.recommendedText}
                   </p>
                 ) : null}
               </div>

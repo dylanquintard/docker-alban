@@ -213,7 +213,7 @@ function CategorySection({ group, tr, variant = "default", showProductImages = f
                   </p>
                 ) : null}
 
-                {ingredientSummary ? (
+                {ingredientSummary?.classicText || ingredientSummary?.afterText ? (
                   <p
                     className={`mt-0.5 uppercase text-stone-400 ${
                       isCompact
@@ -235,6 +235,21 @@ function CategorySection({ group, tr, variant = "default", showProductImages = f
                         <span>: {ingredientSummary.afterText}</span>
                       </>
                     ) : null}
+                  </p>
+                ) : null}
+                {ingredientSummary?.recommendedText ? (
+                  <p
+                    className={`mt-1 uppercase italic text-emerald-300 ${
+                      isCompact
+                        ? showProductImages
+                          ? "text-[9px] tracking-[0.11em]"
+                          : "text-[10px] tracking-[0.12em]"
+                        : showProductImages
+                          ? "text-[9px] sm:text-[11px] sm:tracking-[0.13em]"
+                          : "text-[10px] sm:text-xs sm:tracking-[0.14em]"
+                    }`}
+                  >
+                    {ingredientSummary.recommendedText}
                   </p>
                 ) : null}
               </div>
