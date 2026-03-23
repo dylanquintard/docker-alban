@@ -859,12 +859,53 @@ export default function App() {
                   <p className="eyebrow">{APP_COPY.clickCollect.subtitle}</p>
                   <h2>{APP_COPY.clickCollect.title}</h2>
                   <p className="muted-copy compact-copy">{APP_COPY.clickCollect.description}</p>
+                  <p className="muted-copy compact-copy">Service du {filters.date}</p>
                 </div>
                 <div className="app-badge-row">
                   <span className="status-pill neutral">{statusCounters.total} commandes</span>
                   <span className="status-pill neutral">{ticketCounters.total} tickets</span>
                 </div>
               </div>
+
+              <section className="section-overview-grid">
+                {clickCollectSection === "orders" ? (
+                  <>
+                    <article className="glance-card">
+                      <span>En cours</span>
+                      <strong>{statusCounters.COMPLETED}</strong>
+                      <p>File de production active</p>
+                    </article>
+                    <article className="glance-card">
+                      <span>Validees</span>
+                      <strong>{statusCounters.VALIDATE}</strong>
+                      <p>Commandes deja confirmees</p>
+                    </article>
+                    <article className="glance-card">
+                      <span>Tickets a suivre</span>
+                      <strong>{ticketCounters.error + ticketCounters.warning}</strong>
+                      <p>Impressions a surveiller</p>
+                    </article>
+                  </>
+                ) : (
+                  <>
+                    <article className="glance-card glance-card-danger">
+                      <span>Erreurs</span>
+                      <strong>{ticketCounters.error}</strong>
+                      <p>Action immediate</p>
+                    </article>
+                    <article className="glance-card glance-card-warning">
+                      <span>A surveiller</span>
+                      <strong>{ticketCounters.warning}</strong>
+                      <p>Reprises possibles</p>
+                    </article>
+                    <article className="glance-card glance-card-success">
+                      <span>OK</span>
+                      <strong>{ticketCounters.healthy}</strong>
+                      <p>Flux d'impression stable</p>
+                    </article>
+                  </>
+                )}
+              </section>
 
               <section className="mobile-menu-switcher compact-switcher">
                 <button
@@ -884,7 +925,7 @@ export default function App() {
               </section>
             </section>
 
-            <section className="toolbar app-toolbar">
+            <section className="toolbar app-toolbar panel-card">
               {clickCollectSection === "orders" ? (
                 <>
                   <label className="search-field">
@@ -989,11 +1030,18 @@ export default function App() {
 
             {clickCollectSection === "orders" ? (
               <section className="orders-layout mobile-orders-layout">
-                <div className="orders-column">
+                <section className="orders-column panel-card">
+                  <div className="column-head">
+                    <div>
+                      <p className="eyebrow">File active</p>
+                      <h3>Commandes a traiter</h3>
+                    </div>
+                    <span className="status-pill neutral">{filteredOrders.length} visibles</span>
+                  </div>
                   {ordersLoading ? (
-                    <div className="panel-card">Chargement des commandes...</div>
+                    <div className="subtle-empty-state">Chargement des commandes...</div>
                   ) : groupedKeys.length === 0 ? (
-                    <div className="panel-card">
+                    <div className="subtle-empty-state">
                       {searchQuery
                         ? "Aucune commande ne correspond a cette recherche."
                         : "Aucune commande pour cette date."}
@@ -1023,11 +1071,16 @@ export default function App() {
                                     {getStatusLabel(workflowStatus)}
                                   </span>
                                 </div>
-                                <p>{order.timeSlot?.location?.name || "Lieu non renseigne"}</p>
-                                <p>
-                                  {order.timeSlot?.startTime
-                                    ? formatTimeLabel(order.timeSlot.startTime)
-                                    : "Heure non renseignee"}
+                                <div className="order-card-meta">
+                                  <span>{order.timeSlot?.location?.name || "Lieu non renseigne"}</span>
+                                  <span>
+                                    {order.timeSlot?.startTime
+                                      ? formatTimeLabel(order.timeSlot.startTime)
+                                      : "Heure non renseignee"}
+                                  </span>
+                                </div>
+                                <p className="muted-copy">
+                                  {order.items?.length || 0} article(s) · {formatPrice(order.total)}
                                 </p>
                               </button>
                             );
@@ -1036,7 +1089,7 @@ export default function App() {
                       </section>
                     ))
                   )}
-                </div>
+                </section>
 
                 <div className="details-column">
                   {!selectedOrder ? (
@@ -1049,6 +1102,12 @@ export default function App() {
                         <div>
                           <p className="eyebrow">Commande active</p>
                           <h2>Commande #{selectedOrder.id}</h2>
+                          <p className="muted-copy compact-copy">
+                            {selectedOrder.timeSlot?.location?.name || "Lieu non renseigne"} ·{" "}
+                            {selectedOrder.timeSlot?.startTime
+                              ? formatTimeLabel(selectedOrder.timeSlot.startTime)
+                              : "Heure non renseignee"}
+                          </p>
                         </div>
                         <div className="detail-head-actions">
                           <div className="inline-nav">
@@ -1087,6 +1146,7 @@ export default function App() {
                         <div className="detail-block">
                           <span>Client</span>
                           <strong>{getOrderDisplayName(selectedOrder)}</strong>
+                          <p>{selectedOrder.user?.phone || selectedOrder.user?.email || "Contact non renseigne"}</p>
                         </div>
 
                         <div className="detail-block">
