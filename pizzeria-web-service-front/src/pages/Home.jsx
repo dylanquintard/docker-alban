@@ -648,7 +648,7 @@ const truckTourSchedule = useMemo(
       </section>
 
       <section id="menu" className="section-shell">
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)] xl:items-start">
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.75fr)] xl:items-start">
           <div className="space-y-8">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
@@ -677,7 +677,7 @@ const truckTourSchedule = useMemo(
           </div>
 
           <div className="space-y-5 xl:sticky xl:top-28">
-            <CompactServiceInfoPanel truckTourSchedule={truckTourSchedule} />
+            <CompactServiceInfoPanel compact truckTourSchedule={truckTourSchedule} />
             <article id="services" className="hidden">
               <p className="text-xs uppercase tracking-[0.22em] text-saffron">
                 {tr("Nos services", "Our services")}

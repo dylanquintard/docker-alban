@@ -135,7 +135,11 @@ function buildTruckTourSchedule(weeklySettings, tr) {
     }));
 }
 
-export default function CompactServiceInfoPanel({ className = "", truckTourSchedule = null }) {
+export default function CompactServiceInfoPanel({
+  className = "",
+  truckTourSchedule = null,
+  compact = false,
+}) {
   const { tr } = useLanguage();
   const [schedule, setSchedule] = useState(Array.isArray(truckTourSchedule) ? truckTourSchedule : []);
 
@@ -163,18 +167,36 @@ export default function CompactServiceInfoPanel({ className = "", truckTourSched
   }, [truckTourSchedule, tr]);
 
   const normalizedSchedule = useMemo(() => (Array.isArray(schedule) ? schedule : []), [schedule]);
+  const panelPaddingClass = compact ? "p-4" : "p-5";
+  const sectionSpacingClass = compact ? "space-y-4" : "space-y-5";
+  const titleClass = compact ? "text-xl" : "text-2xl";
+  const introClass = compact ? "mt-1.5 text-[11px] leading-4.5" : "mt-2 text-xs leading-5";
+  const cardPaddingClass = compact ? "p-3" : "p-3.5";
+  const locationTitleClass = compact ? "text-[11px]" : "text-xs";
+  const locationMetaClass = compact ? "mt-1 text-[10px] leading-4" : "mt-1 text-[11px] leading-5";
+  const dayBadgeClass = compact ? "px-1.5 py-0.5 text-[9px]" : "px-2 py-1 text-[10px]";
+  const slotBadgeClass = compact
+    ? "px-2 py-0.5 text-[9px]"
+    : "px-2.5 py-1 text-[10px]";
+  const buttonClass = compact
+    ? "px-3 py-1.5 text-[9px]"
+    : "px-4 py-2 text-[10px]";
+  const dividerPaddingClass = compact ? "pt-4" : "pt-5";
+  const serviceTitleClass = compact ? "text-xs" : "text-sm";
+  const serviceTextClass = compact ? "mt-1.5 text-[11px] leading-4.5" : "mt-2 text-xs leading-5";
+  const paymentsGapClass = compact ? "gap-2.5" : "gap-3";
 
   return (
-    <section className={`glass-panel p-5 ${className}`.trim()}>
-      <div className="space-y-5">
+    <section className={`glass-panel ${panelPaddingClass} ${className}`.trim()}>
+      <div className={sectionSpacingClass}>
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-saffron">
             {tr("Emplacements & horaires d'ouverture", "Locations & opening hours")}
           </p>
-          <h2 className="mt-2 font-display text-2xl uppercase tracking-wide text-white">
+          <h2 className={`mt-2 font-display uppercase tracking-wide text-white ${titleClass}`}>
             {tr("Ou nous trouver", "Where to find us")}
           </h2>
-          <p className="mt-2 text-xs leading-5 text-stone-400">
+          <p className={`text-stone-400 ${introClass}`}>
             {tr(
               "Les points de passage, jours et horaires actuellement ouverts.",
               "Current stops, opening days and available hours."
@@ -191,14 +213,16 @@ export default function CompactServiceInfoPanel({ className = "", truckTourSched
             normalizedSchedule.map((location) => (
               <div
                 key={location.key}
-                className="rounded-2xl border border-white/10 bg-black/20 p-3.5"
+                className={`rounded-2xl border border-white/10 bg-black/20 ${cardPaddingClass}`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-white">{location.locationName}</p>
-                    <p className="mt-1 text-[11px] leading-5 text-stone-300">{location.address}</p>
+                    <p className={`font-bold text-white ${locationTitleClass}`}>{location.locationName}</p>
+                    <p className={`text-stone-300 ${locationMetaClass}`}>{location.address}</p>
                   </div>
-                  <span className="shrink-0 rounded-full border border-saffron/30 bg-saffron/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-saffron">
+                  <span
+                    className={`shrink-0 rounded-full border border-saffron/30 bg-saffron/10 font-semibold uppercase tracking-wide text-saffron ${dayBadgeClass}`}
+                  >
                     {location.dayLabel}
                   </span>
                 </div>
@@ -207,7 +231,7 @@ export default function CompactServiceInfoPanel({ className = "", truckTourSched
                   {(Array.isArray(location.hours) ? location.hours : []).map((hour) => (
                     <span
                       key={hour}
-                      className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-stone-200"
+                      className={`rounded-full border border-white/10 bg-white/5 font-semibold text-stone-200 ${slotBadgeClass}`}
                     >
                       {hour}
                     </span>
@@ -220,32 +244,32 @@ export default function CompactServiceInfoPanel({ className = "", truckTourSched
 
         <Link
           to="/planing"
-          className="inline-flex rounded-full border border-saffron/60 px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
+          className={`inline-flex rounded-full border border-saffron/60 font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10 ${buttonClass}`}
         >
           {tr("Voir les horaires", "See opening hours")}
         </Link>
 
-        <div className="border-t border-white/10 pt-5">
+        <div className={`border-t border-white/10 ${dividerPaddingClass}`}>
           <p className="text-xs uppercase tracking-[0.22em] text-saffron">
             {tr("Nos services", "Our services")}
           </p>
-          <h2 className="mt-2 font-display text-2xl uppercase tracking-wide text-white">
+          <h2 className={`mt-2 font-display uppercase tracking-wide text-white ${titleClass}`}>
             {tr("A emporter uniquement", "Takeaway only")}
           </h2>
 
           <div className="mt-4 grid gap-2.5">
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-3.5">
-              <p className="text-sm font-bold text-white">{tr("Commande rapide", "Fast ordering")}</p>
-              <p className="mt-2 text-xs leading-5 text-stone-300">
+            <div className={`rounded-2xl border border-white/10 bg-black/20 ${cardPaddingClass}`}>
+              <p className={`font-bold text-white ${serviceTitleClass}`}>{tr("Commande rapide", "Fast ordering")}</p>
+              <p className={`text-stone-300 ${serviceTextClass}`}>
                 {tr(
                   "Commandez, choisissez votre creneau, puis recuperez votre pizza au camion sans attente inutile.",
                   "Order, pick your slot, then collect your pizza at the truck without unnecessary waiting."
                 )}
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-3.5">
-              <p className="text-sm font-bold text-white">{tr("Qualite constante", "Consistent quality")}</p>
-              <p className="mt-2 text-xs leading-5 text-stone-300">
+            <div className={`rounded-2xl border border-white/10 bg-black/20 ${cardPaddingClass}`}>
+              <p className={`font-bold text-white ${serviceTitleClass}`}>{tr("Qualite constante", "Consistent quality")}</p>
+              <p className={`text-stone-300 ${serviceTextClass}`}>
                 {tr(
                   "Une pate preparee en amont, des produits bien calibres et une cuisson minute pour garder un resultat plus stable.",
                   "Prepared dough, well-calibrated ingredients and minute baking for a more reliable result."
@@ -255,15 +279,15 @@ export default function CompactServiceInfoPanel({ className = "", truckTourSched
           </div>
         </div>
 
-        <div className="border-t border-white/10 pt-5">
+        <div className={`border-t border-white/10 ${dividerPaddingClass}`}>
           <p className="text-xs uppercase tracking-[0.22em] text-saffron">
             {tr("Moyens de paiement acceptes", "Accepted payment methods")}
           </p>
-          <h2 className="mt-2 font-display text-2xl uppercase tracking-wide text-white">
+          <h2 className={`mt-2 font-display uppercase tracking-wide text-white ${titleClass}`}>
             {tr("Paiement sur place", "On-site payment")}
           </h2>
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 px-3 py-3">
-            <div className="flex flex-wrap items-center gap-3">
+          <div className={`mt-4 rounded-2xl border border-white/10 bg-black/20 ${compact ? "px-2.5 py-2.5" : "px-3 py-3"}`}>
+            <div className={`flex flex-wrap items-center ${paymentsGapClass}`}>
               {paymentLogos.map((logo) => (
                 <div key={logo.alt} className="flex items-center justify-center">
                   <picture>
