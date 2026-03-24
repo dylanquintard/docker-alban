@@ -24,6 +24,7 @@ export default function CompactReviewsPanel({
   locationId = null,
   limit = 5,
   className = "",
+  compact = false,
 }) {
   const { tr, locale } = useLanguage();
   const [payload, setPayload] = useState({
@@ -77,44 +78,56 @@ export default function CompactReviewsPanel({
     return average.toFixed(1);
   }, [payload.summary?.averageRating]);
 
+  const panelPaddingClass = compact ? "p-5" : "p-6";
+  const badgePaddingClass = compact ? "px-2.5 py-1.5" : "px-3 py-2";
+  const badgeTextClass = compact ? "text-base" : "text-lg";
+  const bodySpacingClass = compact ? "mt-3 space-y-2.5" : "mt-4 space-y-3";
+  const cardPaddingClass = compact ? "p-3.5" : "p-4";
+  const reviewTextClass = compact ? "text-xs leading-5" : "text-sm leading-6";
+  const metaTextClass = compact ? "text-[10px]" : "text-[11px]";
+  const emptyTextClass = compact ? "mt-3 text-xs" : "mt-4 text-sm";
+  const skeletonBodyClass = compact ? "mt-2.5 h-10" : "mt-3 h-12";
+
   return (
-    <section className={`glass-panel p-6 ${className}`.trim()}>
+    <section className={`glass-panel ${panelPaddingClass} ${className}`.trim()}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.24em] text-saffron">
             {tr("Avis clients", "Customer reviews")}
           </p>
         </div>
-        <div className="rounded-2xl border border-saffron/25 bg-saffron/10 px-3 py-2 text-right">
-          <p className="text-lg font-bold text-white">{averageLabel}/5</p>
+        <div
+          className={`rounded-2xl border border-saffron/25 bg-saffron/10 text-right ${badgePaddingClass}`}
+        >
+          <p className={`font-bold text-white ${badgeTextClass}`}>{averageLabel}/5</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="mt-4 space-y-3">
+        <div className={bodySpacingClass}>
           {Array.from({ length: 3 }).map((_, index) => (
             <div
               key={`compact-review-skeleton-${index}`}
-              className="animate-pulse rounded-xl border border-white/10 bg-white/5 p-4"
+              className={`animate-pulse rounded-xl border border-white/10 bg-white/5 ${cardPaddingClass}`}
             >
               <div className="h-4 w-20 rounded bg-white/10" />
-              <div className="mt-3 h-12 rounded bg-white/10" />
+              <div className={`${skeletonBodyClass} rounded bg-white/10`} />
               <div className="mt-3 h-3 w-24 rounded bg-white/10" />
             </div>
           ))}
         </div>
       ) : Array.isArray(payload.reviews) && payload.reviews.length > 0 ? (
-        <div className="mt-4 space-y-3">
+        <div className={bodySpacingClass}>
           {payload.reviews.map((review) => (
             <article
               key={review.id}
-              className="rounded-xl border border-white/10 bg-white/5 p-4"
+              className={`rounded-xl border border-white/10 bg-white/5 ${cardPaddingClass}`}
             >
-              <p className="text-sm tracking-[0.16em] text-saffron">
+              <p className="text-xs tracking-[0.16em] text-saffron">
                 {renderStars(review.rating)}
               </p>
-              <p className="mt-3 text-sm leading-6 text-stone-200">{review.comment}</p>
-              <div className="mt-3 border-t border-white/10 pt-3 text-[11px] text-stone-400">
+              <p className={`mt-3 text-stone-200 ${reviewTextClass}`}>{review.comment}</p>
+              <div className={`mt-3 border-t border-white/10 pt-3 text-stone-400 ${metaTextClass}`}>
                 <p className="font-semibold uppercase tracking-[0.16em] text-white">
                   {review.customerLabel}
                 </p>
@@ -124,7 +137,7 @@ export default function CompactReviewsPanel({
           ))}
         </div>
       ) : (
-        <p className="mt-4 text-sm text-stone-300">
+        <p className={`text-stone-300 ${emptyTextClass}`}>
           {tr(
             "Aucun avis public n'est encore disponible pour cette location.",
             "No public review is available for this location yet."

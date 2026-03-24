@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import CompactServiceInfoPanel from "../components/common/CompactServiceInfoPanel";
 import PageFaqSection from "../components/common/PageFaqSection";
 import CompactReviewsPanel from "../components/reviews/CompactReviewsPanel";
 import SeoHead from "../components/seo/SeoHead";
@@ -76,37 +77,41 @@ export default function APropos() {
         </div>
       </header>
 
-      <section className="glass-panel p-6">
-        <h2 className="text-xl font-bold text-white">
-          {tr("Ou trouver le camion en Moselle ?", "Where can you find the truck in Moselle?")}
-        </h2>
-        <p className="mt-3 text-sm text-stone-300">
-          {tr(
-            `${companyName} se deplace chaque semaine sur plusieurs communes de Moselle, autour de Thionville et des secteurs voisins.`,
-            `${companyName} moves every week across several towns in Moselle, around Thionville and nearby areas.`
-          )}
-        </p>
-        <p className="mt-3 text-sm text-stone-300">
-          {tr(
-            "Les lieux de passage et les horaires ne sont pas figes. Ils suivent la tournee publiee sur le planning.",
-            "Locations and opening hours are not fixed. They follow the route published in the weekly schedule."
-          )}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link
-            to="/planing"
-            className="rounded-full border border-saffron/70 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
-          >
-            {tr("Voir la tournee de la semaine", "See this week's route")}
-          </Link>
-          <Link
-            to="/menu"
-            className="rounded-full bg-saffron px-4 py-2 text-xs font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300"
-          >
-            {tr("Voir le menu", "See the menu")}
-          </Link>
-        </div>
-      </section>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_336px] lg:items-start">
+        <section className="glass-panel p-6">
+          <h2 className="text-xl font-bold text-white">
+            {tr("Ou trouver le camion en Moselle ?", "Where can you find the truck in Moselle?")}
+          </h2>
+          <p className="mt-3 text-sm text-stone-300">
+            {tr(
+              `${companyName} se deplace chaque semaine sur plusieurs communes de Moselle, autour de Thionville et des secteurs voisins.`,
+              `${companyName} moves every week across several towns in Moselle, around Thionville and nearby areas.`
+            )}
+          </p>
+          <p className="mt-3 text-sm text-stone-300">
+            {tr(
+              "Les lieux de passage et les horaires ne sont pas figes. Ils suivent la tournee publiee sur le planning.",
+              "Locations and opening hours are not fixed. They follow the route published in the weekly schedule."
+            )}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              to="/planing"
+              className="rounded-full border border-saffron/70 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
+            >
+              {tr("Voir la tournee de la semaine", "See this week's route")}
+            </Link>
+            <Link
+              to="/menu"
+              className="rounded-full bg-saffron px-4 py-2 text-xs font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300"
+            >
+              {tr("Voir le menu", "See the menu")}
+            </Link>
+          </div>
+        </section>
+
+        <CompactServiceInfoPanel />
+      </div>
       <PageFaqSection
         pathname="/a-propos"
         title={tr("Questions frequentes", "Frequently asked questions")}

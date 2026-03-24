@@ -4,6 +4,7 @@ import { getCategories } from "../api/category.api";
 import { getPublicGallery } from "../api/gallery.api";
 import { getPublicWeeklySettings } from "../api/timeslot.api";
 import { getAllProductsClient } from "../api/user.api";
+import CompactServiceInfoPanel from "../components/common/CompactServiceInfoPanel";
 import SeoHead from "../components/seo/SeoHead";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../context/SiteSettingsContext";
@@ -676,65 +677,8 @@ const truckTourSchedule = useMemo(
           </div>
 
           <div className="space-y-5 xl:sticky xl:top-28">
-            <article id="emplacements" className="glass-panel p-5 sm:p-6">
-              <p className="theme-light-keep-dark text-xs uppercase tracking-[0.22em] text-saffron">
-                {tr("Emplacements & horaires d'ouverture", "Locations & opening hours")}
-              </p>
-              <h2 className="mt-2 font-display text-3xl uppercase tracking-wide text-white">
-                {tr("Ou nous trouver", "Where to find us")}
-              </h2>
-              <p className="mt-2 text-sm text-stone-400">
-                {tr(
-                  "Les points de passage, jours et horaires actuellement ouverts.",
-                  "Current stops, opening days and available hours."
-                )}
-              </p>
-
-              <div className="mt-5 space-y-3">
-                {truckTourSchedule.length === 0 ? (
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-stone-300">
-                    {tr("Aucun horaire disponible pour le moment.", "No opening hours available for now.")}
-                  </div>
-                ) : (
-                  truckTourSchedule.map((location) => (
-                    <div
-                      key={location.key}
-                      className="rounded-2xl border border-white/10 bg-black/20 p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-white">{location.locationName}</p>
-                          <p className="mt-1 text-xs text-stone-300">{location.address}</p>
-                        </div>
-                        <span className="shrink-0 rounded-full border border-saffron/30 bg-saffron/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-saffron">
-                          {location.dayLabel}
-                        </span>
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {(Array.isArray(location.hours) ? location.hours : []).map((hour) => (
-                          <span
-                            key={hour}
-                            className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-stone-200"
-                          >
-                            {hour}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <Link
-                to="/planing"
-                className="mt-5 inline-flex rounded-full border border-saffron/60 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
-              >
-                {tr("Voir les horaires", "See opening hours")}
-              </Link>
-            </article>
-
-            <article id="services" className="glass-panel p-5 sm:p-6">
+            <CompactServiceInfoPanel truckTourSchedule={truckTourSchedule} />
+            <article id="services" className="hidden">
               <p className="text-xs uppercase tracking-[0.22em] text-saffron">
                 {tr("Nos services", "Our services")}
               </p>
@@ -764,7 +708,7 @@ const truckTourSchedule = useMemo(
               </div>
             </article>
 
-            <article id="paiements" className="glass-panel p-4 sm:p-5">
+            <article id="paiements" className="hidden">
               <p className="theme-light-keep-dark text-xs uppercase tracking-[0.22em] text-saffron">
                 {tr("Moyens de paiement acceptes", "Accepted payment methods")}
               </p>

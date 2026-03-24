@@ -368,6 +368,19 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
   const canonicalSiteUrl = String(settings.seo?.canonicalSiteUrl || "").trim();
   const pageTitle = `Pizza ${cityDisplay} | ${siteName}`;
   const pageDescription = `Retrouvez les adresses et horaires d'ouverture pour ${cityDisplay}.`;
+  const introParagraphs = useMemo(
+    () => [
+      tr(
+        `${cityDisplay} fait partie des zones ou le camion pizza propose un retrait simple, rapide et centre sur des horaires clairs. Vous retrouvez ici un point de repere local utile pour savoir quand commander et ou recuperer votre pizza.`,
+        `${cityDisplay} is one of the areas where the pizza truck offers simple pickup, quick service and clear opening times. This page gives you a practical local reference to know when to order and where to collect your pizza.`
+      ),
+      tr(
+        `Cette page locale est surtout la pour vous aider a verifier la couverture, consulter les horaires publies et retrouver les avis lies a cette zone. L'objectif est de garder une information lisible, directe et utile avant votre commande.`,
+        `This local page is mainly here to help you check coverage, browse the published schedule and read reviews tied to this area. The goal is to keep the information readable, direct and useful before you place an order.`
+      ),
+    ],
+    [cityDisplay, tr]
+  );
 
   const locationScheduleCards = useMemo(() => {
     const grouped = new Map();
@@ -546,10 +559,15 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
         <div className="space-y-6">
           <section className="glass-panel min-h-[420px] p-6">
-            <div className="max-w-2xl space-y-3">
+            <div className="max-w-2xl space-y-5">
               <p className="text-xs uppercase tracking-[0.24em] text-saffron">
                 {cityDisplay}
               </p>
+              {introParagraphs.map((paragraph, index) => (
+                <p key={`${resolvedCitySlug}-intro-${index}`} className="text-sm leading-7 text-stone-200">
+                  {paragraph}
+                </p>
+              ))}
             </div>
           </section>
         </div>
@@ -589,7 +607,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
             )}
           </section>
 
-          {reviewLocationId ? <CompactReviewsPanel locationId={reviewLocationId} /> : null}
+          {reviewLocationId ? <CompactReviewsPanel locationId={reviewLocationId} compact /> : null}
         </aside>
       </section>
 
