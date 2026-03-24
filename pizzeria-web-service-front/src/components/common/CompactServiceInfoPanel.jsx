@@ -184,7 +184,7 @@ export default function CompactServiceInfoPanel({
   const dividerPaddingClass = compact ? "pt-4" : "pt-5";
   const serviceTitleClass = compact ? "text-xs" : "text-sm";
   const serviceTextClass = compact ? "mt-1.5 text-[11px] leading-4.5" : "mt-2 text-xs leading-5";
-  const paymentsGapClass = compact ? "gap-2.5" : "gap-3";
+  const paymentsGridClass = compact ? "grid-cols-2 gap-3 sm:grid-cols-4" : "grid-cols-2 gap-3.5 sm:grid-cols-4";
 
   return (
     <section className={`glass-panel ${panelPaddingClass} ${className}`.trim()}>
@@ -253,20 +253,24 @@ export default function CompactServiceInfoPanel({
 
           <div className="mt-4 grid gap-2.5">
             <div className={`rounded-2xl border border-white/10 bg-black/20 ${cardPaddingClass}`}>
-              <p className={`font-bold text-white ${serviceTitleClass}`}>{tr("Commande rapide", "Fast ordering")}</p>
+              <p className={`font-bold text-white ${serviceTitleClass}`}>
+                {tr("Commandez en lignes, recuperer sur place", "Order online, collect on site")}
+              </p>
               <p className={`text-stone-300 ${serviceTextClass}`}>
                 {tr(
-                  "Commandez, choisissez votre creneau, puis recuperez votre pizza au camion sans attente inutile.",
-                  "Order, pick your slot, then collect your pizza at the truck without unnecessary waiting."
+                  "Commandez, choisissez votre creneau, puis recuperez votre pizza au camion, on essaye de garantir un respect des timings de retrait au maximum !",
+                  "Order, choose your time slot, then collect your pizza at the truck. We do our best to keep pickup timing as accurate as possible."
                 )}
               </p>
             </div>
             <div className={`rounded-2xl border border-white/10 bg-black/20 ${cardPaddingClass}`}>
-              <p className={`font-bold text-white ${serviceTitleClass}`}>{tr("Qualite constante", "Consistent quality")}</p>
+              <p className={`font-bold text-white ${serviceTitleClass}`}>
+                {tr("Qualite itallienne", "Italian quality")}
+              </p>
               <p className={`text-stone-300 ${serviceTextClass}`}>
                 {tr(
-                  "Une pate preparee en amont, des produits bien calibres et une cuisson minute pour garder un resultat plus stable.",
-                  "Prepared dough, well-calibrated ingredients and minute baking for a more reliable result."
+                  "Une pate preparee sur place avec la farine d'italie, des produits selectionnes pour leurs qualites et une cuisson minute pour garantir une pizza pleine de saveurs .",
+                  "Dough prepared on site with flour from Italy, carefully selected ingredients and minute baking to guarantee a pizza full of flavor."
                 )}
               </p>
             </div>
@@ -281,9 +285,9 @@ export default function CompactServiceInfoPanel({
             {tr("Paiement sur place", "On-site payment")}
           </h2>
           <div className={`mt-4 rounded-2xl border border-white/10 bg-black/20 ${compact ? "px-2.5 py-2.5" : "px-3 py-3"}`}>
-            <div className={`flex flex-wrap items-center ${paymentsGapClass}`}>
+            <div className={`grid items-center ${paymentsGridClass}`}>
               {paymentLogos.map((logo) => (
-                <div key={logo.alt} className="flex items-center justify-center">
+                <div key={logo.alt} className="flex min-h-[42px] items-center justify-center">
                   <picture>
                     <source srcSet={logo.src} type="image/webp" />
                     <img
