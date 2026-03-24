@@ -81,27 +81,30 @@ export default function Menu() {
   const trustHighlights = useMemo(
     () => [
       {
-        kicker: tr("Produit", "Product"),
-        title: tr("Une pate pensee pour le retrait", "Dough designed for pickup"),
+        kicker: tr("Produit italiens", "Italian products"),
+        title: tr(
+          "De la pate aux ingredients, une selection d'ingredients d'italie pour une pizza de qualitee.",
+          "From dough to toppings, a selection of Italian ingredients for a quality pizza."
+        ),
         text: tr(
-          "La pizza est travaillee pour rester souple, chaude et nette au moment ou elle quitte le camion.",
-          "Each pizza is worked so it stays supple, hot and clean when it leaves the truck."
+          "De la pate aux ingredients, une selection d'ingredients d'italie pour une pizza de qualitee.",
+          "From dough to toppings, a selection of Italian ingredients for a quality pizza."
         ),
       },
       {
         kicker: tr("Service", "Service"),
-        title: tr("Un retrait simple a suivre", "A simple pickup flow"),
+        title: tr("Facilite de commande en ligne", "Easy online ordering"),
         text: tr(
-          "Commande, creneau, puis retrait sur le point de passage actif sans attente inutile.",
-          "Order, choose a timeslot, then collect from the active stop without unnecessary waiting."
+          "Commandez en ligne, choisissez votre creneau, verifiez l'adresse de retrait et retirez votre commande. On garantie un temps d'attente tres limite !",
+          "Order online, choose your timeslot, check the pickup address and collect your order. We keep waiting time as short as possible."
         ),
       },
       {
-        kicker: tr("Selection", "Selection"),
-        title: tr("Des produits italiens bien choisis", "Well-chosen Italian products"),
+        kicker: tr("Notre pate", "Our dough"),
+        title: tr("Une fermentation en 2 temps", "A two-step fermentation"),
         text: tr(
-          "Farine, tomates, mozzarella et charcuteries sont choisis pour leur tenue au four et leur equilibre en bouche.",
-          "Flour, tomatoes, mozzarella and charcuterie are chosen for oven balance and clean flavor."
+          "Nous travaillons pour garantir une pate legere, alveolee et pleine de saveurs a la sortie du four.",
+          "We work to guarantee a light, airy dough full of flavor when it comes out of the oven."
         ),
       },
     ],
