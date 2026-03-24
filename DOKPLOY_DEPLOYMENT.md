@@ -12,6 +12,7 @@ Services inclus :
 - `backend-worker`
 - `frontend`
 - `admin-mobile`
+- `admin-mobile-v2`
 
 Service exclu pour cette phase :
 
@@ -22,6 +23,13 @@ Hypotheses de domaines :
 - site public : `https://alban.flow-os.fr`
 - API : `https://api.alban.flow-os.fr`
 - admin mobile : `https://admin.alban.flow-os.fr`
+- admin mobile V2 : `https://admin-v2.alban.flow-os.fr`
+
+Strategie recommandee :
+
+- garder `admin.alban.flow-os.fr` pour la V1
+- deployer `admin-v2.alban.flow-os.fr` en parallele pour la recette V2
+- ne basculer le domaine principal admin que quand la V2 est validee
 
 Fichier d'environnement de base :
 
@@ -59,6 +67,7 @@ A faire avant le deploy :
 - creer un enregistrement `A` pour `alban.flow-os.fr` vers l'IP publique du serveur Dokploy
 - creer un enregistrement `A` pour `api.alban.flow-os.fr` vers l'IP publique du serveur Dokploy
 - creer un enregistrement `A` pour `admin.alban.flow-os.fr` vers l'IP publique du serveur Dokploy
+- creer un enregistrement `A` pour `admin-v2.alban.flow-os.fr` vers l'IP publique du serveur Dokploy
 - attendre la propagation DNS
 
 Verification :
@@ -67,9 +76,10 @@ Verification :
 dig +short alban.flow-os.fr
 dig +short api.alban.flow-os.fr
 dig +short admin.alban.flow-os.fr
+dig +short admin-v2.alban.flow-os.fr
 ```
 
-Les trois doivent pointer vers le serveur Dokploy.
+Les quatre doivent pointer vers le serveur Dokploy.
 
 ### 2. Variables de production
 
@@ -94,7 +104,8 @@ Doivent rester ainsi :
 - `PUBLIC_FRONTEND_URL=https://alban.flow-os.fr`
 - `PUBLIC_BACKEND_URL=https://api.alban.flow-os.fr`
 - `PUBLIC_ADMIN_URL=https://admin.alban.flow-os.fr`
-- `BACKEND_CORS_ORIGINS=https://alban.flow-os.fr,https://admin.alban.flow-os.fr`
+- `PUBLIC_ADMIN_V2_URL=https://admin-v2.alban.flow-os.fr`
+- `BACKEND_CORS_ORIGINS=https://alban.flow-os.fr,https://admin.alban.flow-os.fr,https://admin-v2.alban.flow-os.fr`
 
 ### 3. Volumes et persistance
 
@@ -118,6 +129,7 @@ Configurer ces domaines :
 - `frontend` vers `alban.flow-os.fr` sur le port conteneur `8000`
 - `backend` vers `api.alban.flow-os.fr` sur le port conteneur `5000`
 - `admin-mobile` vers `admin.alban.flow-os.fr` sur le port conteneur `80`
+- `admin-mobile-v2` vers `admin-v2.alban.flow-os.fr` sur le port conteneur `80`
 
 Ne pas attacher de domaine a :
 
@@ -147,6 +159,7 @@ A faire juste apres deploy :
 - verifier que les categories se chargent
 - verifier qu'une commande peut etre lue
 - verifier que les uploads/images publiques se chargent
+- verifier que `https://admin-v2.alban.flow-os.fr` charge
 
 ## Procedure Dokploy
 
@@ -209,6 +222,17 @@ Dans Dokploy, ajouter ces domaines :
 
 - Host : `admin.alban.flow-os.fr`
 - Service : `admin-mobile`
+- Container Port : `80`
+- HTTPS : active
+- Certificate : `letsencrypt`
+- Path : vide
+- Internal Path : vide
+- Strip Path : desactive
+
+### Domaine 4
+
+- Host : `admin-v2.alban.flow-os.fr`
+- Service : `admin-mobile-v2`
 - Container Port : `80`
 - HTTPS : active
 - Certificate : `letsencrypt`
@@ -282,6 +306,7 @@ Checks HTTP :
 - `https://api.alban.flow-os.fr/readyz` doit renvoyer `200`
 - `https://alban.flow-os.fr` doit charger
 - `https://admin.alban.flow-os.fr` doit charger
+- `https://admin-v2.alban.flow-os.fr` doit charger
 
 Checks metier :
 
@@ -314,10 +339,11 @@ Apres stabilisation :
 Passer en `GO` uniquement si tout est vrai :
 
 - les 3 DNS pointent vers le serveur Dokploy
+- le 4e DNS `admin-v2.alban.flow-os.fr` pointe aussi vers le serveur Dokploy
 - les certificats HTTPS sont emis
 - les secrets ont ete remplaces
 - `backend` repond `healthz` et `readyz`
-- `frontend` et `admin-mobile` chargent correctement
+- `frontend`, `admin-mobile` et `admin-mobile-v2` chargent correctement
 - les donnees sont presentes si vous restaurez le dump
 - le login admin fonctionne
 - les images/upload publics fonctionnent

@@ -19,6 +19,10 @@ services:
     ports:
       - "4173:80"
 
+  admin-mobile-v2:
+    ports:
+      - "14174:80"
+
   print-agent:
     ports:
       - "3000:3000"

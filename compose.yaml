@@ -47,7 +47,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-pizzeria}?schema=public
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       SHUTDOWN_TIMEOUT_MS: ${SHUTDOWN_TIMEOUT_MS:-10000}
-      CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:8000,http://localhost:4173}
+      CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:8000,http://localhost:4173,http://localhost:14174}
       FRONTEND_SITE_URL: ${PUBLIC_FRONTEND_URL:-http://localhost:8000}
       UPLOAD_PUBLIC_BASE_URL: ${PUBLIC_BACKEND_URL:-http://localhost:5000}
       TRUST_PROXY: ${TRUST_PROXY:-false}
@@ -128,7 +128,7 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-pizzeria}?schema=public
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
-      CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:8000,http://localhost:4173}
+      CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:8000,http://localhost:4173,http://localhost:14174}
       FRONTEND_SITE_URL: ${PUBLIC_FRONTEND_URL:-http://localhost:8000}
       TRUST_PROXY: ${TRUST_PROXY:-false}
       ENABLE_HSTS: ${ENABLE_HSTS:-false}
@@ -196,6 +196,26 @@ services:
       args:
         VITE_API_BASE_URL: ${PUBLIC_BACKEND_URL:-http://localhost:5000}/api
         VITE_REALTIME_STREAM_URL: ${PUBLIC_BACKEND_URL:-http://localhost:5000}/api/realtime/stream
+        VITE_SW_VERSION: ${VITE_SW_VERSION:-}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  admin-mobile-v2:
+    build:
+      context: ./pizzeria-admin-mobile-v2
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${PUBLIC_BACKEND_URL:-http://localhost:5000}/api
+        VITE_REALTIME_STREAM_URL: ${PUBLIC_BACKEND_URL:-http://localhost:5000}/api/realtime/stream
+        VITE_PUBLIC_ORDER_URL: ${PUBLIC_FRONTEND_URL:-http://localhost:8000}/order
         VITE_SW_VERSION: ${VITE_SW_VERSION:-}
     restart: unless-stopped
     depends_on:
