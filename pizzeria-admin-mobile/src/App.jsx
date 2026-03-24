@@ -521,6 +521,41 @@ export default function App() {
     }
   }
 
+  async function handleReprintAllFailedTickets() {
+    const failedTickets = filteredTickets.filter(
+      (entry) => String(entry?.status || "").toUpperCase() === "FAILED"
+    );
+
+    if (failedTickets.length === 0) {
+      setStatusMessage("Aucun ticket FAILED a reimprimer.");
+      return;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      setTicketsLoading(true);
+      setStatusMessage("");
+
+      for (const ticket of failedTickets) {
+        try {
+          await reprintTicket(ticket.id);
+          successCount += 1;
+        } catch (_error) {
+          failCount += 1;
+        }
+      }
+
+      setStatusMessage(
+        `Reimpression lancee: ${successCount} OK${failCount ? `, ${failCount} en erreur` : ""}`
+      );
+      await loadTickets({ silent: true });
+    } finally {
+      setTicketsLoading(false);
+    }
+  }
+
   function scrollToTop() {
     if (typeof window === "undefined") return;
     const prefersReducedMotion =
@@ -969,38 +1004,6 @@ export default function App() {
                   </>
                 ) : null}
 
-                {clickCollectSection === "tickets" ? (
-                  <>
-                    <label className="search-field">
-                      <input
-                        type="search"
-                        value={ticketSearchQuery}
-                        onChange={(event) => setTicketSearchQuery(event.target.value)}
-                        placeholder="Commande, imprimante, client..."
-                      />
-                    </label>
-
-                    <select
-                      className="filter-select"
-                      value={ticketFilter}
-                      onChange={(event) => setTicketFilter(event.target.value)}
-                    >
-                      <option value="attention">Prioritaires</option>
-                      <option value="error">Erreurs</option>
-                      <option value="healthy">OK</option>
-                      <option value="all">Tous</option>
-                    </select>
-
-                    <button
-                      type="button"
-                      className="ghost-button compact-button"
-                      onClick={() => loadTickets({ silent: true })}
-                      disabled={ticketsLoading}
-                    >
-                      {ticketsLoading ? "Actualisation..." : "Rafraichir"}
-                    </button>
-                  </>
-                ) : null}
               </section>
             ) : null}
 
@@ -1336,6 +1339,69 @@ export default function App() {
 
             {clickCollectSection === "tickets" ? (
               <section className="stack-layout">
+                <section className="panel-card ticket-summary-panel">
+                  <div className="ticket-summary-grid">
+                    <article className="ticket-summary-card ticket-summary-card-error">
+                      <span>Erreurs ticket</span>
+                      <strong>{ticketCounters.error}</strong>
+                    </article>
+                    <article className="ticket-summary-card ticket-summary-card-warning">
+                      <span>A surveiller</span>
+                      <strong>{ticketCounters.warning}</strong>
+                    </article>
+                    <article className="ticket-summary-card ticket-summary-card-healthy">
+                      <span>OK / reimprimable</span>
+                      <strong>{ticketCounters.healthy}</strong>
+                    </article>
+                    <article className="ticket-summary-card ticket-summary-card-neutral">
+                      <span>Tickets visibles</span>
+                      <strong>{filteredTickets.length}</strong>
+                    </article>
+                  </div>
+
+                  <div className="ticket-summary-actions">
+                    <button
+                      type="button"
+                      className="ghost-button compact-button ticket-bulk-reprint-button"
+                      onClick={handleReprintAllFailedTickets}
+                      disabled={ticketsLoading}
+                    >
+                      {ticketsLoading ? "Reimpression..." : "Reimprimer tous les failed"}
+                    </button>
+                  </div>
+                </section>
+
+                <section className="toolbar app-toolbar panel-card">
+                  <label className="search-field">
+                    <input
+                      type="search"
+                      value={ticketSearchQuery}
+                      onChange={(event) => setTicketSearchQuery(event.target.value)}
+                      placeholder="Commande, imprimante, client..."
+                    />
+                  </label>
+
+                  <select
+                    className="filter-select"
+                    value={ticketFilter}
+                    onChange={(event) => setTicketFilter(event.target.value)}
+                  >
+                    <option value="attention">Prioritaires</option>
+                    <option value="error">Erreurs</option>
+                    <option value="healthy">OK</option>
+                    <option value="all">Tous</option>
+                  </select>
+
+                  <button
+                    type="button"
+                    className="ghost-button compact-button"
+                    onClick={() => loadTickets({ silent: true })}
+                    disabled={ticketsLoading}
+                  >
+                    {ticketsLoading ? "Actualisation..." : "Rafraichir"}
+                  </button>
+                </section>
+
                 {ticketsLoading && tickets.length === 0 ? (
                   <div className="panel-card">Chargement des tickets...</div>
                 ) : filteredTickets.length === 0 ? (
