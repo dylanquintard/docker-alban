@@ -539,7 +539,12 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
                 >
                   <div className="detail-head">
                     <div className="detail-modal-summary">
-                      <h2 id="v2-order-detail-title">Commande #{selectedOrder.id}</h2>
+                      <h2 id="v2-order-detail-title">
+                        Commande #{selectedOrder.id}{" "}
+                        <span className={`status-pill ${selectedWorkflowStatus.toLowerCase()}`}>
+                          {getStatusLabel(selectedWorkflowStatus)}
+                        </span>
+                      </h2>
                       <div className="inline-nav">
                         <NavArrow aria-label="Commande precedente" onClick={() => navigateSelection(-1)} disabled={selectedOrderIndex <= 0} />
                         <span>{selectedOrderIndex >= 0 ? `${selectedOrderIndex + 1}/${orderedOrderIds.length}` : "--"}</span>
@@ -547,9 +552,6 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
                       </div>
                     </div>
                     <div className="detail-head-actions">
-                      <span className={`status-pill ${selectedWorkflowStatus.toLowerCase()}`}>
-                        {getStatusLabel(selectedWorkflowStatus)}
-                      </span>
                       <NavArrow aria-label="Fermer le detail de commande" onClick={() => setIsOrderDetailOpen(false)} />
                     </div>
                   </div>
@@ -562,8 +564,8 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
                       <div key={item.id} className="detail-item-row">
                         <div>
                           <strong>{item.quantity}x {item.product?.name || "Produit"}</strong>
-                          {item.addedIngredients?.length ? <p>+ {item.addedIngredients.map((entry) => entry.name).join(", ")}</p> : null}
                           {item.removedIngredients?.length ? <p>- {item.removedIngredients.map((entry) => entry.name).join(", ")}</p> : null}
+                          {item.addedIngredients?.length ? <p>+ {item.addedIngredients.map((entry) => entry.name).join(", ")}</p> : null}
                         </div>
                         <span>{formatPrice(item.unitPrice * item.quantity)}</span>
                       </div>
