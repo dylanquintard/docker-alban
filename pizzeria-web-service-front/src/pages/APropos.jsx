@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import PageFaqSection from "../components/common/PageFaqSection";
-import PublicReviewsSection from "../components/reviews/PublicReviewsSection";
+import CompactReviewsPanel from "../components/reviews/CompactReviewsPanel";
 import SeoHead from "../components/seo/SeoHead";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../context/SiteSettingsContext";
@@ -71,6 +71,9 @@ export default function APropos() {
         >
           {tr("Voir les emplacements et horaires", "See locations and opening hours")}
         </Link>
+        <div className="flex justify-end pt-1">
+          <CompactReviewsPanel className="w-full max-w-[420px]" />
+        </div>
       </header>
 
       <section className="glass-panel p-6">
@@ -104,9 +107,6 @@ export default function APropos() {
           </Link>
         </div>
       </section>
-
-      <PublicReviewsSection className="space-y-5" />
-
       <PageFaqSection
         pathname="/a-propos"
         title={tr("Questions frequentes", "Frequently asked questions")}

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { getLocations } from "../api/location.api";
-import { getPublicReviews } from "../api/review.api";
 import { getSeoLocations } from "../api/seo.api";
 import { getPublicWeeklySettings } from "../api/timeslot.api";
 import PageFaqSection from "../components/common/PageFaqSection";
+import CompactReviewsPanel from "../components/reviews/CompactReviewsPanel";
 import SeoHead from "../components/seo/SeoHead";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../context/SiteSettingsContext";
@@ -64,24 +64,6 @@ function getSeoLocationLabel(location) {
 
 function buildLocationCardKey(locationName, address) {
   return `${String(locationName || "").trim()}|${String(address || "").trim()}`;
-}
-
-function formatReviewDate(value, locale) {
-  if (!value) return "";
-  try {
-    return new Intl.DateTimeFormat(locale, {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    }).format(new Date(value));
-  } catch (_err) {
-    return "";
-  }
-}
-
-function renderStars(rating) {
-  const score = Math.max(0, Math.min(5, Number(rating) || 0));
-  return Array.from({ length: 5 }, (_value, index) => (index < score ? "\u2605" : "\u2606")).join("");
 }
 
 function normalizeSeoCatalogEntries(entries) {
@@ -181,7 +163,7 @@ function CityPageNotFound({ citySlug }) {
 }
 
 export default function CitySeoPage({ forcedCitySlug = "" }) {
-  const { locale, tr } = useLanguage();
+  const { tr } = useLanguage();
   const { settings } = useSiteSettings();
   const location = useLocation();
   const params = useParams();
@@ -199,12 +181,6 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
   const [seoCatalog, setSeoCatalog] = useState([]);
   const [locations, setLocations] = useState([]);
   const [allowedLoaded, setAllowedLoaded] = useState(false);
-  const [reviewsPayload, setReviewsPayload] = useState({
-    summary: { averageRating: 0, totalReviews: 0 },
-    reviews: [],
-  });
-  const [reviewsLoading, setReviewsLoading] = useState(false);
-
   useEffect(() => {
     let cancelled = false;
 
@@ -432,52 +408,6 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
     return [...grouped.values()];
   }, [cityDisplay, currentBucket?.entries, matchingLocations]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!reviewLocationId) {
-      setReviewsPayload({
-        summary: { averageRating: 0, totalReviews: 0 },
-        reviews: [],
-      });
-      setReviewsLoading(false);
-      return undefined;
-    }
-
-    setReviewsLoading(true);
-
-    getPublicReviews({ locationId: reviewLocationId, limit: 5 })
-      .then((data) => {
-        if (cancelled) return;
-        setReviewsPayload({
-          summary: data?.summary || { averageRating: 0, totalReviews: 0 },
-          reviews: Array.isArray(data?.reviews) ? data.reviews : [],
-        });
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setReviewsPayload({
-          summary: { averageRating: 0, totalReviews: 0 },
-          reviews: [],
-        });
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setReviewsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [reviewLocationId]);
-
-  const averageLabel = useMemo(() => {
-    const average = Number(reviewsPayload.summary?.averageRating || 0);
-    if (!average) return "5.0";
-    return average.toFixed(1);
-  }, [reviewsPayload.summary?.averageRating]);
-
   const cityJsonLd = useMemo(
     () =>
       [
@@ -659,62 +589,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
             )}
           </section>
 
-          {reviewLocationId ? (
-            <section className="glass-panel p-6">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-saffron">
-                    {tr("Avis clients", "Customer reviews")}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-saffron/25 bg-saffron/10 px-3 py-2 text-right">
-                  <p className="text-lg font-bold text-white">{averageLabel}/5</p>
-                </div>
-              </div>
-
-              {reviewsLoading ? (
-                <div className="mt-4 space-y-3">
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <div
-                      key={`city-review-skeleton-${index}`}
-                      className="animate-pulse rounded-xl border border-white/10 bg-white/5 p-4"
-                    >
-                      <div className="h-4 w-20 rounded bg-white/10" />
-                      <div className="mt-3 h-12 rounded bg-white/10" />
-                      <div className="mt-3 h-3 w-24 rounded bg-white/10" />
-                    </div>
-                  ))}
-                </div>
-              ) : Array.isArray(reviewsPayload.reviews) && reviewsPayload.reviews.length > 0 ? (
-                <div className="mt-4 space-y-3">
-                  {reviewsPayload.reviews.map((review) => (
-                    <article
-                      key={review.id}
-                      className="rounded-xl border border-white/10 bg-white/5 p-4"
-                    >
-                      <p className="text-sm tracking-[0.16em] text-saffron">
-                        {renderStars(review.rating)}
-                      </p>
-                      <p className="mt-3 text-sm leading-6 text-stone-200">{review.comment}</p>
-                      <div className="mt-3 border-t border-white/10 pt-3 text-[11px] text-stone-400">
-                        <p className="font-semibold uppercase tracking-[0.16em] text-white">
-                          {review.customerLabel}
-                        </p>
-                        <p className="mt-1">{formatReviewDate(review.createdAt, locale)}</p>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-4 text-sm text-stone-300">
-                  {tr(
-                    "Aucun avis public n'est encore disponible pour cette location.",
-                    "No public review is available for this location yet."
-                  )}
-                </p>
-              )}
-            </section>
-          ) : null}
+          {reviewLocationId ? <CompactReviewsPanel locationId={reviewLocationId} /> : null}
         </aside>
       </section>
 
