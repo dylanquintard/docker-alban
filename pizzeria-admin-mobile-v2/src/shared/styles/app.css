@@ -131,31 +131,32 @@ button {
 .launcher-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
+  justify-items: center;
 }
 
 .launcher-tile {
   display: grid;
-  gap: 8px;
-  align-content: start;
-  min-height: 170px;
-  padding: 16px 12px;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  padding: 10px;
   border-radius: 24px;
-  text-align: left;
-  background: rgba(255, 255, 255, 0.05);
+  background: transparent;
   color: #f4efe7;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 0;
 }
 
 .launcher-icon {
   display: grid;
   place-items: center;
-  width: 62px;
-  height: 62px;
+  width: 78px;
+  height: 78px;
   border-radius: 18px;
   background: linear-gradient(180deg, #f1c64e 0%, #d79b1c 100%);
   color: #16191d;
   font-weight: 700;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
 }
 
 .launcher-icon-image {
@@ -168,15 +169,6 @@ button {
 .launcher-icon-muted {
   background: rgba(255, 255, 255, 0.12);
   color: rgba(244, 239, 231, 0.7);
-}
-
-.launcher-name {
-  font-weight: 700;
-}
-
-.launcher-subtitle {
-  color: rgba(244, 239, 231, 0.65);
-  font-size: 0.92rem;
 }
 
 .app-panel {
@@ -411,6 +403,23 @@ button {
   background: rgba(241, 198, 78, 0.08);
 }
 
+.order-card-head-inline {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+.order-card-head-inline strong {
+  min-width: 0;
+}
+
+.order-card-head-inline .status-pill {
+  flex-shrink: 0;
+}
+
+.order-card-meta-inline {
+  display: block;
+}
+
 .status-pill {
   padding: 6px 10px;
   border-radius: 999px;
@@ -490,6 +499,22 @@ button {
   outline: none;
 }
 
+.detail-head {
+  align-items: flex-start;
+}
+
+.detail-head-actions {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+}
+
+.detail-modal-summary {
+  padding-right: 52px;
+}
+
 .detail-modal-summary,
 .detail-block,
 .detail-item-row,
@@ -518,6 +543,14 @@ button {
   align-items: start;
   padding: 12px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.detail-ingredient-removed {
+  color: #fca5a5;
+}
+
+.detail-ingredient-added {
+  color: #86efac;
 }
 
 .detail-item-row:last-child {
@@ -680,7 +713,7 @@ button {
 
 @media (max-width: 860px) {
   .launcher-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -703,7 +736,14 @@ button {
   }
 
   .launcher-tile {
-    min-height: 148px;
+    width: 84px;
+    height: 84px;
+    padding: 8px;
+  }
+
+  .launcher-icon {
+    width: 72px;
+    height: 72px;
   }
 
   .ticket-summary-grid {
@@ -712,10 +752,18 @@ button {
 
   .detail-grid,
   .detail-footer,
-  .order-card-head,
   .order-card-meta {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .order-card-head-inline {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .order-card-meta-inline {
+    display: block;
   }
 
   .orders-toolbar-top {

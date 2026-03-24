@@ -1,7 +1,6 @@
 export function SystemMenu({
   isOpen,
   notificationLabel,
-  notificationsEnabled,
   onClose,
   onToggleNotifications,
   onLogout,
@@ -27,9 +26,6 @@ export function SystemMenu({
           <span>Notifications</span>
           <strong>{pushActionPending ? "Activation..." : notificationLabel}</strong>
         </button>
-        {notificationsEnabled ? (
-          <p className="system-menu-hint">Les notifications pourront reouvrir directement la bonne app.</p>
-        ) : null}
         <button type="button" className="system-menu-item system-menu-item-danger" onClick={onLogout}>
           <span>Session</span>
           <strong>Deconnecter</strong>

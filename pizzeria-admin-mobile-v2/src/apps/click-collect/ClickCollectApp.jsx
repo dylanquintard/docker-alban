@@ -493,8 +493,16 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
                             const workflowStatus = normalizeWorkflowStatus(order);
                             return (
                               <button type="button" key={order.id} className={`order-card ${String(selectedOrderId) === String(order.id) ? "selected" : ""}`} onClick={() => { setSelectedOrderId(order.id); setIsOrderDetailOpen(true); }}>
-                                <div className="order-card-head"><strong>{getOrderDisplayName(order)}</strong><span className={`status-pill ${workflowStatus.toLowerCase()}`}>{getStatusLabel(workflowStatus)}</span></div>
-                                <div className="order-card-meta"><span>{order.timeSlot?.location?.name || "Lieu non renseigne"}</span><span>{order.timeSlot?.startTime ? formatTimeLabel(order.timeSlot.startTime) : "Heure non renseignee"}</span></div>
+                                <div className="order-card-head order-card-head-inline">
+                                  <strong>{getOrderDisplayName(order)}</strong>
+                                  <span className={`status-pill ${workflowStatus.toLowerCase()}`}>{getStatusLabel(workflowStatus)}</span>
+                                </div>
+                                <div className="order-card-meta order-card-meta-inline">
+                                  <span>
+                                    {order.timeSlot?.location?.name || "Lieu non renseigne"} -{" "}
+                                    {order.timeSlot?.startTime ? formatTimeLabel(order.timeSlot.startTime) : "Heure non renseignee"}
+                                  </span>
+                                </div>
                                 <p className="muted-copy">{order.items?.length || 0} article(s) · {formatPrice(order.total)}</p>
                               </button>
                             );
@@ -564,8 +572,16 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
                       <div key={item.id} className="detail-item-row">
                         <div>
                           <strong>{item.quantity}x {item.product?.name || "Produit"}</strong>
-                          {item.removedIngredients?.length ? <p>- {item.removedIngredients.map((entry) => entry.name).join(", ")}</p> : null}
-                          {item.addedIngredients?.length ? <p>+ {item.addedIngredients.map((entry) => entry.name).join(", ")}</p> : null}
+                          {item.removedIngredients?.length ? (
+                            <p className="detail-ingredient-removed">
+                              - {item.removedIngredients.map((entry) => entry.name).join(", ")}
+                            </p>
+                          ) : null}
+                          {item.addedIngredients?.length ? (
+                            <p className="detail-ingredient-added">
+                              + {item.addedIngredients.map((entry) => entry.name).join(", ")}
+                            </p>
+                          ) : null}
                         </div>
                         <span>{formatPrice(item.unitPrice * item.quantity)}</span>
                       </div>

@@ -286,7 +286,6 @@ export function AppShell() {
               </section>
               <Launcher apps={appRegistry} onOpenApp={openApp} />
               <NotificationCenter
-                activeAppId={routeState.app}
                 pushState={pushState}
                 sessionState={session.state}
               />
@@ -307,7 +306,6 @@ export function AppShell() {
       <SystemMenu
         isOpen={isMenuOpen}
         notificationLabel={getNotificationLabel()}
-        notificationsEnabled={pushState === "active"}
         onClose={() => setIsMenuOpen(false)}
         onToggleNotifications={handleToggleNotifications}
         onLogout={handleLogout}
