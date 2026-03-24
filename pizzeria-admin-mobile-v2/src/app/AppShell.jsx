@@ -277,13 +277,6 @@ export function AppShell() {
           ) : null}
           {routeState.app === "launcher" ? (
             <>
-              <section className="hero-card">
-                <p className="eyebrow">V2</p>
-                <h2>Base mobile type mini OS</h2>
-                <p>
-                  Launcher central, apps separees, deep links et notifications dirigees vers la bonne vue.
-                </p>
-              </section>
               <Launcher apps={appRegistry} onOpenApp={openApp} />
               <NotificationCenter
                 pushState={pushState}
