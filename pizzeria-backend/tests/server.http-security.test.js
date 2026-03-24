@@ -48,5 +48,9 @@ test("server sets baseline security headers", async () => {
       response.headers.get("permissions-policy"),
       "geolocation=(), microphone=(), camera=()"
     );
+    assert.match(
+      response.headers.get("content-security-policy") || "",
+      /default-src 'none'/
+    );
   });
 });

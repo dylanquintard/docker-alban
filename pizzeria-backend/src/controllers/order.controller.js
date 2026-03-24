@@ -138,13 +138,21 @@ async function getOrdersAdmin(req, res) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { date, status, filterUserId } = req.query;
+    const { date, status, filterUserId, paginated, page, limit } = req.query;
     const filters = {};
     if (date) filters.date = date;
     if (status) filters.status = status;
     if (filterUserId) filters.userId = Number(filterUserId);
+    if (page) filters.page = Number(page);
+    if (limit) filters.limit = Number(limit);
 
-    const orders = await orderService.getOrdersAdmin(filters);
+    const shouldPaginate =
+      String(paginated || "").trim().toLowerCase() === "true" ||
+      String(paginated || "").trim() === "1";
+
+    const orders = shouldPaginate
+      ? await orderService.getOrdersAdminPaginated(filters)
+      : await orderService.getOrdersAdmin(filters);
     res.json(orders);
   } catch (err) {
     console.error("getOrdersAdmin error:", err);

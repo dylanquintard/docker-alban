@@ -170,7 +170,6 @@ export default function CompactServiceInfoPanel({
   const panelPaddingClass = compact ? "p-4" : "p-5";
   const sectionSpacingClass = compact ? "space-y-4" : "space-y-5";
   const titleClass = compact ? "text-xl" : "text-2xl";
-  const introClass = compact ? "mt-1.5 text-[11px] leading-4.5" : "mt-2 text-xs leading-5";
   const cardPaddingClass = compact ? "p-3" : "p-3.5";
   const locationTitleClass = compact ? "text-[11px]" : "text-xs";
   const locationMetaClass = compact ? "mt-1 text-[10px] leading-4" : "mt-1 text-[11px] leading-5";

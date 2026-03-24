@@ -14,17 +14,18 @@ import {
   toIsoDate,
 } from "../../shared/lib/formatters";
 import {
-  buildStatusCounters,
   getTicketMonitorLabel,
   getTicketMonitorState,
   getTicketStatusClass,
   getTicketStatusLabel,
   groupOrdersBySlot,
   matchesOrderQuery,
-  matchesStatusFilter,
   matchesTicketQuery,
 } from "../../shared/utils/click-collect";
 import { getRealtimeStreamUrl } from "../../services/realtime/client";
+
+const FOCUSABLE_SELECTOR =
+  "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])";
 
 function NavArrow({ direction = "left", ...props }) {
   return (
@@ -35,6 +36,15 @@ function NavArrow({ direction = "left", ...props }) {
     </button>
   );
 }
+
+const ORDERS_PAGE_SIZE = 20;
+const DEFAULT_STATUS_COUNTS = Object.freeze({
+  total: 0,
+  COMPLETED: 0,
+  FINALIZED: 0,
+  VALIDATE: 0,
+  CANCELED: 0,
+});
 
 export function ClickCollectApp({ activeView, onChangeView, routeState }) {
   const [orders, setOrders] = useState([]);
@@ -58,15 +68,17 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
   const [orderBuilderLoading, setOrderBuilderLoading] = useState(false);
   const [orderBuilderError, setOrderBuilderError] = useState("");
   const [statusNotice, setStatusNotice] = useState(null);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersTotal, setOrdersTotal] = useState(0);
+  const [ordersHasMore, setOrdersHasMore] = useState(false);
+  const [ordersStatusCounts, setOrdersStatusCounts] = useState(DEFAULT_STATUS_COUNTS);
   const noticeTimerRef = useRef(null);
+  const orderDetailDialogRef = useRef(null);
+  const orderDetailPreviousFocusRef = useRef(null);
 
   const filteredOrders = useMemo(
-    () =>
-      orders.filter(
-        (entry) =>
-          matchesStatusFilter(entry, filters.status) && matchesOrderQuery(entry, searchQuery)
-      ),
-    [orders, filters.status, searchQuery]
+    () => orders.filter((entry) => matchesOrderQuery(entry, searchQuery)),
+    [orders, searchQuery]
   );
   const groupedOrders = useMemo(() => groupOrdersBySlot(filteredOrders), [filteredOrders]);
   const groupedKeys = useMemo(() => Object.keys(groupedOrders).sort(), [groupedOrders]);
@@ -77,7 +89,13 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
       null,
     [filteredOrders, selectedOrderId]
   );
-  const statusCounters = useMemo(() => buildStatusCounters(orders), [orders]);
+  const statusCounters = useMemo(
+    () => ({
+      ...DEFAULT_STATUS_COUNTS,
+      ...ordersStatusCounts,
+    }),
+    [ordersStatusCounts]
+  );
   const orderedOrderIds = useMemo(() => filteredOrders.map((entry) => String(entry.id)), [filteredOrders]);
   const selectedOrderIndex = useMemo(
     () => orderedOrderIds.findIndex((entry) => entry === String(selectedOrder?.id || "")),
@@ -111,8 +129,8 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
   }, [menuProducts, selectedMenuCategoryId]);
 
   useEffect(() => {
-    loadOrders();
-  }, [filters.date]);
+    loadOrders({ reset: true });
+  }, [filters.date, filters.status]);
 
   useEffect(() => {
     if (activeView === "tickets") {
@@ -148,6 +166,72 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
     };
   }, [statusNotice]);
 
+  useEffect(() => {
+    if (!isOrderDetailOpen || !selectedOrder) return undefined;
+
+    orderDetailPreviousFocusRef.current =
+      typeof document !== "undefined" ? document.activeElement : null;
+
+    const frameId =
+      typeof window !== "undefined"
+        ? window.requestAnimationFrame(() => {
+            orderDetailDialogRef.current?.focus();
+          })
+        : null;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsOrderDetailOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const dialog = orderDetailDialogRef.current;
+      if (!dialog) return;
+
+      const focusableElements = Array.from(dialog.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
+        (element) =>
+          !element.hasAttribute("disabled") &&
+          element.getAttribute("aria-hidden") !== "true" &&
+          element.tabIndex !== -1
+      );
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      if (frameId !== null && typeof window !== "undefined") {
+        window.cancelAnimationFrame(frameId);
+      }
+      document.removeEventListener("keydown", handleKeyDown);
+
+      const previousFocus = orderDetailPreviousFocusRef.current;
+      if (previousFocus && typeof previousFocus.focus === "function") {
+        previousFocus.focus();
+      }
+    };
+  }, [isOrderDetailOpen, selectedOrder]);
+
   useRealtimeStream({
     enabled: true,
     streamUrl: getRealtimeStreamUrl(),
@@ -165,10 +249,42 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
 
   async function loadOrders(options = {}) {
     const silent = Boolean(options.silent);
+    const reset = Boolean(options.reset);
+    const append = Boolean(options.append);
+    const nextPage = append ? ordersPage + 1 : 1;
+    const requestLimit =
+      append || reset
+        ? ORDERS_PAGE_SIZE
+        : Math.max(ORDERS_PAGE_SIZE, orders.length || ORDERS_PAGE_SIZE);
+
     silent ? setIsRefreshing(true) : setOrdersLoading(true);
     try {
-      const payload = await fetchOrders(filters);
-      setOrders(Array.isArray(payload) ? payload : []);
+      const payload = await fetchOrders(filters, {
+        paginated: true,
+        page: nextPage,
+        limit: requestLimit,
+      });
+      const nextItems = Array.isArray(payload?.items) ? payload.items : [];
+      setOrders((current) => {
+        if (!append) return nextItems;
+
+        const seenIds = new Set(current.map((entry) => String(entry.id)));
+        const merged = [...current];
+        nextItems.forEach((entry) => {
+          if (seenIds.has(String(entry.id))) return;
+          merged.push(entry);
+        });
+        return merged;
+      });
+      setOrdersPage(
+        append ? nextPage : Math.max(1, Math.ceil(nextItems.length / ORDERS_PAGE_SIZE))
+      );
+      setOrdersTotal(Number(payload?.total) || 0);
+      setOrdersHasMore(Boolean(payload?.hasMore));
+      setOrdersStatusCounts({
+        ...DEFAULT_STATUS_COUNTS,
+        ...(payload?.statusCounts || {}),
+      });
       setOrdersError("");
     } catch (error) {
       setOrdersError(error.message || "Impossible de charger les commandes.");
@@ -316,7 +432,9 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
                         <button key={category.id} type="button" className={`switcher-pill ${String(selectedMenuCategoryId) === String(category.id) ? "active" : ""}`} onClick={() => setSelectedMenuCategoryId(category.id)}>{category.name}</button>
                       ))}
                     </div>
-                    {filteredMenuProducts.length === 0 ? <div className="subtle-empty-state">Aucun plat dans cette categorie.</div> : (
+                    {menuCategories.length === 0 ? (
+                      <div className="subtle-empty-state">Aucune categorie active.</div>
+                    ) : filteredMenuProducts.length === 0 ? <div className="subtle-empty-state">Aucun plat dans cette categorie.</div> : (
                       <div className="menu-products-list">
                         {filteredMenuProducts.map((product) => (
                           <button key={product.id} type="button" className="menu-product-row" onClick={() => window.open(PUBLIC_ORDER_URL, "_blank", "noopener,noreferrer")}>{product.name}</button>
@@ -341,7 +459,14 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
                 {ordersError ? <p className="inline-error">{ordersError}</p> : null}
                 <section className="orders-layout mobile-orders-layout">
                   <section className="orders-column panel-card">
-                    <div className="column-head"><div><h3>Commandes a traiter</h3></div><span className="status-pill neutral">{filteredOrders.length} visibles</span></div>
+                    <div className="column-head">
+                      <div><h3>Commandes a traiter</h3></div>
+                      <span className="status-pill neutral">
+                        {searchQuery
+                          ? `${filteredOrders.length} visibles sur ${orders.length} chargees`
+                          : `${orders.length} chargees sur ${ordersTotal}`}
+                      </span>
+                    </div>
                     {ordersLoading ? <div className="subtle-empty-state">Chargement des commandes...</div> : groupedKeys.length === 0 ? (
                       <div className="subtle-empty-state">{searchQuery ? "Aucune commande ne correspond a cette recherche." : "Aucune commande pour cette date."}</div>
                     ) : groupedKeys.map((slot) => (
@@ -361,25 +486,56 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
                         </div>
                       </section>
                     ))}
+                    {!searchQuery && ordersHasMore ? (
+                      <div className="pagination-footer">
+                        <p className="muted-copy">
+                          {orders.length} commande(s) chargee(s) sur {ordersTotal}
+                        </p>
+                        <button
+                          type="button"
+                          className="ghost-button compact-button"
+                          onClick={() => loadOrders({ append: true })}
+                          disabled={ordersLoading || isRefreshing}
+                        >
+                          {ordersLoading || isRefreshing ? "Chargement..." : "Afficher plus"}
+                        </button>
+                      </div>
+                    ) : null}
                   </section>
                 </section>
               </>
             )}
 
             {isOrderDetailOpen && selectedOrder ? (
-              <div className="detail-modal-shell" role="dialog" aria-modal="true">
+              <div
+                className="detail-modal-shell"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="v2-order-detail-title"
+              >
                 <button type="button" className="detail-modal-backdrop" onClick={() => setIsOrderDetailOpen(false)} aria-label="Fermer le detail de commande" />
-                <article className="detail-card detail-modal-card">
+                <article
+                  ref={orderDetailDialogRef}
+                  className="detail-card detail-modal-card"
+                  role="document"
+                  tabIndex={-1}
+                  aria-labelledby="v2-order-detail-title"
+                >
                   <div className="detail-head">
                     <div className="detail-modal-summary">
-                      <h2>Commande #{selectedOrder.id}</h2>
+                      <h2 id="v2-order-detail-title">Commande #{selectedOrder.id}</h2>
                       <div className="inline-nav">
                         <NavArrow aria-label="Commande precedente" onClick={() => navigateSelection(-1)} disabled={selectedOrderIndex <= 0} />
                         <span>{selectedOrderIndex >= 0 ? `${selectedOrderIndex + 1}/${orderedOrderIds.length}` : "--"}</span>
                         <NavArrow direction="right" aria-label="Commande suivante" onClick={() => navigateSelection(1)} disabled={selectedOrderIndex < 0 || selectedOrderIndex >= orderedOrderIds.length - 1} />
                       </div>
                     </div>
-                    <div className="detail-head-actions"><NavArrow aria-label="Fermer le detail de commande" onClick={() => setIsOrderDetailOpen(false)} /></div>
+                    <div className="detail-head-actions">
+                      <span className={`status-pill ${selectedWorkflowStatus.toLowerCase()}`}>
+                        {getStatusLabel(selectedWorkflowStatus)}
+                      </span>
+                      <NavArrow aria-label="Fermer le detail de commande" onClick={() => setIsOrderDetailOpen(false)} />
+                    </div>
                   </div>
                   <div className="detail-grid">
                     <div className="detail-block"><span>Client</span><strong>{getOrderDisplayName(selectedOrder)}</strong><p>{selectedOrder.user?.phone || selectedOrder.user?.email || "Contact non renseigne"}</p></div>

@@ -125,6 +125,8 @@ export default function PizzaSpotlightGallery({ images = [] }) {
           <img
             src={primaryImage.imageUrl}
             alt={primaryImage.altText || primaryImage.title || tr("Photo pizza", "Pizza photo")}
+            loading="eager"
+            decoding="async"
             className="h-72 w-full object-cover transition duration-500 group-hover:scale-[1.03] sm:h-[380px]"
           />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-charcoal/90 to-transparent p-3">
@@ -148,6 +150,8 @@ export default function PizzaSpotlightGallery({ images = [] }) {
                   <img
                     src={image.thumbnailUrl || image.imageUrl}
                     alt={image.altText || image.title || tr("Photo pizza", "Pizza photo")}
+                    loading="lazy"
+                    decoding="async"
                     className="h-24 w-full object-cover transition duration-500 group-hover:scale-105 sm:h-[121px]"
                   />
                 </button>

@@ -175,6 +175,10 @@ test("front server sends baseline security headers", async () => {
       "geolocation=(), microphone=(), camera=()"
     );
     assert.equal(response.headers.get("cross-origin-opener-policy"), "same-origin");
+    assert.match(
+      response.headers.get("content-security-policy") || "",
+      /default-src 'self'/
+    );
   });
 });
 

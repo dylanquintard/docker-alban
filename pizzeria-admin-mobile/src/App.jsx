@@ -201,6 +201,8 @@ export default function App() {
   );
   const shouldOpenOrderDetailRef = useRef(Boolean(pendingOrderIdRef.current));
   const statusTimeoutRef = useRef(null);
+  const orderDetailDialogRef = useRef(null);
+  const orderDetailPreviousFocusRef = useRef(null);
 
   const filteredOrders = useMemo(
     () =>
@@ -278,6 +280,72 @@ export default function App() {
   useEffect(() => {
     bootstrapSession();
   }, []);
+
+  useEffect(() => {
+    if (!isOrderDetailOpen || !selectedOrder) return undefined;
+
+    orderDetailPreviousFocusRef.current =
+      typeof document !== "undefined" ? document.activeElement : null;
+
+    const frameId =
+      typeof window !== "undefined"
+        ? window.requestAnimationFrame(() => {
+            orderDetailDialogRef.current?.focus();
+          })
+        : null;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsOrderDetailOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const dialog = orderDetailDialogRef.current;
+      if (!dialog) return;
+
+      const focusableElements = Array.from(dialog.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
+        (element) =>
+          !element.hasAttribute("disabled") &&
+          element.getAttribute("aria-hidden") !== "true" &&
+          element.tabIndex !== -1
+      );
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      if (frameId !== null && typeof window !== "undefined") {
+        window.cancelAnimationFrame(frameId);
+      }
+      document.removeEventListener("keydown", handleKeyDown);
+
+      const previousFocus = orderDetailPreviousFocusRef.current;
+      if (previousFocus && typeof previousFocus.focus === "function") {
+        previousFocus.focus();
+      }
+    };
+  }, [isOrderDetailOpen, selectedOrder]);
 
   useEffect(() => {
     if (!statusNotice?.message) return undefined;
@@ -1550,17 +1618,28 @@ export default function App() {
             ) : null}
 
             {clickCollectSection === "orders" && isOrderDetailOpen && selectedOrder ? (
-              <div className="detail-modal-shell" role="dialog" aria-modal="true">
+              <div
+                className="detail-modal-shell"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="order-detail-modal-title"
+              >
                 <button
                   type="button"
                   className="detail-modal-backdrop"
                   onClick={() => setIsOrderDetailOpen(false)}
                   aria-label="Fermer le detail de commande"
                 />
-                <article className="detail-card detail-modal-card">
+                <article
+                  ref={orderDetailDialogRef}
+                  className="detail-card detail-modal-card"
+                  role="document"
+                  aria-labelledby="order-detail-modal-title"
+                  tabIndex={-1}
+                >
                   <div className="detail-head">
                     <div className="detail-modal-summary">
-                      <h2>Commande #{selectedOrder.id}</h2>
+                      <h2 id="order-detail-modal-title">Commande #{selectedOrder.id}</h2>
                       <div className="inline-nav">
                         <button
                           type="button"

@@ -137,6 +137,40 @@ function applyAdminStatusFilter(where, status) {
   where.status = parseStatus(normalized);
 }
 
+function buildAdminOrdersWhere(filters = {}) {
+  const where = {};
+
+  if (filters.userId) {
+    where.userId = parsePositiveInt(filters.userId, "userId");
+  }
+
+  if (filters.date) {
+    const startOfDay = new Date(filters.date);
+    if (Number.isNaN(startOfDay.getTime())) {
+      throw new Error("Invalid date");
+    }
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    where.timeSlot = {
+      is: {
+        startTime: { gte: startOfDay, lte: endOfDay },
+      },
+    };
+  }
+
+  applyAdminStatusFilter(where, filters.status);
+  return where;
+}
+
+function clampAdminOrdersLimit(value, fallback = 20) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) return fallback;
+  return Math.min(parsed, 100);
+}
+
 function deriveOrderWorkflowStatus(order, primaryPrintJob) {
   if (order?.status === OrderStatus.CANCELED) {
     return "CANCELED";
@@ -756,30 +790,7 @@ async function finalizeOrder(userId, pickupSelection = {}) {
 }
 
 async function getOrdersAdmin(filters = {}) {
-  const where = {};
-
-  if (filters.userId) {
-    where.userId = parsePositiveInt(filters.userId, "userId");
-  }
-
-  applyAdminStatusFilter(where, filters.status);
-
-  if (filters.date) {
-    const startOfDay = new Date(filters.date);
-    if (Number.isNaN(startOfDay.getTime())) {
-      throw new Error("Invalid date");
-    }
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(startOfDay);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    where.timeSlot = {
-      is: {
-        startTime: { gte: startOfDay, lte: endOfDay },
-      },
-    };
-  }
+  const where = buildAdminOrdersWhere(filters);
 
   const orders = await prisma.order.findMany({
     where,
@@ -788,6 +799,63 @@ async function getOrdersAdmin(filters = {}) {
   });
 
   return formatOrderCollection(orders);
+}
+
+async function getOrdersAdminPaginated(filters = {}) {
+  const page = Math.max(1, parsePositiveInt(filters.page || 1, "page"));
+  const limit = clampAdminOrdersLimit(filters.limit, 20);
+  const skip = (page - 1) * limit;
+  const where = buildAdminOrdersWhere(filters);
+
+  const countFilters = {
+    userId: filters.userId,
+    date: filters.date,
+  };
+
+  const [
+    total,
+    orders,
+    inProgressCount,
+    printedCount,
+    validatedCount,
+    canceledCount,
+  ] = await Promise.all([
+    prisma.order.count({ where }),
+    prisma.order.findMany({
+      where,
+      include: ADMIN_ORDER_INCLUDE,
+      orderBy: [{ timeSlot: { startTime: "asc" } }, { createdAt: "desc" }],
+      skip,
+      take: limit,
+    }),
+    prisma.order.count({
+      where: buildAdminOrdersWhere({ ...countFilters, status: "IN_PROGRESS" }),
+    }),
+    prisma.order.count({
+      where: buildAdminOrdersWhere({ ...countFilters, status: "PRINTED" }),
+    }),
+    prisma.order.count({
+      where: buildAdminOrdersWhere({ ...countFilters, status: "VALIDATE" }),
+    }),
+    prisma.order.count({
+      where: buildAdminOrdersWhere({ ...countFilters, status: "CANCELED" }),
+    }),
+  ]);
+
+  return {
+    items: formatOrderCollection(orders),
+    total,
+    page,
+    limit,
+    hasMore: skip + orders.length < total,
+    statusCounts: {
+      total: inProgressCount + printedCount + validatedCount + canceledCount,
+      COMPLETED: inProgressCount,
+      FINALIZED: printedCount,
+      VALIDATE: validatedCount,
+      CANCELED: canceledCount,
+    },
+  };
 }
 
 async function getOrderById(orderId) {
@@ -967,6 +1035,7 @@ module.exports = {
   removeItemFromCart,
   finalizeOrder,
   getOrdersAdmin,
+  getOrdersAdminPaginated,
   getOrderById,
   updateOrderStatusAdmin,
   deleteOrder,

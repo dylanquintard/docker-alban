@@ -160,6 +160,8 @@ export default function Blog() {
                   <img
                     src={article.featuredImage.imageUrl}
                     alt={article.featuredImage.altText || article.featuredImage.caption || article.title}
+                    loading="lazy"
+                    decoding="async"
                     className="h-40 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                   />
                 </div>

@@ -105,6 +105,7 @@ export default function PizzaPage() {
     language,
     DEFAULT_SITE_SETTINGS.pizzaPage.sectionDescription.fr
   );
+  const siteName = settings.siteName || DEFAULT_SITE_SETTINGS.siteName;
   const trustHighlights = useMemo(
     () => [
       {
@@ -141,7 +142,7 @@ export default function PizzaPage() {
   return (
     <div className="section-shell space-y-10 pb-20 pt-10">
       <SeoHead
-        title={tr("Nos pizzas | Carte", "Our pizzas | Menu")}
+        title={tr(`Nos pizzas | ${siteName}`, `Our pizzas | ${siteName}`)}
         description={tr(
           "Decouvrez une selection de nos pizzas signatures, avec prix et ingredients.",
           "Discover a selection of our signature pizzas, with prices and ingredients."

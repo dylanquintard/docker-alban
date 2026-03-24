@@ -5,32 +5,6 @@ function formatPrice(value) {
   return Number.isFinite(numeric) ? numeric.toFixed(2) : "0.00";
 }
 
-function splitIngredientsByCookingPhase(product) {
-  const entries = Array.isArray(product?.ingredients) ? product.ingredients : [];
-  const classic = [];
-  const afterCooking = [];
-  const recommendedSupplements = [];
-
-  entries.forEach((entry) => {
-    const name = String(entry?.ingredient?.name || "").trim();
-    if (!name) return;
-    if (entry?.isRecommended && entry?.ingredient?.isExtra) {
-      recommendedSupplements.push({
-        name,
-        price: entry?.ingredient?.price,
-      });
-      return;
-    }
-    if (entry?.isAfterCooking) {
-      afterCooking.push(name);
-      return;
-    }
-    classic.push(name);
-  });
-
-  return { classic, afterCooking, recommendedSupplements };
-}
-
 export default function FeaturedPizzaSuggestions({
   products = [],
   tr,

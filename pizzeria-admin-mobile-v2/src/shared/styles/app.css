@@ -345,9 +345,16 @@ button {
 
 .slot-group,
 .slot-orders,
-.ticket-badges {
+.ticket-badges,
+.pagination-footer {
   display: grid;
   gap: 8px;
+}
+
+.pagination-footer {
+  margin-top: 4px;
+  justify-items: center;
+  text-align: center;
 }
 
 .slot-header {
@@ -450,6 +457,7 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.08);
   display: grid;
   gap: 14px;
+  outline: none;
 }
 
 .detail-modal-summary,

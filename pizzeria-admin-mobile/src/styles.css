@@ -799,6 +799,7 @@ button {
   overflow: auto;
   margin: auto;
   padding-top: 18px;
+  outline: none;
 }
 
 .detail-close-button {

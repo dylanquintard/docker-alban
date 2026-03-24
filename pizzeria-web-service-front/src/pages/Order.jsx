@@ -89,56 +89,6 @@ function isPizzaCategoryLabel(value) {
   return normalizeText(value).includes("pizza");
 }
 
-function splitIngredientsByCookingPhase(product) {
-  const entries = Array.isArray(product?.ingredients) ? product.ingredients : [];
-  const classic = [];
-  const afterCooking = [];
-  const recommendedSupplements = [];
-
-  entries.forEach((entry) => {
-    const name = String(entry?.ingredient?.name || "").trim();
-    if (!name) return;
-    if (entry?.isRecommended && entry?.ingredient?.isExtra) {
-      recommendedSupplements.push({
-        name,
-        price: entry?.ingredient?.price,
-      });
-      return;
-    }
-    if (entry?.isAfterCooking) {
-      afterCooking.push(name);
-      return;
-    }
-    classic.push(name);
-  });
-
-  return { classic, afterCooking, recommendedSupplements };
-}
-
-function buildIngredientSummaryParts(product, tr) {
-  const { classic, afterCooking, recommendedSupplements } = splitIngredientsByCookingPhase(product);
-  if (classic.length === 0 && afterCooking.length === 0 && recommendedSupplements.length === 0) {
-    return null;
-  }
-  const afterLabel = tr("Après cuisson", "After cooking");
-  const classicText = classic.length > 0 ? classic.join(" - ") : "";
-  const afterText = afterCooking.length > 0 ? `${afterLabel}: ${afterCooking.join(" - ")}` : "";
-  const recommendationLabel = tr("Supplement", "Supplement");
-  const recommendedText =
-    recommendedSupplements.length > 0
-      ? `[ ${recommendationLabel}: ${recommendedSupplements
-          .map((item) => {
-            const numericPrice = Number(item?.price);
-            const priceText = Number.isFinite(numericPrice)
-              ? `${numericPrice.toFixed(2)} EUR`
-              : "? EUR";
-            return `"${item?.name || ""}" + ${priceText}`;
-          })
-          .join(" - ")} ]`
-      : "";
-  return { classicText, afterText, recommendedText };
-}
-
 function isCustomizableProduct(product, categoryTitle) {
   if (!product) return false;
 
@@ -1607,6 +1557,7 @@ export default function Order() {
         title={orderPageTitle}
         description={orderPageDescription}
         pathname="/order"
+        robots="noindex,nofollow"
         jsonLd={buildBaseFoodEstablishmentJsonLd({
           pagePath: "/order",
           pageName: orderPageTitle,

@@ -111,6 +111,38 @@ const SITEMAP_STATIC_ROUTES = new Set([
   "/conditions-generales",
 ]);
 
+function buildContentSecurityPolicy(req) {
+  const canonicalBase = normalizeAbsoluteHttpUrl(getCanonicalBaseUrl(req));
+  const backendOrigin = normalizeAbsoluteHttpUrl(buildBackendOriginUrl());
+  const connectSources = [
+    "'self'",
+    canonicalBase,
+    backendOrigin,
+    "https:",
+    "http://localhost:*",
+    "ws:",
+    "wss:",
+  ].filter(Boolean);
+  const imageSources = ["'self'", "data:", "blob:", canonicalBase, backendOrigin, "https:"].filter(
+    Boolean
+  );
+
+  return [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "form-action 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    `img-src ${Array.from(new Set(imageSources)).join(" ")}`,
+    "font-src 'self' data: https:",
+    `connect-src ${Array.from(new Set(connectSources)).join(" ")}`,
+    "worker-src 'self' blob:",
+    "manifest-src 'self'",
+  ].join("; ");
+}
+
 function createInitialSeoCache() {
   return {
     expiresAt: 0,
@@ -796,6 +828,12 @@ function buildSeoMeta(pathname, cache) {
         `Articles ${siteName}: pizza napolitaine, cuisson, ingredients italiens et savoir-faire artisanal.`,
       image: defaultImage,
     },
+    "/pizza": {
+      title: `Nos pizzas | ${siteName}`,
+      description:
+        "Decouvrez une selection de nos pizzas signatures, avec prix et ingredients.",
+      image: defaultImage,
+    },
     "/mentions-legales": {
       title: `Mentions legales | ${siteName}`,
       description: `Mentions legales et informations de publication du site ${siteName}.`,
@@ -819,23 +857,10 @@ function buildSeoMeta(pathname, cache) {
     },
   };
 
-  if (pathname === "/pizza") {
-    return {
-      title: "Redirection vers la page locale",
-      description: "Choisissez un emplacement actif pour acceder a la page locale.",
-      robots: "noindex,follow",
-      ogType: "website",
-      pathname,
-      siteName,
-      image: defaultImage,
-      canonicalBaseUrl,
-    };
-  }
-
   if (staticPageMeta[pathname]) {
     return {
       ...staticPageMeta[pathname],
-      robots: "index,follow",
+      robots: NOINDEX_EXACT_ROUTES.has(pathname) ? "noindex,nofollow" : "index,follow",
       ogType: "website",
       pathname,
       siteName,
@@ -849,9 +874,8 @@ function buildSeoMeta(pathname, cache) {
     if (!cache.citySlugs.has(slug)) return null;
     const city = cache.cityLabelsBySlug.get(slug) || titleizeSlug(slug);
     return {
-      title: `Pizza napolitaine ${city} | ${siteName}`,
-      description:
-        `Pizza napolitaine artisanale ${city}: ingredients italiens, cuisson au four a bois et gaz, service a emporter.`,
+      title: `Pizza ${city} - ${siteName}`,
+      description: `Retrouvez les adresses et horaires d'ouverture pour ${city}.`,
       robots: "index,follow",
       ogType: "website",
       pathname,
@@ -1032,6 +1056,7 @@ app.use((req, res, next) => {
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Content-Security-Policy", buildContentSecurityPolicy(req));
 
   const forwardedProto = String(req.headers["x-forwarded-proto"] || "").toLowerCase();
   const isHttps = req.secure || forwardedProto === "https";

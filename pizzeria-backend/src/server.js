@@ -23,6 +23,23 @@ const app = express();
 app.disable("x-powered-by");
 if (TRUST_PROXY) app.set("trust proxy", 1);
 
+function buildContentSecurityPolicy() {
+  return [
+    "default-src 'none'",
+    "base-uri 'none'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "form-action 'self'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https:",
+    "style-src 'self' 'unsafe-inline'",
+    "script-src 'self'",
+    "connect-src 'self'",
+    "manifest-src 'self'",
+    "worker-src 'self' blob:",
+  ].join("; ");
+}
+
 const isAllowedOrigin = (origin) => {
   if (!origin) return true;
   const normalized = normalizeOrigin(origin);
@@ -57,6 +74,7 @@ app.use((req, res, next) => {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+  res.setHeader("Content-Security-Policy", buildContentSecurityPolicy());
   const forwardedProto = req.headers["x-forwarded-proto"];
   const isHttps = req.secure || String(forwardedProto || "").toLowerCase() === "https";
   if (ENABLE_HSTS && isHttps) {

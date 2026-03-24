@@ -259,6 +259,8 @@ export default function BlogArticle({ forcedSlug = "" }) {
                   <img
                     src={paragraph.image.imageUrl}
                     alt={paragraph.image.altText || paragraph.image.caption || paragraph.title}
+                    loading="lazy"
+                    decoding="async"
                     className="h-64 w-full object-cover sm:h-72 lg:h-full lg:min-h-[320px]"
                   />
                   {paragraph.image.caption ? (
