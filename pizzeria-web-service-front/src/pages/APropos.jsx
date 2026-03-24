@@ -86,6 +86,24 @@ export default function APropos() {
       </header>
 
       <div className="flex justify-end">
+        <section className="glass-panel mr-auto max-w-2xl p-6">
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-xl font-bold text-white">Notre camion pizza</h2>
+              <p className="mt-3 text-sm leading-7 text-stone-300">
+                Installe en Moselle, pres de Thionville (57), notre camion pizza vous propose des pizzas artisanales preparees avec soin et passion. Nous venons au plus pres de vous pour partager une cuisine conviviale, genereuse et pleine d'authenticite.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-bold text-white">Notre facon de faire</h2>
+              <p className="mt-3 text-sm leading-7 text-stone-300">
+                Nous selectionnons des produits italiens de qualite pour composer une base d'ingredients savoureuse, avec une pate travaillee facon napolitaine, bien aeree et legere. Le tout est cuit dans un four napolitain au feu de bois, pour offrir des pizzas riches en gout et en caractere.
+              </p>
+            </div>
+          </div>
+        </section>
+
         <CompactServiceInfoPanel className="w-full max-w-[336px]" />
       </div>
       <PageFaqSection
