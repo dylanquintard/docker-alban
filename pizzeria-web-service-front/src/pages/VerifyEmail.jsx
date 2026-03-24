@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { resendEmailVerificationCode, verifyEmailCode } from "../api/user.api";
+import SeoHead from "../components/seo/SeoHead";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -91,8 +92,10 @@ export default function VerifyEmail() {
   };
 
   return (
-    <div className="section-shell py-10">
-      <div className="mx-auto max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
+    <>
+      <SeoHead pathname="/verify-email" robots="noindex,nofollow" />
+      <div className="section-shell py-10">
+        <div className="mx-auto max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
         <p className="text-sm uppercase tracking-[0.25em] text-saffron">
           {tr("Vérification email", "Email verification")}
         </p>
@@ -161,7 +164,8 @@ export default function VerifyEmail() {
             {tr("Retour a la connexion", "Back to login")}
           </Link>
         </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

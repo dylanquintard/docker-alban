@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { updateMe } from "../api/user.api";
+import SeoHead from "../components/seo/SeoHead";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { buildFullName, splitPersonName } from "../utils/personName";
@@ -137,8 +138,10 @@ export default function Profile() {
   const passwordMismatch = Boolean(confirmPassword && newPassword && newPassword !== confirmPassword);
 
   return (
-    <div className="section-shell pb-20 pt-12 sm:pt-14">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <>
+      <SeoHead pathname="/profile" robots="noindex,nofollow" />
+      <div className="section-shell pb-20 pt-12 sm:pt-14">
+        <div className="mx-auto max-w-5xl space-y-6">
         <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md">
           <div className="bg-oven-glow p-6 sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -397,7 +400,8 @@ export default function Profile() {
             )}
           </section>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

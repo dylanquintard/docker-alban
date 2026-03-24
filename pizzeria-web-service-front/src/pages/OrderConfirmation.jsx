@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import SeoHead from "../components/seo/SeoHead";
 import { useLanguage } from "../context/LanguageContext";
 
 function formatPickupTime(value, locale, tr) {
@@ -26,8 +27,10 @@ export default function OrderConfirmation() {
   const orderNote = typeof state.orderNote === "string" ? state.orderNote.trim() : "";
 
   return (
-    <div className="section-shell py-12">
-      <div className="mx-auto max-w-2xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-md sm:p-10">
+    <>
+      <SeoHead pathname={location.pathname || "/order-confirmation"} robots="noindex,nofollow" />
+      <div className="section-shell py-12">
+        <div className="mx-auto max-w-2xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-md sm:p-10">
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-emerald-300/50 bg-emerald-500/20 text-4xl font-black text-emerald-200">
           V
         </div>
@@ -75,7 +78,8 @@ export default function OrderConfirmation() {
             {tr("Retour commande", "Order again")}
           </Link>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

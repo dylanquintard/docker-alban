@@ -5,6 +5,7 @@ import PageFaqSection from "../components/common/PageFaqSection";
 import PizzaSpotlightGallery from "../components/gallery/PizzaSpotlightGallery";
 import FeaturedPizzaSuggestions from "../components/pizza/FeaturedPizzaSuggestions";
 import SeoHead from "../components/seo/SeoHead";
+import TrustHighlightsSection from "../components/trust/TrustHighlightsSection";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../context/SiteSettingsContext";
 import { DEFAULT_SITE_SETTINGS, getLocalizedSiteText } from "../site/siteSettings";
@@ -104,6 +105,38 @@ export default function PizzaPage() {
     language,
     DEFAULT_SITE_SETTINGS.pizzaPage.sectionDescription.fr
   );
+  const trustHighlights = useMemo(
+    () => [
+      {
+        kicker: tr("Produit italiens", "Italian products"),
+        title: tr(
+          "De la pate aux ingredients, une selection d'ingredients d'italie pour une pizza de qualitee.",
+          "From dough to toppings, a selection of Italian ingredients from Italy for a quality pizza."
+        ),
+        text: tr(
+          "De la pate aux ingredients, une selection d'ingredients d'italie pour une pizza de qualitee.",
+          "From dough to toppings, a selection of Italian ingredients from Italy for a quality pizza."
+        ),
+      },
+      {
+        kicker: tr("Service", "Service"),
+        title: tr("Facilite de commande en ligne", "Easy online ordering"),
+        text: tr(
+          "Commandez en ligne, choisissez votre creneau, verifiez l'adresse de retrait et retirez votre commande. On garantie un temps d'attente tres limite !",
+          "Order online, choose your timeslot, check the pickup address and collect your order. We keep waiting time as short as possible."
+        ),
+      },
+      {
+        kicker: tr("Notre pate", "Our dough"),
+        title: tr("Une fermentation en 2 temps", "A two-step fermentation"),
+        text: tr(
+          "Nous travaillons pour garantir une pate legere, alveolee et pleine de saveurs a la sortie du four.",
+          "We work to guarantee a light, airy dough full of flavor when it comes out of the oven."
+        ),
+      },
+    ],
+    [tr]
+  );
 
   return (
     <div className="section-shell space-y-10 pb-20 pt-10">
@@ -166,6 +199,11 @@ export default function PizzaPage() {
           </div>
         </section>
       </section>
+
+      <TrustHighlightsSection
+        items={trustHighlights}
+        className="px-0"
+      />
 
       <section className="space-y-3">
         <h2 className="font-display text-3xl uppercase tracking-[0.08em] text-white sm:text-4xl">

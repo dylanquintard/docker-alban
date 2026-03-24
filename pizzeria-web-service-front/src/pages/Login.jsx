@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { loginUser } from "../api/user.api";
+import SeoHead from "../components/seo/SeoHead";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -47,8 +48,10 @@ export default function Login() {
   };
 
   return (
-    <div className="section-shell py-10">
-      <div className="mx-auto max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
+    <>
+      <SeoHead pathname="/login" robots="noindex,nofollow" />
+      <div className="section-shell py-10">
+        <div className="mx-auto max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
         <p className="text-sm uppercase tracking-[0.25em] text-saffron">{tr("Connexion", "Login")}</p>
         <h1 className="mt-2 font-display text-4xl uppercase tracking-wide text-white">{tr("Espace client", "Sign in to your account")}</h1>
 
@@ -95,7 +98,8 @@ export default function Login() {
             {tr("Créer un compte", "Create your account")}
           </Link>
         </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

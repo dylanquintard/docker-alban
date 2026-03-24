@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { forgotPassword } from "../api/user.api";
+import SeoHead from "../components/seo/SeoHead";
 import { useLanguage } from "../context/LanguageContext";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -43,8 +44,10 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="section-shell py-10">
-      <div className="mx-auto max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
+    <>
+      <SeoHead pathname="/forgot-password" robots="noindex,nofollow" />
+      <div className="section-shell py-10">
+        <div className="mx-auto max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
         <p className="text-sm uppercase tracking-[0.25em] text-saffron">
           {tr("Securite compte", "Account security")}
         </p>
@@ -95,7 +98,8 @@ export default function ForgotPassword() {
             {tr("Retour a la connexion", "Back to login")}
           </Link>
         </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

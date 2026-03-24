@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { resetPassword } from "../api/user.api";
+import SeoHead from "../components/seo/SeoHead";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function ResetPassword() {
@@ -84,8 +85,10 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="section-shell py-10">
-      <div className="mx-auto max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
+    <>
+      <SeoHead pathname="/reset-password" robots="noindex,nofollow" />
+      <div className="section-shell py-10">
+        <div className="mx-auto max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
         <p className="text-sm uppercase tracking-[0.25em] text-saffron">
           {tr("Securite compte", "Account security")}
         </p>
@@ -170,7 +173,8 @@ export default function ResetPassword() {
             {tr("Retour a la connexion", "Back to login")}
           </Link>
         </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

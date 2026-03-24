@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import { getUserOrders, saveOrderReview } from "../api/user.api";
+import SeoHead from "../components/seo/SeoHead";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useRealtimeEvents } from "../hooks/useRealtimeEvents";
@@ -211,7 +212,9 @@ export default function UserOrders() {
   );
 
   return (
-    <div className="section-shell space-y-4 py-10">
+    <>
+      <SeoHead pathname="/userorders" robots="noindex,nofollow" />
+      <div className="section-shell space-y-4 py-10">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm uppercase tracking-[0.22em] text-saffron">{tr("Espace client", "My account")}</p>
@@ -440,6 +443,7 @@ export default function UserOrders() {
             </article>
           );
         })}
-    </div>
+      </div>
+    </>
   );
 }
