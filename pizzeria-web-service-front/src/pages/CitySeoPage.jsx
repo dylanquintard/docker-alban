@@ -371,15 +371,15 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
   const introParagraphs = useMemo(
     () => [
       tr(
-        `${cityDisplay} fait partie des zones ou le camion pizza propose un retrait simple, rapide et centre sur des horaires clairs. Vous retrouvez ici un point de repere local utile pour savoir quand commander et ou recuperer votre pizza.`,
-        `${cityDisplay} is one of the areas where the pizza truck offers simple pickup, quick service and clear opening times. This page gives you a practical local reference to know when to order and where to collect your pizza.`
+        "Notre camion pizza\nInstalle en Moselle, pres de Thionville (57), notre camion pizza vous propose des pizzas artisanales preparees avec soin et passion. Nous venons au plus pres de vous pour partager une cuisine conviviale, genereuse et pleine d authenticite.",
+        "Our pizza truck\nBased in Moselle, near Thionville (57), our pizza truck serves handcrafted pizzas made with care and passion. We come close to you to share a friendly, generous and authentic style of cooking."
       ),
       tr(
-        `Cette page locale est surtout la pour vous aider a verifier la couverture, consulter les horaires publies et retrouver les avis lies a cette zone. L'objectif est de garder une information lisible, directe et utile avant votre commande.`,
-        `This local page is mainly here to help you check coverage, browse the published schedule and read reviews tied to this area. The goal is to keep the information readable, direct and useful before you place an order.`
+        "Notre facon de faire\nNous selectionnons des produits italiens de qualite pour composer une base d ingredients savoureuse, avec une pate travaillee facon napolitaine, bien aeree et legere. Le tout est cuit dans un four napolitain au feu de bois, pour offrir des pizzas riches en gout et en caractere.",
+        "Our way of working\nWe select quality Italian products to build a flavorful base of ingredients, with a Neapolitan-style dough that stays airy and light. Everything is baked in a wood-fired Neapolitan oven to deliver pizzas full of taste and character."
       ),
     ],
-    [cityDisplay, tr]
+    [tr]
   );
 
   const locationScheduleCards = useMemo(() => {
