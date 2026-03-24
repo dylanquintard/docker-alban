@@ -1058,9 +1058,11 @@ export default function App() {
           <div className="mobile-os-brand">
             <span className="app-icon-badge launcher-badge">{APP_ICONS.launcher}</span>
             <div>
-              <p className="eyebrow">Tableau mobile</p>
-              <h1>{activeApp === "launcher" ? "Applications admin" : APP_COPY[activeApp].title}</h1>
-              <p className="topbar-copy">{session.user?.email || session.user?.name}</p>
+              <p className="eyebrow">Application mobile</p>
+              <h1>{activeApp === "launcher" ? "Applications" : APP_COPY[activeApp].title}</h1>
+              <p className={`topbar-live-copy ${streamConnected ? "topbar-live-copy-online" : "topbar-live-copy-offline"}`}>
+                Flux en direct : {streamConnected ? "connecte" : "inactif"}
+              </p>
             </div>
           </div>
 
@@ -1122,10 +1124,6 @@ export default function App() {
             </div>
           </div>
         </header>
-
-        {session.state === "authenticated" && !streamConnected ? (
-          <p className="inline-error">FLUX EN DIRECT INACTIF</p>
-        ) : null}
 
         {isStatusNoticeVisible() ? (
           <p className={statusNotice.tone === "error" ? "inline-error" : "inline-success"}>

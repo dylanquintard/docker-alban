@@ -186,6 +186,21 @@ button {
   font-size: 13px;
 }
 
+.topbar-live-copy {
+  margin: 4px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.topbar-live-copy-online {
+  color: var(--success);
+}
+
+.topbar-live-copy-offline {
+  color: var(--danger);
+}
+
 .intro-copy {
   margin: 18px 0 0;
   line-height: 1.6;
@@ -762,7 +777,11 @@ button {
   display: flex;
   align-items: stretch;
   justify-content: center;
-  padding: 12px;
+  padding:
+    max(12px, env(safe-area-inset-top, 0px) + 8px)
+    max(12px, env(safe-area-inset-right, 0px) + 6px)
+    max(12px, env(safe-area-inset-bottom, 0px) + 8px)
+    max(12px, env(safe-area-inset-left, 0px) + 6px);
 }
 
 .detail-modal-backdrop {
@@ -1115,14 +1134,18 @@ button {
   }
 
   .detail-modal-shell {
-    padding: 0;
+    padding:
+      max(0px, env(safe-area-inset-top, 0px))
+      max(0px, env(safe-area-inset-right, 0px))
+      max(0px, env(safe-area-inset-bottom, 0px))
+      max(0px, env(safe-area-inset-left, 0px));
   }
 
   .detail-modal-card {
     width: 100%;
-    min-height: 100%;
+    min-height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     border-radius: 0;
-    padding-top: 10px;
+    padding-top: max(10px, env(safe-area-inset-top, 0px) + 8px);
   }
 
   .inline-nav {

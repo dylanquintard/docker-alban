@@ -90,7 +90,7 @@ describe("App integration", () => {
 
     render(<App />);
 
-    expect(await screen.findByText("Applications admin")).toBeTruthy();
+    expect(await screen.findByText("Applications")).toBeTruthy();
     await waitFor(() => {
       expect(ordersApi.fetchOrders).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -116,7 +116,7 @@ describe("App integration", () => {
     });
     fireEvent.click(loginButton);
 
-    expect(await screen.findByText("Applications admin")).toBeTruthy();
+    expect(await screen.findByText("Applications")).toBeTruthy();
     expect(authApi.login).toHaveBeenCalledWith("boss@pizza.test", "super-secret");
   });
 
