@@ -94,12 +94,12 @@ export function AppShell() {
   }
 
   function openApp(appId, view = "") {
-    setRouteState({ app: appId, view, orderId: "", ticketId: "" });
+    setRouteState({ app: appId, view, orderId: "", ticketId: "", source: "" });
     setIsMenuOpen(false);
   }
 
   function goHome() {
-    setRouteState({ app: "launcher", view: "", orderId: "", ticketId: "" });
+    setRouteState({ app: "launcher", view: "", orderId: "", ticketId: "", source: "" });
     setIsMenuOpen(false);
   }
 
@@ -128,10 +128,11 @@ export function AppShell() {
       }
 
       setSession(nextSession);
-      setRouteState((current) => ({
-        app: current.app || "launcher",
-        view: current.view || "",
-      }));
+      setRouteState((current) =>
+        current.source === "push"
+          ? { ...current, source: "" }
+          : { app: "launcher", view: "", orderId: "", ticketId: "", source: "" }
+      );
     } catch (error) {
       setLoginError(error.message || "Connexion impossible.");
     } finally {
@@ -150,7 +151,7 @@ export function AppShell() {
       setSession({ state: "anonymous", user: null });
       setPushState("unknown");
       setNotificationPermission(getBrowserNotificationPermission());
-      setRouteState({ app: "launcher", view: "", orderId: "", ticketId: "" });
+      setRouteState({ app: "launcher", view: "", orderId: "", ticketId: "", source: "" });
       setIsMenuOpen(false);
     }
   }
@@ -280,7 +281,7 @@ export function AppShell() {
               activeAppId={routeState.app}
               activeView={routeState.view}
               onChangeView={(view) =>
-                setRouteState((current) => ({ ...current, view, orderId: "", ticketId: "" }))
+                setRouteState((current) => ({ ...current, view, orderId: "", ticketId: "", source: "" }))
               }
               routeState={routeState}
             />

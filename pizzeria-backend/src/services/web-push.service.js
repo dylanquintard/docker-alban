@@ -199,8 +199,8 @@ function buildOrderPrepPushPayload(order) {
     body: `Heure de retrait : ${pickupLabel}`,
     tag: `order-prep-${order?.id ?? "unknown"}`,
     url: order?.id
-      ? `/?app=clickCollect&section=orders&orderId=${order.id}`
-      : "/?app=clickCollect&section=orders",
+      ? `/?source=push&app=clickCollect&section=orders&orderId=${order.id}`
+      : "/?source=push&app=clickCollect&section=orders",
   };
 }
 
@@ -226,7 +226,7 @@ function buildGroupedOrderPrepPushPayload(orders) {
     title: `${normalizedOrders.length} commandes a preparer pour ${pickupLabel}`,
     body: "Ouvrez Click&Collect pour traiter la file.",
     tag: `order-prep-batch-${pickupLabel.replace(/[^0-9]/g, "") || "unknown"}`,
-    url: "/?app=clickCollect&section=orders",
+    url: "/?source=push&app=clickCollect&section=orders",
   };
 }
 
@@ -236,8 +236,8 @@ function buildTicketFailurePushPayload(job) {
     body: String(job?.lastErrorMessage || "").trim() || "Ticket en erreur",
     tag: `ticket-failed-${job?.id ?? "unknown"}`,
     url: job?.orderId
-      ? `/?app=clickCollect&section=tickets&orderId=${job.orderId}`
-      : "/?app=clickCollect&section=tickets",
+      ? `/?source=push&app=clickCollect&section=tickets&orderId=${job.orderId}`
+      : "/?source=push&app=clickCollect&section=tickets",
   };
 }
 
@@ -257,7 +257,7 @@ function buildGroupedTicketFailurePushPayload(jobs) {
         ? `${uniqueOrderIds.length} commandes concernees.`
         : "Ouvrez les tickets pour verifier les erreurs.",
     tag: "ticket-failed-batch",
-    url: "/?app=clickCollect&section=tickets",
+    url: "/?source=push&app=clickCollect&section=tickets",
   };
 }
 
