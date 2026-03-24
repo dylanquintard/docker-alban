@@ -14,6 +14,7 @@ import {
   syncPushStateWithBackend,
 } from "../services/notifications/push";
 import { clearCsrfToken } from "../shared/lib/api";
+import { useSessionHeartbeat } from "../hooks/useSessionHeartbeat";
 
 export function AppShell() {
   const [routeState, setRouteState] = useState(() => readUrlState());
@@ -80,6 +81,20 @@ export function AppShell() {
     () => getAppDefinition(routeState.app),
     [routeState.app]
   );
+
+  useSessionHeartbeat(session.state === "authenticated", async () => {
+    const result = await bootstrapSession();
+    if (result.state === "authenticated") {
+      setSession(result);
+      return;
+    }
+
+    clearCsrfToken();
+    setSession({ state: "anonymous", user: null });
+    setPushState("unknown");
+    setNotificationPermission(getBrowserNotificationPermission());
+    setRouteState({ app: "launcher", view: "", orderId: "", ticketId: "", source: "" });
+  });
 
   function showStatusNotice(message, tone = "success") {
     const normalized = String(message || "").trim();
