@@ -223,8 +223,8 @@ function buildGroupedOrderPrepPushPayload(orders) {
   const pickupLabel = formatPickupTimeLabel(normalizedOrders[0]?.timeSlot?.startTime);
 
   return {
-    title: `Plusieurs commandes a preparer pour ${pickupLabel}`,
-    body: `${normalizedOrders.length} commandes sont a preparer.`,
+    title: `${normalizedOrders.length} commandes a preparer pour ${pickupLabel}`,
+    body: "Ouvrez Click&Collect pour traiter la file.",
     tag: `order-prep-batch-${pickupLabel.replace(/[^0-9]/g, "") || "unknown"}`,
     url: "/?app=clickCollect&section=orders",
   };
@@ -251,11 +251,11 @@ function buildGroupedTicketFailurePushPayload(jobs) {
   const uniqueOrderIds = [...new Set(normalizedJobs.map((job) => Number(job.orderId || 0)).filter(Boolean))];
 
   return {
-    title: "Plusieurs echecs impressions",
+    title: `${normalizedJobs.length} echecs impressions a verifier`,
     body:
       uniqueOrderIds.length > 0
-        ? `${normalizedJobs.length} tickets en erreur sur ${uniqueOrderIds.length} commandes.`
-        : `${normalizedJobs.length} tickets en erreur.`,
+        ? `${uniqueOrderIds.length} commandes concernees.`
+        : "Ouvrez les tickets pour verifier les erreurs.",
     tag: "ticket-failed-batch",
     url: "/?app=clickCollect&section=tickets",
   };
