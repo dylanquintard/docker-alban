@@ -368,18 +368,24 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
   const canonicalSiteUrl = String(settings.seo?.canonicalSiteUrl || "").trim();
   const pageTitle = `Pizza ${cityDisplay} | ${siteName}`;
   const pageDescription = `Retrouvez les adresses et horaires d'ouverture pour ${cityDisplay}.`;
-  const introParagraphs = useMemo(
+  const introSections = useMemo(
     () => [
-      tr(
-        `${cityDisplay} fait partie des zones ou le camion pizza propose un retrait simple, rapide et centre sur des horaires clairs. Vous retrouvez ici un point de repere local utile pour savoir quand commander et ou recuperer votre pizza.`,
-        `${cityDisplay} is one of the areas where the pizza truck offers simple pickup, quick service and clear opening times. This page gives you a practical local reference to know when to order and where to collect your pizza.`
-      ),
-      tr(
-        `Cette page locale est surtout la pour vous aider a verifier la couverture, consulter les horaires publies et retrouver les avis lies a cette zone. L'objectif est de garder une information lisible, directe et utile avant votre commande.`,
-        `This local page is mainly here to help you check coverage, browse the published schedule and read reviews tied to this area. The goal is to keep the information readable, direct and useful before you place an order.`
-      ),
+      {
+        title: tr("Notre camion pizza", "Our pizza truck"),
+        body: tr(
+          "Installe en Moselle, pres de Thionville (57), notre camion pizza vous propose des pizzas artisanales preparees avec soin et passion. Nous venons au plus pres de vous pour partager une cuisine conviviale, genereuse et pleine d'authenticite.",
+          "Based in Moselle, near Thionville, our pizza truck serves artisan pizzas prepared with care and passion. We come as close as possible to you to share a warm, generous and authentic style of cooking."
+        ),
+      },
+      {
+        title: tr("Notre facon de faire", "How we work"),
+        body: tr(
+          "Nous selectionnons des produits italiens de qualite pour composer une base d'ingredients savoureuse, avec une pate travaillee facon napolitaine, bien aeree et legere. Le tout est cuit dans un four napolitain au feu de bois, pour offrir des pizzas riches en gout et en caractere.",
+          "We select quality Italian products to build a flavorful ingredient base, with a light and airy Neapolitan-style dough. Everything is baked in a wood-fired Neapolitan oven to deliver pizzas full of taste and character."
+        ),
+      },
     ],
-    [cityDisplay, tr]
+    [tr]
   );
 
   const locationScheduleCards = useMemo(() => {
@@ -558,18 +564,22 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
         <div className="space-y-6">
-          <section className="glass-panel min-h-[420px] p-6">
-            <div className="max-w-2xl space-y-5">
-              <p className="text-xs uppercase tracking-[0.24em] text-saffron">
-                {cityDisplay}
-              </p>
-              {introParagraphs.map((paragraph, index) => (
-                <p key={`${resolvedCitySlug}-intro-${index}`} className="text-sm leading-7 text-stone-200">
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-          </section>
+          <div className="grid gap-5">
+            <p className="text-xs uppercase tracking-[0.24em] text-saffron">
+              {cityDisplay}
+            </p>
+            {introSections.map((section, index) => (
+              <section
+                key={`${resolvedCitySlug}-intro-${index}`}
+                className="glass-panel p-6"
+              >
+                <div className="max-w-2xl space-y-3">
+                  <h2 className="text-xl font-bold text-saffron">{section.title}</h2>
+                  <p className="text-base leading-8 text-stone-200">{section.body}</p>
+                </div>
+              </section>
+            ))}
+          </div>
         </div>
 
         <aside className="space-y-6">

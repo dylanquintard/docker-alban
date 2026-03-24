@@ -86,23 +86,21 @@ export default function APropos() {
       </header>
 
       <div className="flex justify-end">
-        <section className="glass-panel mr-auto max-w-2xl p-6">
-          <div className="space-y-5">
-            <div>
-              <h2 className="text-xl font-bold text-white">Notre camion pizza</h2>
-              <p className="mt-3 text-sm leading-7 text-stone-300">
-                Installe en Moselle, pres de Thionville (57), notre camion pizza vous propose des pizzas artisanales preparees avec soin et passion. Nous venons au plus pres de vous pour partager une cuisine conviviale, genereuse et pleine d'authenticite.
-              </p>
-            </div>
+        <div className="mr-auto grid max-w-2xl gap-5">
+          <section className="glass-panel p-6">
+            <h2 className="text-xl font-bold text-saffron">Notre camion pizza</h2>
+            <p className="mt-3 text-base leading-8 text-stone-200">
+              Installe en Moselle, pres de Thionville (57), notre camion pizza vous propose des pizzas artisanales preparees avec soin et passion. Nous venons au plus pres de vous pour partager une cuisine conviviale, genereuse et pleine d'authenticite.
+            </p>
+          </section>
 
-            <div>
-              <h2 className="text-xl font-bold text-white">Notre facon de faire</h2>
-              <p className="mt-3 text-sm leading-7 text-stone-300">
-                Nous selectionnons des produits italiens de qualite pour composer une base d'ingredients savoureuse, avec une pate travaillee facon napolitaine, bien aeree et legere. Le tout est cuit dans un four napolitain au feu de bois, pour offrir des pizzas riches en gout et en caractere.
-              </p>
-            </div>
-          </div>
-        </section>
+          <section className="glass-panel p-6">
+            <h2 className="text-xl font-bold text-saffron">Notre facon de faire</h2>
+            <p className="mt-3 text-base leading-8 text-stone-200">
+              Nous selectionnons des produits italiens de qualite pour composer une base d'ingredients savoureuse, avec une pate travaillee facon napolitaine, bien aeree et legere. Le tout est cuit dans un four napolitain au feu de bois, pour offrir des pizzas riches en gout et en caractere.
+            </p>
+          </section>
+        </div>
 
         <CompactServiceInfoPanel className="w-full max-w-[336px]" />
       </div>
