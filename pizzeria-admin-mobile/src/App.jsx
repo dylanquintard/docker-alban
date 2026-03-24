@@ -168,7 +168,7 @@ export default function App() {
   const [ticketsError, setTicketsError] = useState("");
   const [customersError, setCustomersError] = useState("");
   const [orderBuilderError, setOrderBuilderError] = useState("");
-  const [statusMessage, setStatusMessage] = useState("");
+  const [statusNotice, setStatusNotice] = useState(null);
   const [activeApp, setActiveApp] = useState(() => getInitialApp());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [clickCollectSection, setClickCollectSection] = useState(() =>
@@ -200,6 +200,7 @@ export default function App() {
       : null
   );
   const shouldOpenOrderDetailRef = useRef(Boolean(pendingOrderIdRef.current));
+  const statusTimeoutRef = useRef(null);
 
   const filteredOrders = useMemo(
     () =>
@@ -277,6 +278,26 @@ export default function App() {
   useEffect(() => {
     bootstrapSession();
   }, []);
+
+  useEffect(() => {
+    if (!statusNotice?.message) return undefined;
+
+    if (statusTimeoutRef.current) {
+      window.clearTimeout(statusTimeoutRef.current);
+    }
+
+    statusTimeoutRef.current = window.setTimeout(() => {
+      setStatusNotice(null);
+      statusTimeoutRef.current = null;
+    }, 3_000);
+
+    return () => {
+      if (statusTimeoutRef.current) {
+        window.clearTimeout(statusTimeoutRef.current);
+        statusTimeoutRef.current = null;
+      }
+    };
+  }, [statusNotice]);
 
   useEffect(() => {
     setNotificationPermission(getBrowserNotificationPermission());
@@ -416,7 +437,10 @@ export default function App() {
       return true;
     } catch (error) {
       if (!quiet) {
-        setStatusMessage(error.message || "Session admin indisponible.");
+        showStatusNotice(error.message || "Session admin indisponible.", {
+          tone: "error",
+          scope: "global",
+        });
       }
 
       if (error?.status === 401) {
@@ -424,7 +448,10 @@ export default function App() {
         setSession({ state: "anonymous", user: null });
         setOrders([]);
         setSelectedOrderId(null);
-        setStatusMessage("Session expiree, reconnectez-vous.");
+        showStatusNotice("Session expiree, reconnectez-vous.", {
+          tone: "error",
+          scope: "global",
+        });
       }
 
       return false;
@@ -492,10 +519,15 @@ export default function App() {
           (order) => !seenOrderIdsRef.current.has(String(order.id))
         );
         if (freshOrders.length > 0) {
-          setStatusMessage(
+          showStatusNotice(
             freshOrders.length === 1
               ? `Nouvelle commande recue : #${freshOrders[0].id}`
-              : `${freshOrders.length} nouvelles commandes recues.`
+              : `${freshOrders.length} nouvelles commandes recues.`,
+            {
+              tone: "success",
+              scope: "clickCollect",
+              section: "orders",
+            }
           );
         }
         seenOrderIdsRef.current = nextIds;
@@ -623,20 +655,28 @@ export default function App() {
   async function handleStatusAction(nextStatus) {
     if (!selectedOrder) return;
     try {
-      setStatusMessage("");
       await updateOrderStatus(selectedOrder.id, nextStatus);
       await loadOrders({ silent: true });
-      setStatusMessage(
+      showStatusNotice(
         nextStatus === "FINALIZED"
           ? "Commande terminee."
           : nextStatus === "VALIDATE"
             ? "Commande validee et mail client declenche."
             : nextStatus === "CANCELED"
               ? "Commande annulee."
-              : "Statut de commande mis a jour."
+              : "Statut de commande mis a jour.",
+        {
+          tone: "success",
+          scope: "clickCollect",
+          section: "orders",
+        }
       );
     } catch (error) {
-      setStatusMessage(error.message || "Impossible de mettre a jour le statut.");
+      showStatusNotice(error.message || "Impossible de mettre a jour le statut.", {
+        tone: "error",
+        scope: "clickCollect",
+        section: "orders",
+      });
     }
   }
 
@@ -651,7 +691,10 @@ export default function App() {
     if (!supportsWebPush()) {
       setNotificationPermission("unsupported");
       setPushSubscriptionState("unsupported");
-      setStatusMessage("Notifications indisponibles sur cet appareil.");
+      showStatusNotice("Notifications indisponibles sur cet appareil.", {
+        tone: "error",
+        scope: "clickCollect",
+      });
       return;
     }
 
@@ -663,20 +706,29 @@ export default function App() {
 
       if (permission === "default") {
         setPushSubscriptionState("inactive");
-        setStatusMessage("Notifications non activees.");
+        showStatusNotice("Notifications non activees.", {
+          tone: "error",
+          scope: "clickCollect",
+        });
         return;
       }
 
       if (permission === "denied") {
         setPushSubscriptionState("denied");
-        setStatusMessage("Notifications bloquees. Autorisez-les dans le navigateur.");
+        showStatusNotice("Notifications bloquees. Autorisez-les dans le navigateur.", {
+          tone: "error",
+          scope: "clickCollect",
+        });
         return;
       }
 
       const pushConfig = await getPushPublicKey();
       if (!pushConfig?.enabled || !pushConfig?.publicKey) {
         setPushSubscriptionState("config-missing");
-        setStatusMessage("Push non configure cote serveur.");
+        showStatusNotice("Push non configure cote serveur.", {
+          tone: "error",
+          scope: "clickCollect",
+        });
         return;
       }
 
@@ -695,14 +747,21 @@ export default function App() {
       );
 
       setPushSubscriptionState("active");
-      setStatusMessage(
+      showStatusNotice(
         isStandaloneDisplay()
           ? "Notifications actives sur cet appareil."
-          : "Notifications actives. Sur iPhone, ajoutez aussi l'app a l'ecran d'accueil."
+          : "Notifications actives. Sur iPhone, ajoutez aussi l'app a l'ecran d'accueil.",
+        {
+          tone: "success",
+          scope: "clickCollect",
+        }
       );
     } catch (error) {
       setPushSubscriptionState("error");
-      setStatusMessage(error?.message || "Impossible d'activer les notifications.");
+      showStatusNotice(error?.message || "Impossible d'activer les notifications.", {
+        tone: "error",
+        scope: "clickCollect",
+      });
     } finally {
       setPushActionPending(false);
     }
@@ -733,14 +792,50 @@ export default function App() {
     window.history.replaceState({}, "", url.toString());
   }
 
+  function showStatusNotice(message, options = {}) {
+    const normalizedMessage = String(message || "").trim();
+    if (!normalizedMessage) {
+      setStatusNotice(null);
+      return;
+    }
+
+    setStatusNotice({
+      message: normalizedMessage,
+      tone: options.tone === "error" ? "error" : "success",
+      scope: options.scope || "global",
+      section: options.section || null,
+    });
+  }
+
+  function isStatusNoticeVisible() {
+    if (!statusNotice?.message) return false;
+    if (statusNotice.scope === "global") return true;
+    if (statusNotice.scope === "clickCollect") {
+      if (activeApp !== "clickCollect") return false;
+      if (statusNotice.section && clickCollectSection !== statusNotice.section) return false;
+      return true;
+    }
+    if (statusNotice.scope === "customerInfo") {
+      return activeApp === "customerInfo";
+    }
+    return false;
+  }
+
   async function handleReprintTicket(jobId) {
     try {
-      setStatusMessage("");
       await reprintTicket(jobId);
       await loadTickets({ silent: true });
-      setStatusMessage("Ticket ajoute en reimpression.");
+      showStatusNotice("Ticket ajoute en reimpression.", {
+        tone: "success",
+        scope: "clickCollect",
+        section: "tickets",
+      });
     } catch (error) {
-      setStatusMessage(error.message || "Impossible de reimprimer ce ticket.");
+      showStatusNotice(error.message || "Impossible de reimprimer ce ticket.", {
+        tone: "error",
+        scope: "clickCollect",
+        section: "tickets",
+      });
     }
   }
 
@@ -750,7 +845,11 @@ export default function App() {
     );
 
     if (failedTickets.length === 0) {
-      setStatusMessage("Aucun ticket FAILED a reimprimer.");
+      showStatusNotice("Aucun ticket FAILED a reimprimer.", {
+        tone: "error",
+        scope: "clickCollect",
+        section: "tickets",
+      });
       return;
     }
 
@@ -759,7 +858,6 @@ export default function App() {
 
     try {
       setTicketsLoading(true);
-      setStatusMessage("");
 
       for (const ticket of failedTickets) {
         try {
@@ -770,8 +868,13 @@ export default function App() {
         }
       }
 
-      setStatusMessage(
-        `Reimpression lancee: ${successCount} OK${failCount ? `, ${failCount} en erreur` : ""}`
+      showStatusNotice(
+        `Reimpression lancee: ${successCount} OK${failCount ? `, ${failCount} en erreur` : ""}`,
+        {
+          tone: failCount ? "error" : "success",
+          scope: "clickCollect",
+          section: "tickets",
+        }
       );
       await loadTickets({ silent: true });
     } finally {
@@ -1024,7 +1127,11 @@ export default function App() {
           <p className="inline-error">FLUX EN DIRECT INACTIF</p>
         ) : null}
 
-        {statusMessage ? <p className="inline-success">{statusMessage}</p> : null}
+        {isStatusNoticeVisible() ? (
+          <p className={statusNotice.tone === "error" ? "inline-error" : "inline-success"}>
+            {statusNotice.message}
+          </p>
+        ) : null}
 
         {activeApp === "launcher" ? (
           <>
