@@ -80,13 +80,10 @@ export default function APropos() {
             {tr("Voir le menu", "See the menu")}
           </Link>
         </div>
-        <div className="flex justify-end pt-1">
-          <CompactReviewsPanel compact className="w-full max-w-[336px]" />
-        </div>
       </header>
 
-      <div className="flex justify-end">
-        <div className="mr-auto grid max-w-2xl gap-5">
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_336px] lg:items-start">
+        <div className="grid max-w-2xl gap-5">
           <section className="glass-panel p-6">
             <h2 className="text-xl font-bold text-saffron">Notre camion pizza</h2>
             <p className="mt-3 text-base leading-8 text-stone-200">
@@ -102,8 +99,11 @@ export default function APropos() {
           </section>
         </div>
 
-        <CompactServiceInfoPanel className="w-full max-w-[336px]" />
-      </div>
+        <aside className="space-y-6">
+          <CompactReviewsPanel compact className="w-full" />
+          <CompactServiceInfoPanel className="w-full" />
+        </aside>
+      </section>
       <PageFaqSection
         pathname="/a-propos"
         title={tr("Questions frequentes", "Frequently asked questions")}
