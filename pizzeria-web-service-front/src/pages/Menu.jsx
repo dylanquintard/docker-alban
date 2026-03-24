@@ -7,6 +7,7 @@ import PageFaqSection from "../components/common/PageFaqSection";
 import MenuBoard from "../components/menu/MenuBoard";
 import FeaturedPizzaSuggestions from "../components/pizza/FeaturedPizzaSuggestions";
 import SeoHead from "../components/seo/SeoHead";
+import TrustHighlightsSection from "../components/trust/TrustHighlightsSection";
 import { buildBaseFoodEstablishmentJsonLd } from "../seo/jsonLd";
 import { DEFAULT_SITE_SETTINGS } from "../site/siteSettings";
 
@@ -77,6 +78,35 @@ export default function Menu() {
     const byId = new Map(productsSortedByPrice.map((product) => [Number(product.id), product]));
     return featuredIds.map((id) => byId.get(id)).filter(Boolean);
   }, [featuredIds, productsSortedByPrice]);
+  const trustHighlights = useMemo(
+    () => [
+      {
+        kicker: tr("Produit", "Product"),
+        title: tr("Une pate pensee pour le retrait", "Dough designed for pickup"),
+        text: tr(
+          "La pizza est travaillee pour rester souple, chaude et nette au moment ou elle quitte le camion.",
+          "Each pizza is worked so it stays supple, hot and clean when it leaves the truck."
+        ),
+      },
+      {
+        kicker: tr("Service", "Service"),
+        title: tr("Un retrait simple a suivre", "A simple pickup flow"),
+        text: tr(
+          "Commande, creneau, puis retrait sur le point de passage actif sans attente inutile.",
+          "Order, choose a timeslot, then collect from the active stop without unnecessary waiting."
+        ),
+      },
+      {
+        kicker: tr("Selection", "Selection"),
+        title: tr("Des produits italiens bien choisis", "Well-chosen Italian products"),
+        text: tr(
+          "Farine, tomates, mozzarella et charcuteries sont choisis pour leur tenue au four et leur equilibre en bouche.",
+          "Flour, tomatoes, mozzarella and charcuterie are chosen for oven balance and clean flavor."
+        ),
+      },
+    ],
+    [tr]
+  );
 
   if (loading) {
     return (
@@ -136,6 +166,11 @@ export default function Menu() {
       </header>
 
       <h2 className="sr-only">{tr("Catégories du menu", "Menu categories")}</h2>
+
+      <TrustHighlightsSection
+        items={trustHighlights}
+        className="px-0"
+      />
 
       {featuredProducts.length > 0 ? (
         <section className="space-y-2">

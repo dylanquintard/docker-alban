@@ -80,10 +80,6 @@ const PublicReviewsSection = lazyWithSingleReload(
   () => import("../components/reviews/PublicReviewsSection"),
   "home-public-reviews"
 );
-const TrustHighlightsSection = lazyWithSingleReload(
-  () => import("../components/trust/TrustHighlightsSection"),
-  "home-trust-highlights"
-);
 
 function getInitialIsMobileViewport() {
   if (typeof window === "undefined") {
@@ -874,18 +870,6 @@ const truckTourSchedule = useMemo(
 
       <DeferredSection minHeightClass={CONTENT_SECTION_MIN_HEIGHT_CLASS} rootMargin="380px">
         <PublicReviewsSection />
-      </DeferredSection>
-
-      <DeferredSection minHeightClass={CONTENT_SECTION_MIN_HEIGHT_CLASS} rootMargin="380px">
-        <TrustHighlightsSection
-          eyebrow={tr("Ce qui fait revenir", "Why people come back")}
-          title={tr("Une pizza claire, un retrait fluide, un service mobile serieux", "Clear pizza, smooth pickup, serious mobile service")}
-          intro={tr(
-            "Sans inventer de faux avis, on met en avant les points de confiance qui comptent le plus pour un client local avant de commander.",
-            "Without inventing fake reviews, we highlight the trust points that matter most to local customers before they order."
-          )}
-          items={trustHighlights}
-        />
       </DeferredSection>
 
       <DeferredSection minHeightClass={CONTENT_SECTION_MIN_HEIGHT_CLASS} rootMargin="420px">
