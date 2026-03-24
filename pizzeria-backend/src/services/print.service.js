@@ -1630,6 +1630,7 @@ async function runPrintSchedulerTick() {
     where: {
       status: PrintJobStatus.READY,
       reprintOfJobId: { not: null },
+      attemptCount: { gt: 0 },
       scheduledAt: { lte: reprintReadyFailBefore },
       cancelledAt: null,
     },
@@ -1642,6 +1643,7 @@ async function runPrintSchedulerTick() {
     where: {
       status: PrintJobStatus.READY,
       reprintOfJobId: null,
+      attemptCount: { gt: 0 },
       scheduledAt: { lte: readyFailBefore },
       cancelledAt: null,
     },
@@ -1654,6 +1656,7 @@ async function runPrintSchedulerTick() {
     where: {
       status: PrintJobStatus.READY,
       reprintOfJobId: { not: null },
+      attemptCount: { gt: 0 },
       scheduledAt: { lte: reprintReadyFailBefore },
       cancelledAt: null,
     },
@@ -1669,6 +1672,7 @@ async function runPrintSchedulerTick() {
     where: {
       status: PrintJobStatus.READY,
       reprintOfJobId: null,
+      attemptCount: { gt: 0 },
       scheduledAt: { lte: readyFailBefore },
       cancelledAt: null,
     },
