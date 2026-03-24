@@ -38,13 +38,18 @@ export function useRealtimeStream({
     const refreshTickets = () => {
       ticketsUpdatedRef.current?.();
     };
+    const markConnected = () => {
+      connectionRef.current?.(true);
+    };
 
-    source.onopen = () => connectionRef.current?.(true);
+    source.onopen = markConnected;
     source.onerror = () => connectionRef.current?.(false);
+    source.addEventListener("realtime:connected", markConnected);
     source.addEventListener("orders:admin-updated", refreshOrders);
     source.addEventListener("tickets:admin-updated", refreshTickets);
 
     return () => {
+      source.removeEventListener("realtime:connected", markConnected);
       source.removeEventListener("orders:admin-updated", refreshOrders);
       source.removeEventListener("tickets:admin-updated", refreshTickets);
       source.close();
