@@ -4,6 +4,11 @@ import { clearCsrfToken } from "./lib/api";
 import { fetchMe, login, logout } from "./lib/api/auth";
 import { fetchCustomers } from "./lib/api/customers";
 import { fetchMenuCategories, fetchMenuProducts } from "./lib/api/menu";
+import {
+  getPushPublicKey,
+  removePushSubscription,
+  savePushSubscription,
+} from "./lib/api/notifications";
 import { fetchOrders, updateOrderStatus } from "./lib/api/orders";
 import { fetchTickets, reprintTicket } from "./lib/api/tickets";
 import {
@@ -17,11 +22,6 @@ import {
 } from "./lib/formatters";
 import { useRealtimeStream } from "./hooks/useRealtimeStream";
 import { useSessionHeartbeat } from "./hooks/useSessionHeartbeat";
-import {
-  buildFailedTicketNotification,
-  buildOrderPrepNotification,
-  getNotificationPermission,
-} from "./utils/notificationUtils";
 import {
   buildStatusCounters,
   groupOrdersBySlot,
@@ -37,6 +37,11 @@ import {
   getTicketStatusClass,
   getTicketStatusLabel,
 } from "./utils/formatters";
+import {
+  isStandaloneDisplay,
+  supportsWebPush,
+  urlBase64ToUint8Array,
+} from "./utils/pushUtils";
 
 const APP_ICONS = {
   launcher: "OS",
@@ -66,6 +71,30 @@ const APP_COPY = {
       "Retrouvez rapidement les clients et leurs infos utiles deja presentes quand le service accelere.",
   },
 };
+
+function getSearchParams() {
+  if (typeof window === "undefined") return new URLSearchParams();
+  return new URLSearchParams(window.location.search);
+}
+
+function getInitialApp() {
+  const app = getSearchParams().get("app");
+  if (app === "clickCollect" || app === "customerInfo") return app;
+  return "launcher";
+}
+
+function getInitialClickCollectSection() {
+  const section = getSearchParams().get("section");
+  if (section === "tickets") return "tickets";
+  return "orders";
+}
+
+function getBrowserNotificationPermission() {
+  if (typeof window === "undefined" || typeof window.Notification === "undefined") {
+    return "unsupported";
+  }
+  return window.Notification.permission || "default";
+}
 
 function AppLauncherIcon({ alt, fallback, muted = false, src }) {
   const [hasError, setHasError] = useState(false);
@@ -140,9 +169,11 @@ export default function App() {
   const [customersError, setCustomersError] = useState("");
   const [orderBuilderError, setOrderBuilderError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
-  const [activeApp, setActiveApp] = useState("launcher");
+  const [activeApp, setActiveApp] = useState(() => getInitialApp());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [clickCollectSection, setClickCollectSection] = useState("orders");
+  const [clickCollectSection, setClickCollectSection] = useState(() =>
+    getInitialClickCollectSection()
+  );
   const [isOrderBuilderOpen, setIsOrderBuilderOpen] = useState(false);
   const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false);
   const [selectedMenuCategoryId, setSelectedMenuCategoryId] = useState(null);
@@ -156,19 +187,19 @@ export default function App() {
   });
   const [streamConnected, setStreamConnected] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState(() =>
-    getNotificationPermission()
+    getBrowserNotificationPermission()
   );
+  const [pushSubscriptionState, setPushSubscriptionState] = useState("unknown");
+  const [pushActionPending, setPushActionPending] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const seenOrderIdsRef = useRef(new Set());
-  const notifiedOrderPrepKeysRef = useRef(new Set());
-  const notifiedFailedTicketKeysRef = useRef(new Set());
-  const ticketSnapshotReadyRef = useRef(false);
   const snapshotReadyRef = useRef(false);
   const pendingOrderIdRef = useRef(
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("orderId")
       : null
   );
+  const shouldOpenOrderDetailRef = useRef(Boolean(pendingOrderIdRef.current));
 
   const filteredOrders = useMemo(
     () =>
@@ -248,7 +279,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    setNotificationPermission(getNotificationPermission());
+    setNotificationPermission(getBrowserNotificationPermission());
   }, [session.state]);
 
   useEffect(() => {
@@ -277,6 +308,16 @@ export default function App() {
       loadCustomers();
     }
   }, [activeApp, customers.length, session.state]);
+
+  useEffect(() => {
+    if (session.state !== "authenticated") {
+      setPushSubscriptionState("unknown");
+      return undefined;
+    }
+
+    refreshPushSubscriptionState({ syncWithBackend: true });
+    return undefined;
+  }, [session.state]);
 
   useEffect(() => {
     if (session.state !== "authenticated") return undefined;
@@ -316,6 +357,20 @@ export default function App() {
     }
   }, [selectedOrder]);
 
+  useEffect(() => {
+    if (session.state !== "authenticated") return;
+
+    syncSelectionFromLocation();
+  }, [session.state]);
+
+  useEffect(() => {
+    if (!selectedOrder || !shouldOpenOrderDetailRef.current) return;
+
+    setIsOrderDetailOpen(true);
+    shouldOpenOrderDetailRef.current = false;
+    clearSelectionQueryParams();
+  }, [selectedOrder]);
+
   useRealtimeStream({
     enabled: session.state === "authenticated",
     streamUrl: REALTIME_STREAM_URL,
@@ -330,51 +385,6 @@ export default function App() {
       loadTickets({ silent: true });
     },
   });
-
-  useEffect(() => {
-    const nextFailedKeys = new Set();
-
-    for (const ticket of tickets) {
-      const notification = buildFailedTicketNotification(ticket);
-      if (!notification) continue;
-
-      nextFailedKeys.add(notification.key);
-
-      if (
-        ticketSnapshotReadyRef.current &&
-        !notifiedFailedTicketKeysRef.current.has(notification.key)
-      ) {
-        showBrowserNotification(notification);
-      }
-    }
-
-    ticketSnapshotReadyRef.current = true;
-    notifiedFailedTicketKeysRef.current = nextFailedKeys;
-  }, [notificationPermission, tickets]);
-
-  useEffect(() => {
-    if (session.state !== "authenticated") return undefined;
-
-    const notifyUpcomingOrders = () => {
-      const now = new Date();
-
-      for (const order of orders) {
-        const notification = buildOrderPrepNotification(order, now);
-        if (!notification) continue;
-        if (notifiedOrderPrepKeysRef.current.has(notification.key)) continue;
-
-        showBrowserNotification(notification);
-        notifiedOrderPrepKeysRef.current.add(notification.key);
-      }
-    };
-
-    notifyUpcomingOrders();
-
-    const timer = window.setInterval(notifyUpcomingOrders, 60_000);
-    return () => {
-      window.clearInterval(timer);
-    };
-  }, [notificationPermission, orders, session.state]);
 
   async function bootstrapSession() {
     try {
@@ -421,6 +431,45 @@ export default function App() {
     }
   }
 
+  async function refreshPushSubscriptionState(options = {}) {
+    const { syncWithBackend = false } = options;
+
+    const permission = getBrowserNotificationPermission();
+    setNotificationPermission(permission);
+
+    if (!supportsWebPush()) {
+      setPushSubscriptionState("unsupported");
+      return null;
+    }
+
+    if (permission !== "granted") {
+      setPushSubscriptionState(permission === "denied" ? "denied" : "inactive");
+      return null;
+    }
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) {
+        setPushSubscriptionState("inactive");
+        return null;
+      }
+
+      if (syncWithBackend && session.state === "authenticated") {
+        await savePushSubscription(
+          typeof subscription.toJSON === "function" ? subscription.toJSON() : subscription
+        );
+      }
+
+      setPushSubscriptionState("active");
+      return subscription;
+    } catch (_error) {
+      setPushSubscriptionState("error");
+      return null;
+    }
+  }
+
   async function loadOrders(options = {}) {
     if (session.state !== "authenticated") return;
     const silent = Boolean(options.silent);
@@ -460,11 +509,6 @@ export default function App() {
         ) {
           const matchedId = pendingOrderIdRef.current;
           pendingOrderIdRef.current = null;
-          if (typeof window !== "undefined") {
-            const url = new URL(window.location.href);
-            url.searchParams.delete("orderId");
-            window.history.replaceState({}, "", url.toString());
-          }
           return matchedId;
         }
         if (current && nextOrders.some((entry) => String(entry.id) === String(current))) {
@@ -538,6 +582,24 @@ export default function App() {
   }
 
   async function handleLogout() {
+    if (supportsWebPush()) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        const endpoint = subscription?.endpoint || "";
+
+        if (endpoint) {
+          await removePushSubscription(endpoint);
+        }
+
+        if (subscription) {
+          await subscription.unsubscribe();
+        }
+      } catch (_error) {
+        // Ignore push cleanup issues during logout.
+      }
+    }
+
     try {
       await logout();
     } catch (_error) {
@@ -553,9 +615,8 @@ export default function App() {
       setActiveApp("launcher");
       setIsMenuOpen(false);
       setClickCollectSection("orders");
-      notifiedOrderPrepKeysRef.current = new Set();
-      notifiedFailedTicketKeysRef.current = new Set();
-      ticketSnapshotReadyRef.current = false;
+      setPushSubscriptionState("unknown");
+      setNotificationPermission(getBrowserNotificationPermission());
     }
   }
 
@@ -587,30 +648,89 @@ export default function App() {
   }
 
   async function handleEnableNotifications() {
-    if (typeof window === "undefined" || typeof window.Notification === "undefined") {
+    if (!supportsWebPush()) {
       setNotificationPermission("unsupported");
+      setPushSubscriptionState("unsupported");
       setStatusMessage("Notifications indisponibles sur cet appareil.");
       return;
     }
+
+    setPushActionPending(true);
 
     try {
       const permission = await window.Notification.requestPermission();
       setNotificationPermission(permission);
 
-      if (permission === "granted") {
-        setStatusMessage("Notifications actives sur cet appareil.");
+      if (permission === "default") {
+        setPushSubscriptionState("inactive");
+        setStatusMessage("Notifications non activees.");
         return;
       }
 
       if (permission === "denied") {
+        setPushSubscriptionState("denied");
         setStatusMessage("Notifications bloquees. Autorisez-les dans le navigateur.");
         return;
       }
 
-      setStatusMessage("Notifications non activees.");
-    } catch (_error) {
-      setStatusMessage("Impossible d'activer les notifications.");
+      const pushConfig = await getPushPublicKey();
+      if (!pushConfig?.enabled || !pushConfig?.publicKey) {
+        setPushSubscriptionState("config-missing");
+        setStatusMessage("Push non configure cote serveur.");
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      let subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(pushConfig.publicKey),
+        });
+      }
+
+      await savePushSubscription(
+        typeof subscription.toJSON === "function" ? subscription.toJSON() : subscription
+      );
+
+      setPushSubscriptionState("active");
+      setStatusMessage(
+        isStandaloneDisplay()
+          ? "Notifications actives sur cet appareil."
+          : "Notifications actives. Sur iPhone, ajoutez aussi l'app a l'ecran d'accueil."
+      );
+    } catch (error) {
+      setPushSubscriptionState("error");
+      setStatusMessage(error?.message || "Impossible d'activer les notifications.");
+    } finally {
+      setPushActionPending(false);
     }
+  }
+
+  function syncSelectionFromLocation() {
+    const params = getSearchParams();
+    const nextApp = params.get("app");
+    const nextSection = params.get("section");
+
+    if (nextApp === "clickCollect" || nextApp === "customerInfo") {
+      setActiveApp(nextApp);
+    }
+
+    if (nextSection === "orders" || nextSection === "tickets") {
+      setClickCollectSection(nextSection);
+    }
+  }
+
+  function clearSelectionQueryParams() {
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("app");
+    url.searchParams.delete("section");
+    url.searchParams.delete("orderId");
+
+    window.history.replaceState({}, "", url.toString());
   }
 
   async function handleReprintTicket(jobId) {
@@ -740,30 +860,15 @@ export default function App() {
   }
 
   function getNotificationsMenuLabel() {
-    if (notificationPermission === "granted") return "Notifications actives";
-    if (notificationPermission === "denied") return "Autoriser dans le navigateur";
+    if (pushActionPending) return "Activation...";
+    if (pushSubscriptionState === "active") return "Notifications actives";
+    if (pushSubscriptionState === "config-missing") return "Push non configure";
+    if (pushSubscriptionState === "unsupported") return "Indisponibles ici";
+    if (notificationPermission === "denied" || pushSubscriptionState === "denied") {
+      return "Autoriser dans le navigateur";
+    }
     if (notificationPermission === "unsupported") return "Notifications indisponibles";
     return "Activer les notifications";
-  }
-
-  function showBrowserNotification(notification) {
-    if (notificationPermission !== "granted") return;
-    if (typeof window === "undefined" || typeof window.Notification === "undefined") return;
-
-    try {
-      const browserNotification = new window.Notification(notification.title, {
-        body: notification.body,
-        tag: notification.tag,
-        icon: APP_LOGOS.clickCollect,
-        badge: APP_LOGOS.clickCollect,
-      });
-
-      browserNotification.onclick = () => {
-        window.focus?.();
-      };
-    } catch (_error) {
-      // Ignore browsers that reject foreground notifications.
-    }
   }
 
   if (session.state === "loading") {
@@ -892,6 +997,7 @@ export default function App() {
                         type="button"
                         className="menu-action-button"
                         onClick={handleEnableNotifications}
+                        disabled={pushActionPending}
                         role="menuitem"
                       >
                         <span>Notifications</span>

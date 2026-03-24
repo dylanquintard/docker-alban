@@ -8,6 +8,7 @@ const {
   PrintLogLevel,
 } = require("@prisma/client");
 const prisma = require("../lib/prisma");
+const webPushService = require("./web-push.service");
 const {
   PRINT_SCHEDULER_ENABLED,
   PRINT_SCHEDULER_INTERVAL_MS,
@@ -1624,6 +1625,30 @@ async function runPrintSchedulerTick() {
     reclaimStaleFailedCount = reclaimStaleToFailed.count;
   }
 
+  const readyToFailedReprintJobs = await prisma.printJob.findMany({
+    where: {
+      status: PrintJobStatus.READY,
+      reprintOfJobId: { not: null },
+      scheduledAt: { lte: reprintReadyFailBefore },
+      cancelledAt: null,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const readyToFailedPrimaryJobs = await prisma.printJob.findMany({
+    where: {
+      status: PrintJobStatus.READY,
+      reprintOfJobId: null,
+      scheduledAt: { lte: readyFailBefore },
+      cancelledAt: null,
+    },
+    select: {
+      id: true,
+    },
+  });
+
   const readyToFailedReprints = await prisma.printJob.updateMany({
     where: {
       status: PrintJobStatus.READY,
@@ -1655,6 +1680,11 @@ async function runPrintSchedulerTick() {
   });
 
   const readyToFailed = readyToFailedReprints.count + readyToFailedPrimary.count;
+  const failedJobIdsToNotify = [
+    ...staleClaimedToFailedIds,
+    ...readyToFailedReprintJobs.map((entry) => entry.id),
+    ...readyToFailedPrimaryJobs.map((entry) => entry.id),
+  ];
 
   const printedReprintsDeleted = await prisma.printJob.deleteMany({
     where: {
@@ -1695,6 +1725,15 @@ async function runPrintSchedulerTick() {
     });
     printed_deleted = cleanupResult.count;
     lastPrintJobCleanupAtMs = nowMs;
+  }
+
+  try {
+    if (failedJobIdsToNotify.length > 0) {
+      await webPushService.sendTicketFailurePushesByJobIds(failedJobIdsToNotify);
+    }
+    await webPushService.sendOrderPrepPushesForDueOrders({ now });
+  } catch (error) {
+    console.error("[print-scheduler] web push dispatch failed:", error?.message || error);
   }
 
   return {

@@ -1,4 +1,5 @@
 const printService = require("../services/print.service");
+const webPushService = require("../services/web-push.service");
 const { emitRealtimeEvent } = require("../lib/realtime");
 
 function sendError(res, err, fallbackStatus = 400) {
@@ -101,6 +102,14 @@ async function markJobFail(req, res) {
         },
         { roles: ["ADMIN"] }
       );
+
+      try {
+        await webPushService.sendTicketFailurePushesByJobIds([
+          result?.job_id || req.params.jobId,
+        ]);
+      } catch (pushError) {
+        console.error("[print] failed ticket push dispatch error:", pushError?.message || pushError);
+      }
     }
 
     res.json(result);
