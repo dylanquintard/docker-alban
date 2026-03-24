@@ -122,7 +122,7 @@ const PRINT_SCHEDULER_ENABLED = parseBooleanFlag(process.env.PRINT_SCHEDULER_ENA
 const PRINT_SCHEDULER_INTERVAL_MS = parsePositiveInt(
   process.env.PRINT_SCHEDULER_INTERVAL_MS,
   "PRINT_SCHEDULER_INTERVAL_MS",
-  2_000
+  5_000
 );
 const PRINT_JOB_LOCK_MS = parsePositiveInt(
   process.env.PRINT_JOB_LOCK_MS,

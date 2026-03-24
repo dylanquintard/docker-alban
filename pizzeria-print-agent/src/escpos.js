@@ -61,6 +61,18 @@ function formatPickupTime(value) {
   return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 }
 
+function formatPickupHour(value) {
+  const raw = sanitizeText(value || "");
+  if (!raw) return "-";
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) {
+    return raw;
+  }
+  const hh = String(parsed.getHours()).padStart(2, "0");
+  const min = String(parsed.getMinutes()).padStart(2, "0");
+  return `${hh}:${min}`;
+}
+
 function buildOrderTicketBuffer(payload, options = {}) {
   const order = payload?.order || {};
   const items = Array.isArray(order.items) ? order.items : [];
@@ -70,18 +82,26 @@ function buildOrderTicketBuffer(payload, options = {}) {
   const isCopy = Boolean(payload?.reprint?.source_job_id);
   const ticketStatus = isCopy ? "COPIE" : "ORIGINAL";
   const orderNumber = sanitizeText(order.number || `A-${order.id || "?"}`);
+  const pickupCity = sanitizeText(order?.location?.city || order?.location?.name || "-");
+  const pickupHour = formatPickupHour(order.pickup_time);
+  const orderNote = sanitizeText(order.note || "-");
+  const orderTotal = sanitizeText(order.total || "0.00");
+  const orderCurrency = sanitizeText(order.currency || "EUR");
 
   let text = "";
   text += line(ticketStatus);
   text += line(agentName);
   text += separator();
   text += line(`TICKET COMMANDE N: ${orderNumber}`);
-  text += line(`Heure retrait: ${formatPickupTime(order.pickup_time)}`);
   text += separator();
   text += line("INFOS CLIENT");
   text += line(`Nom: ${customerDisplay.lastName}`);
   text += line(`Prenom: ${customerDisplay.firstName}`);
-  text += line(`Numero: ${sanitizeText(customer.phone || "-")}`);
+  text += line(`Numero client: ${sanitizeText(customer.phone || "-")}`);
+  text += separator();
+  text += line("RETRAIT");
+  text += line(`Ville: ${pickupCity}`);
+  text += line(`Heure retrait: ${pickupHour}`);
   text += separator();
   text += line("DETAILS COMMANDE");
 
@@ -102,10 +122,8 @@ function buildOrderTicketBuffer(payload, options = {}) {
   }
 
   text += separator();
-  text += line(`Total: ${sanitizeText(order.total || "0.00")} ${sanitizeText(order.currency || "EUR")}`);
-  if (order.note) {
-    text += line(`Note: ${sanitizeText(order.note)}`);
-  }
+  text += line(`Note commande: ${orderNote}`);
+  text += line(`Prix total: ${orderTotal} ${orderCurrency}`);
   text += "\n\n";
 
   const initialize = Buffer.from([0x1b, 0x40]);

@@ -103,7 +103,7 @@ const config = {
   printerCode: printers[0].code,
   printerIp: printers[0].ip,
   printerPort: printers[0].port,
-  pollMs: numberFromEnv("POLL_MS", 3000),
+  pollMs: numberFromEnv("POLL_MS", 5000),
   heartbeatMs: numberFromEnv("HEARTBEAT_MS", 10000),
   requestTimeoutMs: numberFromEnv("REQUEST_TIMEOUT_MS", 10000),
   socketTimeoutMs: numberFromEnv("SOCKET_TIMEOUT_MS", 5000),

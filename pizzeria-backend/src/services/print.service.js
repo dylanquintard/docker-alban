@@ -400,6 +400,7 @@ function buildOrderTicketPayload({ order, printerCode, scheduledAt, ticketItems 
         : null,
       location: {
         name: location?.name || "",
+        city: location?.city || location?.name || "",
         address: [location?.addressLine1, `${location?.postalCode || ""} ${location?.city || ""}`.trim()]
           .filter(Boolean)
           .join(", "),
