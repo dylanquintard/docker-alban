@@ -25,6 +25,7 @@ export default function CompactReviewsPanel({
   limit = 5,
   className = "",
   compact = false,
+  grid = false,
 }) {
   const { tr, locale } = useLanguage();
   const [payload, setPayload] = useState({
@@ -87,6 +88,11 @@ export default function CompactReviewsPanel({
   const metaTextClass = compact ? "text-[10px]" : "text-[11px]";
   const emptyTextClass = compact ? "mt-3 text-xs" : "mt-4 text-sm";
   const skeletonBodyClass = compact ? "mt-2.5 h-10" : "mt-3 h-12";
+  const listClass = grid
+    ? compact
+      ? "mt-3 grid gap-2.5 sm:grid-cols-2"
+      : "mt-4 grid gap-3 sm:grid-cols-2"
+    : bodySpacingClass;
 
   return (
     <section className={`glass-panel ${panelPaddingClass} ${className}`.trim()}>
@@ -104,7 +110,7 @@ export default function CompactReviewsPanel({
       </div>
 
       {loading ? (
-        <div className={bodySpacingClass}>
+        <div className={listClass}>
           {Array.from({ length: 3 }).map((_, index) => (
             <div
               key={`compact-review-skeleton-${index}`}
@@ -117,7 +123,7 @@ export default function CompactReviewsPanel({
           ))}
         </div>
       ) : Array.isArray(payload.reviews) && payload.reviews.length > 0 ? (
-        <div className={bodySpacingClass}>
+        <div className={listClass}>
           {payload.reviews.map((review) => (
             <article
               key={review.id}

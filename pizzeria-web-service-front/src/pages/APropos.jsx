@@ -82,8 +82,8 @@ export default function APropos() {
         </div>
       </header>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_336px] lg:items-start">
-        <div className="grid max-w-2xl gap-5">
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)] lg:items-start">
+        <div className="grid gap-5">
           <section className="glass-panel p-6">
             <h2 className="text-xl font-bold text-saffron">Notre camion pizza</h2>
             <p className="mt-3 text-base leading-8 text-stone-200">
@@ -97,10 +97,11 @@ export default function APropos() {
               Nous selectionnons des produits italiens de qualite pour composer une base d'ingredients savoureuse, avec une pate travaillee facon napolitaine, bien aeree et legere. Le tout est cuit dans un four napolitain au feu de bois, pour offrir des pizzas riches en gout et en caractere.
             </p>
           </section>
+
+          <CompactReviewsPanel limit={4} compact grid className="w-full" />
         </div>
 
         <aside className="space-y-6">
-          <CompactReviewsPanel compact className="w-full" />
           <CompactServiceInfoPanel className="w-full" />
         </aside>
       </section>

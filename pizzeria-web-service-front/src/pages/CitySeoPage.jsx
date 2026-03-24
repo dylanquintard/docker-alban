@@ -562,7 +562,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.9fr)] lg:items-start">
         <div className="space-y-6">
           <div className="grid gap-5">
             {introSections.map((section, index) => (
@@ -570,13 +570,23 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
                 key={`${resolvedCitySlug}-intro-${index}`}
                 className="glass-panel p-6"
               >
-                <div className="max-w-2xl space-y-3">
+                <div className="space-y-3">
                   <h2 className="text-xl font-bold text-saffron">{section.title}</h2>
                   <p className="text-base leading-8 text-stone-200">{section.body}</p>
                 </div>
               </section>
             ))}
           </div>
+
+          {reviewLocationId ? (
+            <CompactReviewsPanel
+              locationId={reviewLocationId}
+              limit={4}
+              compact
+              grid
+              className="w-full"
+            />
+          ) : null}
         </div>
 
         <aside className="space-y-6">
@@ -613,8 +623,6 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
               </p>
             )}
           </section>
-
-          {reviewLocationId ? <CompactReviewsPanel locationId={reviewLocationId} compact /> : null}
         </aside>
       </section>
 

@@ -196,12 +196,6 @@ export default function CompactServiceInfoPanel({
           <h2 className={`mt-2 font-display uppercase tracking-wide text-white ${titleClass}`}>
             {tr("Ou nous trouver", "Where to find us")}
           </h2>
-          <p className={`text-stone-400 ${introClass}`}>
-            {tr(
-              "Les points de passage, jours et horaires actuellement ouverts.",
-              "Current stops, opening days and available hours."
-            )}
-          </p>
         </div>
 
         <div className="space-y-2.5">
