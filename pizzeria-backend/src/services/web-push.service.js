@@ -11,6 +11,7 @@ const ORDER_PREP_WINDOW_MS = 30 * 60 * 1000;
 const ORDER_PREP_SWEEP_INTERVAL_MS = 60 * 1000;
 const ORDER_PREP_ACTIVITY_ACTION = "ORDER_PREP_PUSH_SENT";
 const FAILED_TICKET_PUSH_LOG_EVENT = "push_ticket_failed_sent";
+const FAILED_TICKET_PUSH_BATCH_EVENT = "push_ticket_failed_batch_sent";
 
 let vapidConfigured = false;
 let lastOrderPrepSweepAtMs = 0;
@@ -203,6 +204,32 @@ function buildOrderPrepPushPayload(order) {
   };
 }
 
+function formatPickupTimeLabel(dateValue) {
+  const pickupAt = new Date(dateValue || "");
+  if (Number.isNaN(pickupAt.getTime())) return "--:--";
+  return pickupAt.toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function buildGroupedOrderPrepPushPayload(orders) {
+  const normalizedOrders = Array.isArray(orders) ? orders.filter(Boolean) : [];
+  if (normalizedOrders.length === 0) return null;
+  if (normalizedOrders.length === 1) {
+    return buildOrderPrepPushPayload(normalizedOrders[0]);
+  }
+
+  const pickupLabel = formatPickupTimeLabel(normalizedOrders[0]?.timeSlot?.startTime);
+
+  return {
+    title: `Plusieurs commandes a preparer pour ${pickupLabel}`,
+    body: `${normalizedOrders.length} commandes sont a preparer.`,
+    tag: `order-prep-batch-${pickupLabel.replace(/[^0-9]/g, "") || "unknown"}`,
+    url: "/?app=clickCollect&section=orders",
+  };
+}
+
 function buildTicketFailurePushPayload(job) {
   return {
     title: `IMPRESSION TICKET ECHEC #${job?.orderId ?? "?"}`,
@@ -211,6 +238,26 @@ function buildTicketFailurePushPayload(job) {
     url: job?.orderId
       ? `/?app=clickCollect&section=tickets&orderId=${job.orderId}`
       : "/?app=clickCollect&section=tickets",
+  };
+}
+
+function buildGroupedTicketFailurePushPayload(jobs) {
+  const normalizedJobs = Array.isArray(jobs) ? jobs.filter(Boolean) : [];
+  if (normalizedJobs.length === 0) return null;
+  if (normalizedJobs.length === 1) {
+    return buildTicketFailurePushPayload(normalizedJobs[0]);
+  }
+
+  const uniqueOrderIds = [...new Set(normalizedJobs.map((job) => Number(job.orderId || 0)).filter(Boolean))];
+
+  return {
+    title: "Plusieurs echecs impressions",
+    body:
+      uniqueOrderIds.length > 0
+        ? `${normalizedJobs.length} tickets en erreur sur ${uniqueOrderIds.length} commandes.`
+        : `${normalizedJobs.length} tickets en erreur.`,
+    tag: "ticket-failed-batch",
+    url: "/?app=clickCollect&section=tickets",
   };
 }
 
@@ -241,34 +288,37 @@ async function sendTicketFailurePushesByJobIds(jobIds = []) {
     return { delivered: 0, sent: 0, skipped: true, reason: "NO_MATCHING_FAILED_JOBS" };
   }
 
-  let sent = 0;
-  let delivered = 0;
+  const payload =
+    jobs.length > 1
+      ? buildGroupedTicketFailurePushPayload(jobs)
+      : buildTicketFailurePushPayload(jobs[0]);
+  const result = await sendAdminPushNotification(payload, { ttl: 600 });
 
-  for (const job of jobs) {
-    const result = await sendAdminPushNotification(
-      buildTicketFailurePushPayload(job),
-      { ttl: 600 }
-    );
-
-    if (result.delivered > 0) {
-      sent += 1;
-      delivered += result.delivered;
-
+  if (result.delivered > 0) {
+    for (const job of jobs) {
       await prisma.printLog.create({
         data: {
           jobId: job.id,
           level: PrintLogLevel.INFO,
-          event: FAILED_TICKET_PUSH_LOG_EVENT,
+          event: jobs.length > 1 ? FAILED_TICKET_PUSH_BATCH_EVENT : FAILED_TICKET_PUSH_LOG_EVENT,
           payload: {
             delivered: result.delivered,
             orderId: job.orderId,
+            grouped: jobs.length > 1,
+            batchSize: jobs.length,
           },
         },
       });
     }
   }
 
-  return { delivered, sent, skipped: false };
+  return {
+    delivered: result.delivered,
+    sent: result.delivered > 0 ? 1 : 0,
+    skipped: false,
+    grouped: jobs.length > 1,
+    count: jobs.length,
+  };
 }
 
 async function sendOrderPrepPushesForDueOrders(options = {}) {
@@ -325,11 +375,22 @@ async function sendOrderPrepPushesForDueOrders(options = {}) {
     return { delivered: 0, sent: 0, skipped: true, reason: "NO_DUE_ORDERS" };
   }
 
+  const groupedByPickupTime = new Map();
+
+  for (const order of dueOrders) {
+    const pickupTime = String(order?.timeSlot?.startTime || "");
+    if (!groupedByPickupTime.has(pickupTime)) {
+      groupedByPickupTime.set(pickupTime, []);
+    }
+    groupedByPickupTime.get(pickupTime).push(order);
+  }
+
   let sent = 0;
   let delivered = 0;
 
-  for (const order of dueOrders) {
-    const result = await sendAdminPushNotification(buildOrderPrepPushPayload(order), {
+  for (const ordersAtSameTime of groupedByPickupTime.values()) {
+    const payload = buildGroupedOrderPrepPushPayload(ordersAtSameTime);
+    const result = await sendAdminPushNotification(payload, {
       ttl: Math.max(300, Math.floor(ORDER_PREP_WINDOW_MS / 1000)),
     });
 
@@ -337,17 +398,21 @@ async function sendOrderPrepPushesForDueOrders(options = {}) {
       sent += 1;
       delivered += result.delivered;
 
-      await prisma.orderActivity.create({
-        data: {
-          orderId: order.id,
-          action: ORDER_PREP_ACTIVITY_ACTION,
-          metadata: {
-            delivered: result.delivered,
-            pickupTime: order.timeSlot?.startTime || null,
-            source: "web-push",
+      for (const order of ordersAtSameTime) {
+        await prisma.orderActivity.create({
+          data: {
+            orderId: order.id,
+            action: ORDER_PREP_ACTIVITY_ACTION,
+            metadata: {
+              delivered: result.delivered,
+              pickupTime: order.timeSlot?.startTime || null,
+              source: "web-push",
+              grouped: ordersAtSameTime.length > 1,
+              batchSize: ordersAtSameTime.length,
+            },
           },
-        },
-      });
+        });
+      }
     }
   }
 
