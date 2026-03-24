@@ -89,6 +89,20 @@ async function markJobFail(req, res) {
       req.params.jobId,
       req.body || {}
     );
+
+    if (String(result?.status || "").toUpperCase() === "FAILED") {
+      emitRealtimeEvent(
+        "tickets:admin-updated",
+        {
+          type: "print-job-failed",
+          jobId: result?.job_id || req.params.jobId,
+          orderId: result?.order_id || null,
+          status: result?.status || "FAILED",
+        },
+        { roles: ["ADMIN"] }
+      );
+    }
+
     res.json(result);
   } catch (err) {
     sendError(res, err);

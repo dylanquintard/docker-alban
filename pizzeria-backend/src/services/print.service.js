@@ -1213,6 +1213,9 @@ async function markPrintJobFailure(agent, jobId, payload = {}) {
 
     return {
       ok: true,
+      job_id: updated.id,
+      order_id: updated.orderId,
+      printer_id: updated.printerId,
       status: updated.status,
       next_retry_at: nextRetryAt,
       attempt_count: updated.attemptCount,

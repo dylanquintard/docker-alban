@@ -18,6 +18,11 @@ import {
 import { useRealtimeStream } from "./hooks/useRealtimeStream";
 import { useSessionHeartbeat } from "./hooks/useSessionHeartbeat";
 import {
+  buildFailedTicketNotification,
+  buildOrderPrepNotification,
+  getNotificationPermission,
+} from "./utils/notificationUtils";
+import {
   buildStatusCounters,
   groupOrdersBySlot,
   matchesCustomerQuery,
@@ -150,8 +155,14 @@ export default function App() {
     status: "IN_PROGRESS",
   });
   const [streamConnected, setStreamConnected] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState(() =>
+    getNotificationPermission()
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const seenOrderIdsRef = useRef(new Set());
+  const notifiedOrderPrepKeysRef = useRef(new Set());
+  const notifiedFailedTicketKeysRef = useRef(new Set());
+  const ticketSnapshotReadyRef = useRef(false);
   const snapshotReadyRef = useRef(false);
   const pendingOrderIdRef = useRef(
     typeof window !== "undefined"
@@ -237,6 +248,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    setNotificationPermission(getNotificationPermission());
+  }, [session.state]);
+
+  useEffect(() => {
     snapshotReadyRef.current = false;
     seenOrderIdsRef.current = new Set();
   }, [filters.date]);
@@ -262,6 +277,20 @@ export default function App() {
       loadCustomers();
     }
   }, [activeApp, customers.length, session.state]);
+
+  useEffect(() => {
+    if (session.state !== "authenticated") return undefined;
+
+    loadTickets({ silent: true });
+
+    const monitorTimer = window.setInterval(() => {
+      loadTickets({ silent: true });
+    }, 45_000);
+
+    return () => {
+      window.clearInterval(monitorTimer);
+    };
+  }, [filters.date, session.state]);
 
   useSessionHeartbeat(session.state === "authenticated", () => {
     refreshAuthenticatedSession();
@@ -297,7 +326,55 @@ export default function App() {
         loadTickets({ silent: true });
       }
     },
+    onTicketsUpdated: () => {
+      loadTickets({ silent: true });
+    },
   });
+
+  useEffect(() => {
+    const nextFailedKeys = new Set();
+
+    for (const ticket of tickets) {
+      const notification = buildFailedTicketNotification(ticket);
+      if (!notification) continue;
+
+      nextFailedKeys.add(notification.key);
+
+      if (
+        ticketSnapshotReadyRef.current &&
+        !notifiedFailedTicketKeysRef.current.has(notification.key)
+      ) {
+        showBrowserNotification(notification);
+      }
+    }
+
+    ticketSnapshotReadyRef.current = true;
+    notifiedFailedTicketKeysRef.current = nextFailedKeys;
+  }, [notificationPermission, tickets]);
+
+  useEffect(() => {
+    if (session.state !== "authenticated") return undefined;
+
+    const notifyUpcomingOrders = () => {
+      const now = new Date();
+
+      for (const order of orders) {
+        const notification = buildOrderPrepNotification(order, now);
+        if (!notification) continue;
+        if (notifiedOrderPrepKeysRef.current.has(notification.key)) continue;
+
+        showBrowserNotification(notification);
+        notifiedOrderPrepKeysRef.current.add(notification.key);
+      }
+    };
+
+    notifyUpcomingOrders();
+
+    const timer = window.setInterval(notifyUpcomingOrders, 60_000);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [notificationPermission, orders, session.state]);
 
   async function bootstrapSession() {
     try {
@@ -476,6 +553,9 @@ export default function App() {
       setActiveApp("launcher");
       setIsMenuOpen(false);
       setClickCollectSection("orders");
+      notifiedOrderPrepKeysRef.current = new Set();
+      notifiedFailedTicketKeysRef.current = new Set();
+      ticketSnapshotReadyRef.current = false;
     }
   }
 
@@ -506,8 +586,31 @@ export default function App() {
     setSelectedOrderId(orderedOrderIds[nextIndex]);
   }
 
-  function handleEnableNotifications() {
-    setStatusMessage("Le push mobile est en reconstruction.");
+  async function handleEnableNotifications() {
+    if (typeof window === "undefined" || typeof window.Notification === "undefined") {
+      setNotificationPermission("unsupported");
+      setStatusMessage("Notifications indisponibles sur cet appareil.");
+      return;
+    }
+
+    try {
+      const permission = await window.Notification.requestPermission();
+      setNotificationPermission(permission);
+
+      if (permission === "granted") {
+        setStatusMessage("Notifications actives sur cet appareil.");
+        return;
+      }
+
+      if (permission === "denied") {
+        setStatusMessage("Notifications bloquees. Autorisez-les dans le navigateur.");
+        return;
+      }
+
+      setStatusMessage("Notifications non activees.");
+    } catch (_error) {
+      setStatusMessage("Impossible d'activer les notifications.");
+    }
   }
 
   async function handleReprintTicket(jobId) {
@@ -634,6 +737,33 @@ export default function App() {
 
   function toggleMenu() {
     setIsMenuOpen((current) => !current);
+  }
+
+  function getNotificationsMenuLabel() {
+    if (notificationPermission === "granted") return "Notifications actives";
+    if (notificationPermission === "denied") return "Autoriser dans le navigateur";
+    if (notificationPermission === "unsupported") return "Notifications indisponibles";
+    return "Activer les notifications";
+  }
+
+  function showBrowserNotification(notification) {
+    if (notificationPermission !== "granted") return;
+    if (typeof window === "undefined" || typeof window.Notification === "undefined") return;
+
+    try {
+      const browserNotification = new window.Notification(notification.title, {
+        body: notification.body,
+        tag: notification.tag,
+        icon: APP_LOGOS.clickCollect,
+        badge: APP_LOGOS.clickCollect,
+      });
+
+      browserNotification.onclick = () => {
+        window.focus?.();
+      };
+    } catch (_error) {
+      // Ignore browsers that reject foreground notifications.
+    }
   }
 
   if (session.state === "loading") {
@@ -765,7 +895,7 @@ export default function App() {
                         role="menuitem"
                       >
                         <span>Notifications</span>
-                        <strong>Activer le push</strong>
+                        <strong>{getNotificationsMenuLabel()}</strong>
                       </button>
                     ) : null}
                     <button
