@@ -197,10 +197,6 @@ const FRONTEND_SITE_URL = parseOptionalHttpUrl(
 if (NODE_ENV === "production" && !FRONTEND_SITE_URL) {
   throw new Error("FRONTEND_SITE_URL is required in production");
 }
-const WEB_PUSH_VAPID_PUBLIC_KEY = parseOptionalString(process.env.WEB_PUSH_VAPID_PUBLIC_KEY);
-const WEB_PUSH_VAPID_PRIVATE_KEY = parseOptionalString(process.env.WEB_PUSH_VAPID_PRIVATE_KEY);
-const WEB_PUSH_SUBJECT =
-  parseOptionalString(process.env.WEB_PUSH_SUBJECT) || "mailto:admin@example.invalid";
 const GOOGLE_SITE_VERIFICATION_FILE = parseOptionalString(
   process.env.GOOGLE_SITE_VERIFICATION_FILE
 );
@@ -210,11 +206,6 @@ const GOOGLE_SITE_VERIFICATION_CONTENT =
     ? `google-site-verification: ${GOOGLE_SITE_VERIFICATION_FILE}`
     : "");
 
-if (Boolean(WEB_PUSH_VAPID_PUBLIC_KEY) !== Boolean(WEB_PUSH_VAPID_PRIVATE_KEY)) {
-  throw new Error(
-    "WEB_PUSH_VAPID_PUBLIC_KEY and WEB_PUSH_VAPID_PRIVATE_KEY must be provided together"
-  );
-}
 const SITEMAP_CACHE_SECONDS = parsePositiveInt(
   process.env.SITEMAP_CACHE_SECONDS,
   "SITEMAP_CACHE_SECONDS",
@@ -251,9 +242,6 @@ module.exports = {
   PRINT_READY_FAIL_AFTER_MINUTES,
   PRINT_REPRINT_READY_FAIL_AFTER_MINUTES,
   FRONTEND_SITE_URL,
-  WEB_PUSH_VAPID_PUBLIC_KEY,
-  WEB_PUSH_VAPID_PRIVATE_KEY,
-  WEB_PUSH_SUBJECT,
   GOOGLE_SITE_VERIFICATION_FILE,
   GOOGLE_SITE_VERIFICATION_CONTENT,
   SITEMAP_CACHE_SECONDS,

@@ -1,6 +1,5 @@
 const orderService = require("../services/order.service");
 const orderEmailService = require("../services/order-email.service");
-const webPushService = require("../services/web-push.service");
 const { emitRealtimeEvent } = require("../lib/realtime");
 
 function getUserId(req) {
@@ -123,12 +122,6 @@ async function finalizeOrder(req, res) {
       }
     } catch (mailErr) {
       console.error("finalizeOrder email error:", mailErr);
-    }
-
-    try {
-      await webPushService.sendNewOrderPushToAdmins(order);
-    } catch (pushErr) {
-      console.error("finalizeOrder push error:", pushErr);
     }
 
     res.json(order);

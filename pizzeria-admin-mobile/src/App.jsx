@@ -4,11 +4,6 @@ import { clearCsrfToken } from "./lib/api";
 import { fetchMe, login, logout } from "./lib/api/auth";
 import { fetchCustomers } from "./lib/api/customers";
 import { fetchMenuCategories, fetchMenuProducts } from "./lib/api/menu";
-import {
-  getPushPublicKey,
-  removePushSubscription,
-  savePushSubscription,
-} from "./lib/api/notifications";
 import { fetchOrders, updateOrderStatus } from "./lib/api/orders";
 import { fetchTickets, reprintTicket } from "./lib/api/tickets";
 import {
@@ -32,13 +27,11 @@ import {
 } from "./utils/filterUtils";
 import {
   formatCustomerDisplayName,
-  getPushStateLabel,
   getTicketMonitorLabel,
   getTicketMonitorState,
   getTicketStatusClass,
   getTicketStatusLabel,
 } from "./utils/formatters";
-import { urlBase64ToUint8Array } from "./utils/pushUtils";
 
 const APP_ICONS = {
   launcher: "OS",
@@ -156,8 +149,6 @@ export default function App() {
     date: toIsoDate(),
     status: "IN_PROGRESS",
   });
-  const [notificationPermission, setNotificationPermission] = useState("default");
-  const [pushState, setPushState] = useState("idle");
   const [streamConnected, setStreamConnected] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const seenOrderIdsRef = useRef(new Set());
@@ -242,20 +233,6 @@ export default function App() {
   }, [menuProducts, selectedMenuCategoryId]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !("Notification" in window)) {
-      setNotificationPermission("unsupported");
-      setPushState("unsupported");
-      return;
-    }
-    setNotificationPermission(window.Notification.permission);
-    if (!("serviceWorker" in window.navigator) || !("PushManager" in window)) {
-      setPushState("unsupported");
-      return;
-    }
-    setPushState("available");
-  }, []);
-
-  useEffect(() => {
     bootstrapSession();
   }, []);
 
@@ -309,48 +286,6 @@ export default function App() {
       setIsOrderDetailOpen(false);
     }
   }, [selectedOrder]);
-
-  useEffect(() => {
-    if (
-      session.state !== "authenticated" ||
-      notificationPermission !== "granted" ||
-      typeof window === "undefined" ||
-      !("serviceWorker" in window.navigator) ||
-      !("PushManager" in window)
-    ) {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function syncExistingSubscription() {
-      try {
-        const registration = await window.navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-        if (!subscription) {
-          if (!cancelled) {
-            setPushState("available");
-          }
-          return;
-        }
-
-        await savePushSubscription(subscription.toJSON());
-        if (!cancelled) {
-          setPushState("subscribed");
-        }
-      } catch (_error) {
-        if (!cancelled) {
-          setPushState("available");
-        }
-      }
-    }
-
-    syncExistingSubscription();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [notificationPermission, session.state]);
 
   useRealtimeStream({
     enabled: session.state === "authenticated",
@@ -526,23 +461,6 @@ export default function App() {
   }
 
   async function handleLogout() {
-    if (
-      typeof window !== "undefined" &&
-      "serviceWorker" in window.navigator &&
-      "PushManager" in window
-    ) {
-      try {
-        const registration = await window.navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-        if (subscription) {
-          await removePushSubscription(subscription.endpoint);
-          await subscription.unsubscribe();
-        }
-      } catch (_error) {
-        // no-op
-      }
-    }
-
     try {
       await logout();
     } catch (_error) {
@@ -588,57 +506,8 @@ export default function App() {
     setSelectedOrderId(orderedOrderIds[nextIndex]);
   }
 
-  async function handleEnableNotifications() {
-    if (
-      typeof window === "undefined" ||
-      !("Notification" in window) ||
-      !("serviceWorker" in window.navigator) ||
-      !("PushManager" in window)
-    ) {
-      setNotificationPermission("unsupported");
-      return;
-    }
-    try {
-      const permission = await window.Notification.requestPermission();
-      setNotificationPermission(permission);
-      if (permission === "denied") {
-        setPushState("denied");
-        setStatusMessage(
-          "Notifications refusees par le navigateur. Si besoin, reautorise-les depuis les reglages du site ou de l'iPhone."
-        );
-        return;
-      }
-      if (permission !== "granted") {
-        setPushState("available");
-        setStatusMessage("Autorisation notifications non accordee.");
-        return;
-      }
-
-      setPushState("subscribing");
-      const registration = await window.navigator.serviceWorker.ready;
-      const vapidConfig = await getPushPublicKey();
-      if (!vapidConfig?.enabled || !vapidConfig?.publicKey) {
-        throw new Error("Web push non configure cote backend.");
-      }
-
-      let subscription = await registration.pushManager.getSubscription();
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(vapidConfig.publicKey),
-        });
-      }
-
-      await savePushSubscription(subscription.toJSON());
-      setPushState("subscribed");
-      setStatusMessage("Notifications push activees pour les nouvelles commandes.");
-    } catch (error) {
-      setPushState("error");
-      setStatusMessage(
-        error?.message ||
-          "Autorisation accordee, mais l'abonnement push a echoue. Verifie la configuration backend web push."
-      );
-    }
+  function handleEnableNotifications() {
+    setStatusMessage("Le push mobile est en reconstruction.");
   }
 
   async function handleReprintTicket(jobId) {
@@ -853,7 +722,7 @@ export default function App() {
                   </div>
 
                   <div className="menu-panel-actions">
-                    {activeApp === "clickCollect" && pushState !== "subscribed" ? (
+                    {activeApp === "clickCollect" ? (
                       <button
                         type="button"
                         className="menu-action-button"
@@ -879,6 +748,10 @@ export default function App() {
             </div>
           </div>
         </header>
+
+        {session.state === "authenticated" && !streamConnected ? (
+          <p className="inline-error">FLUX EN DIRECT INACTIF</p>
+        ) : null}
 
         {statusMessage ? <p className="inline-success">{statusMessage}</p> : null}
 
@@ -1143,7 +1016,6 @@ export default function App() {
                 <section className="orders-column panel-card">
                   <div className="column-head">
                     <div>
-                      <p className="eyebrow">File active</p>
                       <h3>Commandes a traiter</h3>
                     </div>
                     <span className="status-pill neutral">{filteredOrders.length} visibles</span>
@@ -1343,10 +1215,8 @@ export default function App() {
                 />
                 <article className="detail-card detail-modal-card">
                   <div className="detail-head">
-                    <div>
-                      <h2>
-                        Commande #{selectedOrder.id} - {getStatusLabel(selectedWorkflowStatus)}
-                      </h2>
+                    <div className="detail-modal-summary">
+                      <h2>Commande #{selectedOrder.id}</h2>
                       <div className="inline-nav">
                         <button
                           type="button"

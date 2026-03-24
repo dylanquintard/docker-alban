@@ -622,9 +622,13 @@ button {
 
 .orders-layout {
   display: grid;
-  grid-template-columns: minmax(290px, 360px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   align-items: start;
+}
+
+.orders-column {
+  width: 100%;
 }
 
 .column-head {
@@ -641,7 +645,7 @@ button {
 
 .slot-header {
   justify-content: space-between;
-  padding: 0 4px;
+  padding: 0 2px;
   color: var(--muted);
 }
 
@@ -654,12 +658,13 @@ button {
 
 .order-card {
   text-align: left;
-  padding: 12px 14px;
+  width: 100%;
+  padding: 14px 16px;
   background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   border: 1px solid var(--border);
   display: grid;
-  gap: 4px;
+  gap: 6px;
 }
 
 .order-card.selected {
@@ -714,19 +719,58 @@ button {
   max-height: 100%;
   overflow: auto;
   margin: auto;
+  padding-top: 18px;
 }
 
 .detail-close-button {
   flex: 0 0 auto;
 }
 
+.detail-modal-summary {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  width: 100%;
+  padding-top: 8px;
+}
+
+.detail-modal-summary h2 {
+  margin: 0;
+  text-align: center;
+}
+
+.detail-modal-card .inline-nav .ghost-icon-button {
+  width: 30px;
+  height: 30px;
+}
+
+.detail-modal-card .inline-nav .menu-trigger-image {
+  width: 14px;
+  height: 14px;
+}
+
 .detail-head {
-  justify-content: space-between;
+  justify-content: center;
+  position: relative;
 }
 
 .detail-head-actions,
 .inline-nav {
   gap: 10px;
+}
+
+.detail-modal-card .inline-nav {
+  gap: 6px;
+}
+
+.detail-modal-card .inline-nav span {
+  min-width: 38px;
+}
+
+.detail-head-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
 }
 
 .inline-nav span {
@@ -1006,6 +1050,7 @@ button {
     width: 100%;
     min-height: 100%;
     border-radius: 0;
+    padding-top: 10px;
   }
 
   .inline-nav {

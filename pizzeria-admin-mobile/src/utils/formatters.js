@@ -60,20 +60,3 @@ export function getTicketStatusClass(status) {
   if (["FAILED", "CANCELLED"].includes(normalized)) return "canceled";
   return "neutral";
 }
-
-export function getPushStateLabel(pushState) {
-  switch (String(pushState || "").toLowerCase()) {
-    case "subscribed":
-      return "Actif";
-    case "subscribing":
-      return "Activation...";
-    case "denied":
-      return "Refuse";
-    case "error":
-      return "Erreur";
-    case "unsupported":
-      return "Indisponible";
-    default:
-      return "Disponible";
-  }
-}

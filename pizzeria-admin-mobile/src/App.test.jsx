@@ -22,12 +22,6 @@ const customersApi = vi.hoisted(() => ({
   fetchCustomers: vi.fn(),
 }));
 
-const notificationsApi = vi.hoisted(() => ({
-  getPushPublicKey: vi.fn(),
-  removePushSubscription: vi.fn(),
-  savePushSubscription: vi.fn(),
-}));
-
 vi.mock("./hooks/useSessionHeartbeat", () => ({
   useSessionHeartbeat: vi.fn(),
 }));
@@ -56,12 +50,6 @@ vi.mock("./lib/api/customers", () => ({
   fetchCustomers: customersApi.fetchCustomers,
 }));
 
-vi.mock("./lib/api/notifications", () => ({
-  getPushPublicKey: notificationsApi.getPushPublicKey,
-  removePushSubscription: notificationsApi.removePushSubscription,
-  savePushSubscription: notificationsApi.savePushSubscription,
-}));
-
 import App from "./App";
 
 describe("App integration", () => {
@@ -75,9 +63,6 @@ describe("App integration", () => {
     ticketsApi.fetchTickets.mockResolvedValue([]);
     ticketsApi.reprintTicket.mockResolvedValue({ ok: true });
     customersApi.fetchCustomers.mockResolvedValue([]);
-    notificationsApi.getPushPublicKey.mockResolvedValue({ enabled: false, publicKey: "" });
-    notificationsApi.removePushSubscription.mockResolvedValue({ ok: true });
-    notificationsApi.savePushSubscription.mockResolvedValue({ ok: true });
   });
 
   it("shows login screen when there is no active session", async () => {
