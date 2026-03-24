@@ -43,7 +43,9 @@ function ensureHeartbeat() {
 
   heartbeatTimer = setInterval(() => {
     for (const client of clients) {
-      const ok = safeWrite(client.response, ": heartbeat\n\n");
+      const ok = writeEvent(client.response, "heartbeat", {
+        at: new Date().toISOString(),
+      });
       if (!ok) {
         cleanupClient(client);
       }

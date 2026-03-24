@@ -58,7 +58,11 @@ button {
 }
 
 .mobile-os-shell {
-  padding: 18px 14px 28px;
+  padding:
+    max(18px, env(safe-area-inset-top, 0px) + 12px)
+    max(14px, env(safe-area-inset-right, 0px) + 6px)
+    max(28px, env(safe-area-inset-bottom, 0px) + 16px)
+    max(14px, env(safe-area-inset-left, 0px) + 6px);
 }
 
 .login-shell {
