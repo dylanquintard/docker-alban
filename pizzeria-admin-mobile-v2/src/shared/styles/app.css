@@ -240,6 +240,7 @@ button {
 .click-collect-topbar,
 .click-collect-actions-row,
 .toolbar,
+.orders-toolbar-top,
 .column-head,
 .order-card-head,
 .order-card-meta,
@@ -257,6 +258,7 @@ button {
 .click-collect-topbar,
 .order-card-head,
 .column-head,
+.orders-toolbar-top,
 .detail-head,
 .detail-grid,
 .detail-footer {
@@ -323,6 +325,34 @@ button {
 
 .search-field {
   flex: 1 1 240px;
+}
+
+.orders-toolbar {
+  gap: 12px;
+}
+
+.orders-toolbar-top {
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+.orders-toolbar-top .search-field {
+  flex: 1 1 auto;
+}
+
+.orders-status-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.orders-status-row .status-filter-pill {
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .search-field input {
@@ -686,6 +716,20 @@ button {
   .order-card-meta {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .orders-toolbar-top {
+    flex-wrap: wrap;
+  }
+
+  .orders-toolbar-top .compact-button {
+    width: 100%;
+  }
+
+  .orders-status-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
   }
 
   .customer-info-grid {

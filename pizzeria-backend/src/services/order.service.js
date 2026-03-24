@@ -843,7 +843,7 @@ async function getOrdersAdminPaginated(filters = {}) {
   ]);
 
   return {
-    items: formatOrderCollection(orders),
+    items: await formatOrderCollection(orders),
     total,
     page,
     limit,

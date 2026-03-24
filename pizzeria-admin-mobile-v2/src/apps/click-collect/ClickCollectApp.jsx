@@ -446,15 +446,31 @@ export function ClickCollectApp({ activeView, onChangeView, routeState }) {
               </section>
             ) : (
               <>
-                <section className="toolbar app-toolbar panel-card">
-                  <label className="search-field"><input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Commande, client, telephone..." /></label>
-                  <div className="compact-filter-row">
+                <section className="toolbar app-toolbar panel-card orders-toolbar">
+                  <div className="orders-toolbar-top">
+                    <label className="search-field">
+                      <input
+                        type="search"
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        placeholder="Commande, client, telephone..."
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="ghost-button compact-button"
+                      onClick={() => loadOrders({ silent: true })}
+                      disabled={isRefreshing}
+                    >
+                      {isRefreshing ? "Actualisation..." : "Rafraichir"}
+                    </button>
+                  </div>
+                  <div className="orders-status-row">
                     <button type="button" className={`switcher-pill status-filter-pill ${filters.status === "IN_PROGRESS" ? "active" : ""}`} onClick={() => setFilters((current) => ({ ...current, status: "IN_PROGRESS" }))}>En cours {statusCounters.COMPLETED}</button>
                     <button type="button" className={`switcher-pill status-filter-pill ${filters.status === "PRINTED" ? "active" : ""}`} onClick={() => setFilters((current) => ({ ...current, status: "PRINTED" }))}>Finalisees {statusCounters.FINALIZED}</button>
                     <button type="button" className={`switcher-pill status-filter-pill ${filters.status === "VALIDATE" ? "active" : ""}`} onClick={() => setFilters((current) => ({ ...current, status: "VALIDATE" }))}>Validees {statusCounters.VALIDATE}</button>
                     <button type="button" className={`switcher-pill status-filter-pill ${filters.status === "CANCELED" ? "active" : ""}`} onClick={() => setFilters((current) => ({ ...current, status: "CANCELED" }))}>Annulees {statusCounters.CANCELED}</button>
                   </div>
-                  <button type="button" className="ghost-button compact-button" onClick={() => loadOrders({ silent: true })} disabled={isRefreshing}>{isRefreshing ? "Actualisation..." : "Rafraichir"}</button>
                 </section>
                 {ordersError ? <p className="inline-error">{ordersError}</p> : null}
                 <section className="orders-layout mobile-orders-layout">
