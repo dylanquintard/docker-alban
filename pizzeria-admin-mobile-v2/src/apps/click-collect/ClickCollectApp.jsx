@@ -36,7 +36,7 @@ function NavArrow({ direction = "left", ...props }) {
   );
 }
 
-export function ClickCollectApp({ activeView, onChangeView }) {
+export function ClickCollectApp({ activeView, onChangeView, routeState }) {
   const [orders, setOrders] = useState([]);
   const [tickets, setTickets] = useState([]);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
@@ -129,6 +129,15 @@ export function ClickCollectApp({ activeView, onChangeView }) {
       setSelectedOrderId(filteredOrders[0].id);
     }
   }, [filteredOrders, selectedOrderId]);
+
+  useEffect(() => {
+    const requestedOrderId = String(routeState?.orderId || "").trim();
+    if (!requestedOrderId) return;
+    const matchedOrder = filteredOrders.find((entry) => String(entry.id) === requestedOrderId);
+    if (!matchedOrder) return;
+    setSelectedOrderId(matchedOrder.id);
+    setIsOrderDetailOpen(true);
+  }, [filteredOrders, routeState?.orderId]);
 
   useEffect(() => {
     if (!statusNotice?.message) return undefined;

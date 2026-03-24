@@ -1,6 +1,6 @@
 import { getAppDefinition } from "./app-registry";
 
-export function AppRouter({ activeAppId, activeView, onChangeView }) {
+export function AppRouter({ activeAppId, activeView, onChangeView, routeState }) {
   const definition = getAppDefinition(activeAppId);
 
   if (!definition) {
@@ -27,5 +27,11 @@ export function AppRouter({ activeAppId, activeView, onChangeView }) {
   }
 
   const Component = definition.component;
-  return <Component activeView={activeView || definition.defaultView} onChangeView={onChangeView} />;
+  return (
+    <Component
+      activeView={activeView || definition.defaultView}
+      onChangeView={onChangeView}
+      routeState={routeState}
+    />
+  );
 }
