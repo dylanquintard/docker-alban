@@ -739,9 +739,9 @@ const truckTourSchedule = useMemo(
         </div>
       </section>
 
-      <section className="section-shell space-y-6">
-        <div className="grid gap-5 xl:grid-cols-12">
-          <article className="glass-panel p-6 sm:p-8 xl:col-span-7">
+      <section className="hidden">
+        <div className="grid gap-5 xl:grid-cols-3">
+          <article className="glass-panel p-6 sm:p-8">
             <p className="text-xs uppercase tracking-[0.2em] text-saffron">
               {tr("Camion pizza Moselle", "Moselle pizza truck")}
             </p>
@@ -864,6 +864,103 @@ const truckTourSchedule = useMemo(
             >
               {tr("Voir les horaires d'ouverture", "See opening hours")}
             </Link>
+          </article>
+        </div>
+      </section>
+
+      <section className="section-shell">
+        <div className="grid gap-5 xl:grid-cols-3">
+          <article className="glass-panel p-6 sm:p-8">
+            <h2 className="font-display text-3xl uppercase tracking-wide text-white">
+              {tr(
+                "Des produits choisis pour leur tenue, pas pour remplir la carte",
+                "Ingredients chosen for balance, not just to pad out the menu"
+              )}
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
+              {tr(
+                "La base produit reste volontairement courte pour garder des recettes plus nettes:",
+                "The ingredient list stays intentionally short to keep the recipes clear:"
+              )}
+            </p>
+            <ul className="mt-4 grid gap-2 text-sm text-stone-200 sm:grid-cols-2">
+              {highlightedIngredients.map((ingredient, index) => (
+                <li
+                  key={`home-highlight-${ingredient}-${index}`}
+                  className="rounded-lg border border-white/20 bg-stone-200/20 px-3 py-2"
+                >
+                  {ingredient}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-xs uppercase tracking-[0.22em] text-saffron">
+              {tr(
+                "pate travaillee | ingredients bien choisis | cuisson minute",
+                "worked dough | carefully chosen ingredients | baked to order"
+              )}
+            </p>
+          </article>
+
+          <article className="glass-panel p-6 sm:p-8">
+            <h2 className="font-display text-3xl uppercase tracking-wide text-white">
+              {tr("Ou trouver notre camion pizza", "Where to find our pizza truck")}
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
+              {tr(
+                "Le camion passe sur plusieurs points autour de Thionville et dans les communes voisines de Moselle.",
+                "The truck stops at several pickup points around Thionville and nearby towns across Moselle."
+              )}
+            </p>
+            <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
+              {tr(
+                "Les emplacements changent selon la tournee hebdomadaire.",
+                "Locations change with the weekly route."
+              )}
+            </p>
+            <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
+              {tr(
+                "Consultez le planning pour connaitre les horaires et les points de retrait ouverts.",
+                "Check the schedule to see opening hours and available pickup points."
+              )}
+            </p>
+            <Link
+              to="/planing"
+              className="mt-5 inline-flex rounded-full border border-saffron/60 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
+            >
+              {tr("Voir les horaires d'ouverture", "See opening hours")}
+            </Link>
+          </article>
+
+          <article className="glass-panel p-6 sm:p-8">
+            <h2 className="font-display text-3xl uppercase tracking-wide text-white">
+              {tr("Cuisson au four a bois et gaz", "Wood-and-gas oven baking")}
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
+              {tr(
+                "Le four sert a garder une cuisson courte et lisible: un bord qui se developpe, une base qui tient et une pizza qui ne seche pas.",
+                "The oven keeps the bake short and clean: a risen crust, a base that holds and a pizza that does not dry out."
+              )}
+            </p>
+            <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
+              {tr(
+                "Chaque pizza est lancee a la commande pour sortir au bon moment, pas pour attendre sur le cote.",
+                "Every pizza goes in to order so it comes out at the right moment, not to sit waiting on the side."
+              )}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-[11px] uppercase tracking-wide text-saffron">
+                {tr("pizza napolitaine feu de bois", "wood-fired Neapolitan pizza")}
+              </span>
+              <span className="rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-[11px] uppercase tracking-wide text-saffron">
+                {tr("pizza feu de bois thionville", "wood-fired pizza Thionville")}
+              </span>
+              <span className="rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-[11px] uppercase tracking-wide text-saffron">
+                {tr("pizza artisanale moselle", "artisan pizza Moselle")}
+              </span>
+              <span className="rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-[11px] uppercase tracking-wide text-saffron">
+                {tr("camion pizza napolitaine", "Neapolitan pizza truck")}
+              </span>
+            </div>
           </article>
         </div>
       </section>
