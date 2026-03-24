@@ -188,10 +188,16 @@ async function resetPassword(req, res) {
   }
 }
 
-async function logout(_req, res) {
+async function logout(req, res) {
   setNoStore(res);
-  clearAuthCookie(res);
-  clearCsrfCookie(res);
+  try {
+    if (req?.user?.userId) {
+      await userService.revokeUserSessions(req.user.userId);
+    }
+  } finally {
+    clearAuthCookie(res);
+    clearCsrfCookie(res);
+  }
   res.json({ message: "Logout successful" });
 }
 
@@ -230,7 +236,10 @@ async function me(req, res) {
     setNoStore(res);
     const user = await userService.getMe(req.user.userId);
     if (!user) return res.status(404).json({ error: "User not found" });
-    issueAuthenticatedSession(res, user);
+    issueAuthenticatedSession(res, {
+      ...user,
+      sessionVersion: req.user?.sessionVersion ?? 0,
+    });
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });

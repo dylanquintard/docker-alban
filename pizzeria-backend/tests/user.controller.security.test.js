@@ -91,3 +91,40 @@ test("me refreshes the authenticated session cookies", async () => {
     userService.issueSessionToken = originalIssueSessionToken;
   }
 });
+
+test("logout revokes the server-side session before clearing cookies", async () => {
+  const controller = loadUserControllerForNodeEnv("production");
+  const originalRevokeUserSessions = userService.revokeUserSessions;
+  let revokedUserId = null;
+  let authCookieCleared = false;
+  let csrfCookieCleared = false;
+
+  userService.revokeUserSessions = async (userId) => {
+    revokedUserId = userId;
+  };
+
+  try {
+    const res = {
+      clearCookie(name) {
+        if (String(name).includes("auth")) authCookieCleared = true;
+        if (String(name).includes("csrf")) csrfCookieCleared = true;
+      },
+      json(value) {
+        this.payload = value;
+        return this;
+      },
+      setHeader() {},
+      status() {
+        return this;
+      },
+    };
+
+    await controller.logout({ user: { userId: 12 } }, res);
+
+    assert.equal(revokedUserId, 12);
+    assert.equal(authCookieCleared, true);
+    assert.equal(csrfCookieCleared, true);
+  } finally {
+    userService.revokeUserSessions = originalRevokeUserSessions;
+  }
+});

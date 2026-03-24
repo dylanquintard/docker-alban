@@ -1,5 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const jwt = require("jsonwebtoken");
+const prisma = require("../src/lib/prisma");
 
 process.env.NODE_ENV = "test";
 process.env.JWT_SECRET =
@@ -61,4 +63,34 @@ test("adminMiddleware allows admin users", () => {
 
   assert.equal(nextCalled, true);
   assert.equal(res.body, null);
+});
+
+test("authMiddleware rejects revoked sessions", async () => {
+  const originalVerify = jwt.verify;
+  const originalFindUnique = prisma.user.findUnique;
+
+  jwt.verify = () => ({ userId: 9, role: "ADMIN", sessionVersion: 1 });
+  prisma.user.findUnique = async () => ({ id: 9, role: "ADMIN", sessionVersion: 2 });
+
+  try {
+    const req = {
+      headers: {
+        authorization: "Bearer token",
+      },
+      method: "GET",
+    };
+    const res = createResponseRecorder();
+    let nextCalled = false;
+
+    await authMiddleware(req, res, () => {
+      nextCalled = true;
+    });
+
+    assert.equal(nextCalled, false);
+    assert.equal(res.statusCode, 401);
+    assert.deepEqual(res.body, { error: "Session revoked" });
+  } finally {
+    jwt.verify = originalVerify;
+    prisma.user.findUnique = originalFindUnique;
+  }
 });

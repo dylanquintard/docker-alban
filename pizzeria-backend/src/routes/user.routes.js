@@ -25,7 +25,7 @@ const authRegisterRateLimit = createRateLimiter({
 const authLoginRateLimit = createRateLimiter({
   scope: "auth-login",
   windowMs: 15 * 60 * 1000,
-  maxRequests: 20,
+  maxRequests: 12,
   keyBuilder: buildAuthKey,
 });
 

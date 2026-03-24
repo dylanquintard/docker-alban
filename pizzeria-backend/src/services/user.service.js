@@ -4,7 +4,13 @@ const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const prisma = require("../lib/prisma");
-const { JWT_SECRET, CORS_ORIGINS, FRONTEND_SITE_URL } = require("../lib/env");
+const {
+  JWT_SECRET,
+  CORS_ORIGINS,
+  FRONTEND_SITE_URL,
+  ADMIN_LOGIN_MAX_FAILED_ATTEMPTS,
+  ADMIN_LOGIN_LOCK_MINUTES,
+} = require("../lib/env");
 const { sanitizeUser } = require("../utils/user");
 const { normalizeCustomizations } = require("../utils/customizations");
 const { DELETED_PRODUCT_FALLBACK_NAME } = require("../utils/product");
@@ -37,10 +43,18 @@ const ARCHIVED_USER_PHONE =
 let emailTransporter = null;
 
 function generateToken(user) {
-  return jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, {
+  return jwt.sign(
+    {
+      userId: user.id,
+      role: user.role,
+      sessionVersion: Number.isInteger(user?.sessionVersion) ? user.sessionVersion : 0,
+    },
+    JWT_SECRET,
+    {
     algorithm: "HS256",
     expiresIn: "7d",
-  });
+    }
+  );
 }
 
 function issueSessionToken(user) {
@@ -218,6 +232,36 @@ function createEmailNotVerifiedError() {
   err.status = 403;
   err.code = "EMAIL_NOT_VERIFIED";
   return err;
+}
+
+function createAdminAccountLockedError(lockedUntil) {
+  const err = new Error("Admin account temporarily locked");
+  err.status = 429;
+  err.code = "ADMIN_ACCOUNT_LOCKED";
+  err.details = {
+    lockedUntil,
+  };
+  return err;
+}
+
+function getAdminLockDurationMs() {
+  return ADMIN_LOGIN_LOCK_MINUTES * 60 * 1000;
+}
+
+function computeAdminFailureUpdate(user, now = new Date()) {
+  const currentAttempts = Number.isInteger(user?.failedLoginAttempts) ? user.failedLoginAttempts : 0;
+  const nextAttempts = currentAttempts + 1;
+  const shouldLock = nextAttempts >= ADMIN_LOGIN_MAX_FAILED_ATTEMPTS;
+  return {
+    failedLoginAttempts: shouldLock ? 0 : nextAttempts,
+    lockedUntil: shouldLock ? new Date(now.getTime() + getAdminLockDurationMs()) : null,
+  };
+}
+
+function isAdminLockActive(user, now = new Date()) {
+  if (!user || user.role !== Role.ADMIN || !user.lockedUntil) return false;
+  const lockedUntilMs = new Date(user.lockedUntil).getTime();
+  return Number.isFinite(lockedUntilMs) && lockedUntilMs > now.getTime();
 }
 
 async function sendVerificationEmail({ email, name, code }) {
@@ -808,6 +852,9 @@ async function resetPassword({ email, token, password }) {
     where: { id: user.id },
     data: {
       password: passwordHash,
+      sessionVersion: { increment: 1 },
+      failedLoginAttempts: 0,
+      lockedUntil: null,
       passwordResetTokenHash: null,
       passwordResetExpiresAt: null,
       emailOtpCode: null,
@@ -824,9 +871,20 @@ async function loginUser({ email, password }) {
 
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) throw new Error("Invalid email or password");
+  if (isAdminLockActive(user)) {
+    throw createAdminAccountLockedError(user.lockedUntil);
+  }
 
   const match = await bcrypt.compare(password, user.password);
-  if (!match) throw new Error("Invalid email or password");
+  if (!match) {
+    if (user.role === Role.ADMIN) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: computeAdminFailureUpdate(user),
+      });
+    }
+    throw new Error("Invalid email or password");
+  }
   if (!user.emailVerified) {
     const err = createEmailNotVerifiedError();
     const challenge = await buildEmailVerificationChallengeForUser(user);
@@ -834,8 +892,22 @@ async function loginUser({ email, password }) {
     throw err;
   }
 
-  const token = generateToken(user);
-  return { user: sanitizeUser(user), token };
+  let authenticatedUser = user;
+  if (
+    user.role === Role.ADMIN &&
+    ((Number.isInteger(user.failedLoginAttempts) && user.failedLoginAttempts > 0) || user.lockedUntil)
+  ) {
+    authenticatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+      },
+    });
+  }
+
+  const token = generateToken(authenticatedUser);
+  return { user: sanitizeUser(authenticatedUser), token };
 }
 
 async function getOrdersByUserId(userId) {
@@ -921,6 +993,9 @@ async function updateMe(userId, body) {
     if (!match) throw new Error("Old password is incorrect");
 
     updateData.password = await bcrypt.hash(body.newPassword, SALT_ROUNDS);
+    updateData.sessionVersion = { increment: 1 };
+    updateData.failedLoginAttempts = 0;
+    updateData.lockedUntil = null;
   }
 
   if (Object.keys(updateData).length === 0) {
@@ -987,7 +1062,12 @@ async function updateUserRole(userId, newRole) {
 
   const updatedUser = await prisma.user.update({
     where: { id: parsedUserId },
-    data: { role },
+    data: {
+      role,
+      sessionVersion: { increment: 1 },
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+    },
   });
 
   return sanitizeUser(updatedUser);
@@ -1096,6 +1176,18 @@ async function deleteUser(userId) {
   });
 }
 
+async function revokeUserSessions(userId) {
+  const parsedUserId = parsePositiveInt(userId, "userId");
+  await prisma.user.update({
+    where: { id: parsedUserId },
+    data: {
+      sessionVersion: { increment: 1 },
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+    },
+  });
+}
+
 module.exports = {
   issueSessionToken,
   createUser,
@@ -1111,7 +1203,10 @@ module.exports = {
   getUserById,
   updateUserRole,
   deleteUser,
+  revokeUserSessions,
   __testing: {
     getPasswordResetBaseUrl,
+    computeAdminFailureUpdate,
+    isAdminLockActive,
   },
 };

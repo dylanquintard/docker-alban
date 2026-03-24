@@ -50,3 +50,33 @@ test("getPasswordResetBaseUrl ignores env base when explicit options are provide
     }
   }
 });
+
+test("computeAdminFailureUpdate locks admin after configured threshold", () => {
+  const result = __testing.computeAdminFailureUpdate(
+    { failedLoginAttempts: 4 },
+    new Date("2026-03-24T10:00:00.000Z")
+  );
+
+  assert.equal(result.failedLoginAttempts, 0);
+  assert.ok(result.lockedUntil instanceof Date);
+  assert.equal(result.lockedUntil.toISOString(), "2026-03-24T10:15:00.000Z");
+});
+
+test("isAdminLockActive only returns true while lock is still in the future", () => {
+  const now = new Date("2026-03-24T10:00:00.000Z");
+
+  assert.equal(
+    __testing.isAdminLockActive(
+      { role: "ADMIN", lockedUntil: "2026-03-24T10:05:00.000Z" },
+      now
+    ),
+    true
+  );
+  assert.equal(
+    __testing.isAdminLockActive(
+      { role: "ADMIN", lockedUntil: "2026-03-24T09:59:59.000Z" },
+      now
+    ),
+    false
+  );
+});

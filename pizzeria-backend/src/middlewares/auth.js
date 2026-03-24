@@ -52,16 +52,25 @@ async function authMiddleware(req, res, next) {
 
     const dbUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, role: true },
+      select: { id: true, role: true, sessionVersion: true },
     });
 
     if (!dbUser) {
       return res.status(401).json({ error: "User not found" });
     }
 
+    const tokenSessionVersion = Number.isInteger(decoded?.sessionVersion)
+      ? decoded.sessionVersion
+      : 0;
+
+    if (tokenSessionVersion !== (dbUser.sessionVersion || 0)) {
+      return res.status(401).json({ error: "Session revoked" });
+    }
+
     req.user = {
       userId: dbUser.id,
       role: dbUser.role,
+      sessionVersion: dbUser.sessionVersion || 0,
     };
 
     // CSRF applies to browser cookie-authenticated requests.

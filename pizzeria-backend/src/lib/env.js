@@ -110,6 +110,16 @@ const AUTH_COOKIE_MAX_AGE = parsePositiveInt(
   "AUTH_COOKIE_MAX_AGE",
   7 * 24 * 60 * 60 * 1000
 );
+const ADMIN_LOGIN_MAX_FAILED_ATTEMPTS = parsePositiveInt(
+  process.env.ADMIN_LOGIN_MAX_FAILED_ATTEMPTS,
+  "ADMIN_LOGIN_MAX_FAILED_ATTEMPTS",
+  5
+);
+const ADMIN_LOGIN_LOCK_MINUTES = parsePositiveInt(
+  process.env.ADMIN_LOGIN_LOCK_MINUTES,
+  "ADMIN_LOGIN_LOCK_MINUTES",
+  15
+);
 const UPLOAD_DIR = path.resolve(
   String(process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads")).trim()
 );
@@ -228,6 +238,8 @@ module.exports = {
   AUTH_COOKIE_SECURE,
   AUTH_COOKIE_SAMESITE,
   AUTH_COOKIE_MAX_AGE,
+  ADMIN_LOGIN_MAX_FAILED_ATTEMPTS,
+  ADMIN_LOGIN_LOCK_MINUTES,
   UPLOAD_DIR,
   UPLOAD_MAX_MB,
   UPLOAD_PUBLIC_BASE_URL,
