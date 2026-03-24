@@ -1,0 +1,19 @@
+{
+  "name": "Admin Mobile V2",
+  "short_name": "Admin V2",
+  "description": "Application mobile admin V2 de la pizzeria.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111315",
+  "theme_color": "#111315",
+  "lang": "fr",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

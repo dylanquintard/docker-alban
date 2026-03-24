@@ -1,0 +1,1 @@
+export { CustomerInfoApp } from "./CustomerInfoApp";
