@@ -8,89 +8,108 @@ datasource db {
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
-  name          String
-  firstName     String?
-  lastName      String?
-  phone         String
-  email         String    @unique
-  password      String
-  sessionVersion Int      @default(0)
-  failedLoginAttempts Int @default(0)
-  lockedUntil   DateTime?
-  emailVerified Boolean   @default(false)
-  phoneVerified Boolean   @default(false)
-  emailOtpCode  String?
-  phoneOtpCode  String?
-  otpExpiresAt  DateTime?
+  id                     Int                      @id @default(autoincrement())
+  name                   String
+  phone                  String
+  email                  String
+  password               String
+  role                   Role                     @default(CLIENT)
+  emailVerified          Boolean                  @default(false)
+  phoneVerified          Boolean                  @default(false)
+  emailOtpCode           String?
+  phoneOtpCode           String?
+  otpExpiresAt           DateTime?
+  firstName              String                   @default("")
+  lastName               String?
   passwordResetTokenHash String?
   passwordResetExpiresAt DateTime?
-  role          Role      @default(CLIENT)
-  orders        Order[]
-  reviews       OrderReview[]
-  orderActivities OrderActivity[] @relation("OrderActivityActor")
-  webPushSubscriptions WebPushSubscription[]
+  sessionVersion         Int                      @default(0)
+  failedLoginAttempts    Int                      @default(0)
+  lockedUntil            DateTime?
+  tenantId               Int?
+  orders                 Order[]
+  orderActivities        OrderActivity[]          @relation("OrderActivityActor")
+  reviews                OrderReview[]
+  Tenant                 Tenant?                  @relation(fields: [tenantId], references: [id])
+  UserPositionAssignment UserPositionAssignment[]
+  webPushSubscriptions   WebPushSubscription[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId, role])
 }
 
 model Category {
-  id                       Int          @id @default(autoincrement())
-  name                     String
-  kind                     CategoryKind @default(PRODUCT)
-  description              String?
-  sortOrder                Int          @default(0)
-  active                   Boolean      @default(true)
-  customerCanCustomize     Boolean      @default(false)
-  products                 Product[]
-  ingredients              Ingredient[]
-  createdAt                DateTime     @default(now())
-  updatedAt                DateTime     @updatedAt
+  id                   Int          @id @default(autoincrement())
+  name                 String       @unique
+  description          String?
+  sortOrder            Int          @default(0)
+  active               Boolean      @default(true)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  kind                 CategoryKind @default(PRODUCT)
+  customerCanCustomize Boolean      @default(false)
+  tenantId             Int?
+  menuId               Int?
+  Menu                 Menu?        @relation(fields: [menuId], references: [id])
+  Tenant               Tenant?      @relation(fields: [tenantId], references: [id])
+  ingredients          Ingredient[]
+  products             Product[]
 
-  @@unique([name, kind])
+  @@unique([tenantId, name, kind])
   @@index([active, kind, sortOrder])
+  @@index([active, sortOrder])
+  @@index([menuId, active, sortOrder])
+  @@index([tenantId, active, kind, sortOrder])
 }
 
 model Product {
-  id          Int                 @id @default(autoincrement())
-  name        String
-  description String
-  basePrice   Decimal             @db.Decimal(10, 2)
-  imageUrl    String?
+  id           Int                 @id @default(autoincrement())
+  name         String
+  description  String
+  basePrice    Decimal             @db.Decimal(10, 2)
+  categoryId   Int?
+  imageUrl     String?
   thumbnailUrl String?
-  imageAlt    String?
-  categoryId  Int?
-  category    Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  ingredients ProductIngredient[]
-  orderItems  OrderItem[]
+  imageAlt     String?
+  tenantId     Int?
+  orderItems   OrderItem[]
+  category     Category?           @relation(fields: [categoryId], references: [id])
+  Tenant       Tenant?             @relation(fields: [tenantId], references: [id])
+  ingredients  ProductIngredient[]
 
-  @@index([categoryId], map: "Pizza_categoryId_idx")
+  @@index([categoryId])
+  @@index([tenantId, categoryId])
   @@map("Pizza")
 }
 
 model Ingredient {
-  id         Int                 @id @default(autoincrement())
-  name       String
-  price      Decimal             @db.Decimal(10, 2)
-  isExtra    Boolean             @default(true)
-  isBaseIngredient Boolean       @default(false)
-  active     Boolean             @default(true)
-  categoryId Int?
-  category   Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  products   ProductIngredient[]
+  id               Int                 @id @default(autoincrement())
+  name             String
+  price            Decimal             @db.Decimal(10, 2)
+  isExtra          Boolean             @default(true)
+  categoryId       Int?
+  isBaseIngredient Boolean             @default(false)
+  active           Boolean             @default(true)
+  tenantId         Int?
+  category         Category?           @relation(fields: [categoryId], references: [id])
+  Tenant           Tenant?             @relation(fields: [tenantId], references: [id])
+  products         ProductIngredient[]
 
   @@index([categoryId])
+  @@index([tenantId, categoryId])
 }
 
 model ProductIngredient {
-  id           Int        @id @default(autoincrement())
-  productId    Int        @map("pizzaId")
-  ingredientId Int
-  isBase       Boolean    @default(false)
-  isAfterCooking Boolean  @default(false)
-  isRecommended Boolean   @default(false)
-  product      Product    @relation(fields: [productId], references: [id])
-  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+  id             Int        @id @default(autoincrement())
+  productId      Int        @map("pizzaId")
+  ingredientId   Int
+  isBase         Boolean    @default(false)
+  isAfterCooking Boolean    @default(false)
+  isRecommended  Boolean    @default(false)
+  ingredient     Ingredient @relation(fields: [ingredientId], references: [id])
+  product        Product    @relation(fields: [productId], references: [id])
 
-  @@unique([productId, ingredientId], map: "PizzaIngredient_pizzaId_ingredientId_key")
+  @@unique([productId, ingredientId])
   @@map("PizzaIngredient")
 }
 
@@ -108,25 +127,30 @@ model Location {
   active       Boolean    @default(true)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
-  timeSlots    TimeSlot[]
+  tenantId     Int?
+  Tenant       Tenant?    @relation(fields: [tenantId], references: [id])
   printers     Printer[]
+  timeSlots    TimeSlot[]
 
   @@index([active, name])
+  @@index([tenantId, active, name])
 }
 
 model TimeSlot {
-  id            Int       @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   startTime     DateTime
   endTime       DateTime
   maxPizzas     Int
-  currentPizzas Int       @default(0)
-  active        Boolean   @default(true)
+  currentPizzas Int         @default(0)
+  active        Boolean     @default(true)
   serviceDate   DateTime
   locationId    Int?
   agentId       Int?
-  location      Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  agent         PrintAgent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  tenantId      Int?
   orders        Order[]
+  agent         PrintAgent? @relation(fields: [agentId], references: [id])
+  location      Location?   @relation(fields: [locationId], references: [id])
+  Tenant        Tenant?     @relation(fields: [tenantId], references: [id])
 
   @@index([serviceDate])
   @@index([active, startTime])
@@ -134,38 +158,48 @@ model TimeSlot {
   @@index([agentId])
   @@index([locationId, serviceDate, startTime])
   @@index([agentId, serviceDate, startTime])
+  @@index([tenantId, serviceDate, startTime])
 }
 
 model Order {
-  id           Int         @id @default(autoincrement())
-  user         User        @relation(fields: [userId], references: [id])
-  userId       Int
-  timeSlot     TimeSlot?   @relation(fields: [timeSlotId], references: [id])
-  timeSlotId   Int?
-  customerNote String?
-  items        OrderItem[]
-  total        Decimal     @db.Decimal(10, 2)
-  status       OrderStatus @default(PENDING)
-  createdAt    DateTime    @default(now())
-  printJobs    PrintJob[]
-  review       OrderReview?
-  activities   OrderActivity[]
+  id                     Int             @id @default(autoincrement())
+  userId                 Int?
+  timeSlotId             Int?
+  total                  Decimal         @db.Decimal(10, 2)
+  createdAt              DateTime        @default(now())
+  status                 OrderStatus     @default(PENDING)
+  note                   String?
+  customerNote           String?
+  tenantId               Int?
+  externalCustomerName   String?
+  externalCustomerPhone  String?
+  displayNumber          String?
+  displayNumberWindowKey String?
+  Tenant                 Tenant?         @relation(fields: [tenantId], references: [id])
+  timeSlot               TimeSlot?       @relation(fields: [timeSlotId], references: [id])
+  user                   User?           @relation(fields: [userId], references: [id])
+  activities             OrderActivity[]
+  items                  OrderItem[]
+  review                 OrderReview?
+  printJobs              PrintJob[]
 
+  @@unique([tenantId, displayNumberWindowKey, displayNumber])
   @@index([userId])
   @@index([userId, status, createdAt])
   @@index([status, createdAt])
   @@index([timeSlotId, status])
+  @@index([tenantId, status, createdAt])
 }
 
 model OrderActivity {
-  id          Int       @id @default(autoincrement())
-  orderId      Int
-  actorUserId  Int?
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  actorUserId Int?
   action      String
   metadata    Json?
-  createdAt   DateTime  @default(now())
-  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  actor       User?     @relation("OrderActivityActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  actor       User?    @relation("OrderActivityActor", fields: [actorUserId], references: [id])
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId, createdAt])
   @@index([actorUserId, createdAt])
@@ -174,14 +208,14 @@ model OrderActivity {
 
 model OrderReview {
   id        Int      @id @default(autoincrement())
-  orderId    Int     @unique
-  userId     Int
-  rating     Int
-  comment    String  @db.Text
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId   Int      @unique
+  userId    Int
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@index([createdAt])
@@ -189,50 +223,57 @@ model OrderReview {
 
 model OrderItem {
   id             Int      @id @default(autoincrement())
-  order          Order    @relation(fields: [orderId], references: [id])
   orderId        Int
-  product        Product? @relation(fields: [productId], references: [id], onDelete: SetNull, map: "OrderItem_pizzaId_fkey")
   productId      Int?     @map("pizzaId")
   quantity       Int
   unitPrice      Decimal  @db.Decimal(10, 2)
   customizations Json
+  order          Order    @relation(fields: [orderId], references: [id])
+  product        Product? @relation(fields: [productId], references: [id], map: "OrderItem_pizzaId_fkey")
 
   @@index([orderId])
-  @@index([orderId, productId], map: "OrderItem_orderId_pizzaId_idx")
+  @@index([orderId, productId])
 }
 
 model HomeGalleryImage {
-  id           Int      @id @default(autoincrement())
-  title        String?
-  description  String?
-  imageUrl     String
-  thumbnailUrl String?
-  altText      String?
-  sortOrder    Int      @default(0)
-  active       Boolean  @default(true)
-  isHomeBackground Boolean @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  title            String?
+  description      String?
+  imageUrl         String
+  thumbnailUrl     String?
+  altText          String?
+  sortOrder        Int      @default(0)
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  isHomeBackground Boolean  @default(false)
+  tenantId         Int?
+  Tenant           Tenant?  @relation(fields: [tenantId], references: [id])
 
   @@index([active, sortOrder])
   @@index([active, isHomeBackground, sortOrder])
+  @@index([tenantId, active, sortOrder])
 }
 
 model BlogArticle {
-  id          Int             @id @default(autoincrement())
-  title       String
-  slug        String          @unique
-  description String          @db.Text
-  metaTitle   String?
-  metaDescription String?     @db.Text
-  published   Boolean         @default(true)
-  publishedAt DateTime?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  paragraphs  BlogParagraph[]
-  images      BlogImage[]
+  id              Int             @id @default(autoincrement())
+  title           String
+  slug            String
+  description     String
+  published       Boolean         @default(true)
+  publishedAt     DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  metaTitle       String?
+  metaDescription String?
+  tenantId        Int?
+  Tenant          Tenant?         @relation(fields: [tenantId], references: [id])
+  images          BlogImage[]
+  paragraphs      BlogParagraph[]
 
+  @@unique([tenantId, slug])
   @@index([published, publishedAt, updatedAt])
+  @@index([tenantId, published, publishedAt, updatedAt])
 }
 
 model BlogParagraph {
@@ -240,7 +281,7 @@ model BlogParagraph {
   articleId Int
   sortOrder Int         @default(0)
   title     String
-  content   String      @db.Text
+  content   String
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   article   BlogArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
@@ -265,90 +306,100 @@ model BlogImage {
 
 model SiteSetting {
   id              Int      @id @default(1)
-  siteName        String   @default("Camion Pizza Italienne")
+  siteName        String   @default("Pizza Truck")
   siteTagline     Json?
   siteDescription Json?
   contact         Json?
   social          Json?
   seo             Json?
   home            Json?
+  announcement    Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   blog            Json?
   contactPage     Json?
   order           Json?
   footer          Json?
-  announcement    Json?
   pizzaPage       Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  tenantId        Int?     @unique
+  Tenant          Tenant?  @relation(fields: [tenantId], references: [id])
 }
 
 model PageFaq {
   id         Int      @id @default(autoincrement())
   targetPath String
   question   String
-  answer     String   @db.Text
+  answer     String
   sortOrder  Int      @default(0)
   active     Boolean  @default(true)
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  updatedAt  DateTime @default(now()) @updatedAt
+  tenantId   Int?
+  Tenant     Tenant?  @relation(fields: [tenantId], references: [id])
 
   @@index([targetPath, active, sortOrder])
   @@index([targetPath, sortOrder])
+  @@index([tenantId, targetPath, active, sortOrder])
 }
 
 model WebPushSubscription {
-  id             Int      @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   userId         Int
-  endpoint       String   @unique
+  endpoint       String    @unique
   p256dh         String
   auth           String
   userAgent      String?
-  active         Boolean  @default(true)
+  active         Boolean   @default(true)
   lastNotifiedAt DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, active])
   @@index([active, updatedAt])
 }
 
 model PrintAgent {
-  id              Int               @id @default(autoincrement())
-  code            String            @unique
+  id              Int                 @id @default(autoincrement())
+  code            String
   name            String
   tokenHash       String
-  status          PrintAgentStatus  @default(OFFLINE)
+  status          PrintAgentStatus    @default(OFFLINE)
   lastHeartbeatAt DateTime?
   lastSeenIp      String?
   version         String?
   metadata        Json?
-  printers        Printer[]
-  claimedJobs     PrintJob[]        @relation("ClaimedPrintJobs")
-  timeSlots       TimeSlot[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  tenantId        Int?
+  Tenant          Tenant?             @relation(fields: [tenantId], references: [id])
   closures        PrintAgentClosure[]
+  claimedJobs     PrintJob[]          @relation("ClaimedPrintJobs")
   attempts        PrintJobAttempt[]
   logs            PrintLog[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  printers        Printer[]
+  timeSlots       TimeSlot[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status, updatedAt])
 }
 
 model PrintAgentClosure {
-  id          Int        @id @default(autoincrement())
-  agentId     Int
-  startDate   DateTime
-  endDate     DateTime
-  reason      String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  agent       PrintAgent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  id        Int        @id @default(autoincrement())
+  agentId   Int
+  startDate DateTime
+  endDate   DateTime
+  reason    String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  agent     PrintAgent @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@index([agentId, startDate, endDate])
 }
 
 model Printer {
   id             Int                   @id @default(autoincrement())
-  code           String                @unique
+  code           String
   name           String
   model          String?
   paperWidthMm   Int                   @default(80)
@@ -358,14 +409,18 @@ model Printer {
   isActive       Boolean               @default(true)
   agentId        Int?
   locationId     Int?
-  agent          PrintAgent?           @relation(fields: [agentId], references: [id], onDelete: SetNull)
-  location       Location?             @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  jobs           PrintJob[]
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
+  tenantId       Int?
+  jobs           PrintJob[]
+  agent          PrintAgent?           @relation(fields: [agentId], references: [id])
+  location       Location?             @relation(fields: [locationId], references: [id])
+  Tenant         Tenant?               @relation(fields: [tenantId], references: [id])
 
+  @@unique([tenantId, code])
   @@index([isActive, locationId])
   @@index([agentId])
+  @@index([tenantId, isActive, locationId])
 }
 
 model PrintJob {
@@ -391,20 +446,23 @@ model PrintJob {
   reprintOfJobId   String?
   idempotencyKey   String            @unique
   payload          Json
-  order            Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  printer          Printer           @relation(fields: [printerId], references: [id], onDelete: Restrict)
-  claimedByAgent   PrintAgent?       @relation("ClaimedPrintJobs", fields: [claimedByAgentId], references: [id], onDelete: SetNull)
-  reprintOfJob     PrintJob?         @relation("PrintJobReprints", fields: [reprintOfJobId], references: [id], onDelete: SetNull)
-  reprints         PrintJob[]        @relation("PrintJobReprints")
-  attempts         PrintJobAttempt[]
-  logs             PrintLog[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+  tenantId         Int?
+  claimedByAgent   PrintAgent?       @relation("ClaimedPrintJobs", fields: [claimedByAgentId], references: [id])
+  order            Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  printer          Printer           @relation(fields: [printerId], references: [id])
+  reprintOfJob     PrintJob?         @relation("PrintJobReprints", fields: [reprintOfJobId], references: [id])
+  reprints         PrintJob[]        @relation("PrintJobReprints")
+  Tenant           Tenant?           @relation(fields: [tenantId], references: [id])
+  attempts         PrintJobAttempt[]
+  logs             PrintLog[]
 
   @@index([status, scheduledAt, nextRetryAt, priority, createdAt])
   @@index([status, printedAt])
   @@index([claimedByAgentId, status, lockedUntil])
   @@index([orderId, createdAt])
+  @@index([tenantId, status, scheduledAt, nextRetryAt, priority, createdAt], map: "PrintJob_tenantId_status_scheduledAt_nextRetryAt_priority_creat")
 }
 
 model PrintJobAttempt {
@@ -417,8 +475,8 @@ model PrintJobAttempt {
   errorCode       String?
   errorMessage    String?
   printerResponse Json?
+  agent           PrintAgent? @relation(fields: [agentId], references: [id])
   job             PrintJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  agent           PrintAgent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
 
   @@index([jobId, startedAt])
 }
@@ -431,24 +489,372 @@ model PrintLog {
   event     String
   payload   Json?
   createdAt DateTime      @default(now())
+  agent     PrintAgent?   @relation(fields: [agentId], references: [id])
   job       PrintJob?     @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  agent     PrintAgent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
 
   @@index([jobId, createdAt])
   @@index([agentId, createdAt])
+}
+
+model Menu {
+  id          Int        @id @default(autoincrement())
+  tenantId    Int
+  name        String
+  description String?
+  sortOrder   Int        @default(0)
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now())
+  Category    Category[]
+  Tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId, active, sortOrder])
+}
+
+model PiFinalizedOrderFeed {
+  id              Int         @id @default(autoincrement())
+  orderId         Int         @unique
+  status          OrderStatus @default(FINALIZED)
+  pickupAt        DateTime
+  payload         Json
+  syncedAt        DateTime    @default(now())
+  deliveredAt     DateTime?
+  sourceCreatedAt DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime
+
+  @@index([deliveredAt, pickupAt])
+  @@index([status, pickupAt])
+}
+
+model PositionItemAssignment {
+  id            Int           @id @default(autoincrement())
+  tenantId      Int
+  positionId    Int
+  itemId        Int
+  active        Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime
+  StockItem     StockItem     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  StockPosition StockPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  Tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([positionId, itemId])
+  @@index([tenantId, itemId, active])
+  @@index([tenantId, positionId, active])
+}
+
+model PositionZoneAssignment {
+  id            Int           @id @default(autoincrement())
+  tenantId      Int
+  positionId    Int
+  zoneId        Int
+  active        Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime
+  StockPosition StockPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  Tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  StockZone     StockZone     @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@unique([positionId, zoneId])
+  @@index([tenantId, positionId, active])
+  @@index([tenantId, zoneId, active])
+}
+
+model StockAlertState {
+  id                   Int       @id @default(autoincrement())
+  tenantId             Int
+  alertKey             String
+  status               String    @default("open")
+  acknowledgedAt       DateTime?
+  acknowledgedByUserId Int?
+  resolvedAt           DateTime?
+  resolvedByUserId     Int?
+  note                 String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime
+  resolutionReason     String?
+  Tenant               Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, alertKey])
+  @@index([tenantId, status, updatedAt])
+}
+
+model StockAuditLog {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int
+  actorUserId Int?
+  actionType  String
+  entityType  String
+  entityId    String?
+  message     String?
+  payload     Json?
+  createdAt   DateTime @default(now())
+  Tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, actionType, createdAt])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entityType, createdAt])
+}
+
+model StockCount {
+  id                Int              @id @default(autoincrement())
+  tenantId          Int
+  type              String           @default("fin_service")
+  status            String           @default("submitted")
+  positionId        Int
+  zoneId            Int?
+  createdByUserId   Int?
+  submittedAt       DateTime?
+  validatedAt       DateTime?
+  validatedByUserId Int?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime
+  StockPosition     StockPosition    @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  Tenant            Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  StockZone         StockZone?       @relation(fields: [zoneId], references: [id])
+  StockCountLine    StockCountLine[]
+
+  @@index([tenantId, positionId, createdAt])
+  @@index([tenantId, status, submittedAt])
+  @@index([tenantId, zoneId, createdAt])
+}
+
+model StockCountLine {
+  id                  Int        @id @default(autoincrement())
+  tenantId            Int
+  countId             Int
+  itemId              Int
+  theoreticalSnapshot Decimal    @default(0) @db.Decimal(10, 2)
+  countedStockReal    Decimal?   @db.Decimal(10, 2)
+  difference          Decimal?   @db.Decimal(10, 2)
+  isCounted           Boolean    @default(false)
+  comment             String?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime
+  StockCount          StockCount @relation(fields: [countId], references: [id], onDelete: Cascade)
+  StockItem           StockItem  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  Tenant              Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, countId, createdAt])
+  @@index([tenantId, itemId, createdAt])
+}
+
+model StockItem {
+  id                     Int                      @id @default(autoincrement())
+  tenantId               Int
+  code                   String
+  name                   String
+  description            String?
+  unit                   String
+  category               String?
+  status                 String                   @default("pending_validation")
+  stockTheoretical       Decimal                  @default(0) @db.Decimal(10, 2)
+  stockReal              Decimal                  @default(0) @db.Decimal(10, 2)
+  thresholdMin           Decimal?                 @db.Decimal(10, 2)
+  thresholdCritical      Decimal?                 @db.Decimal(10, 2)
+  createdByUserId        Int?
+  validatedByUserId      Int?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  PositionItemAssignment PositionItemAssignment[]
+  StockCountLine         StockCountLine[]
+  Tenant                 Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  StockItemActivity      StockItemActivity[]
+  StockValidationRequest StockValidationRequest[]
+  ZoneItemAssignment     ZoneItemAssignment[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status, name])
+}
+
+model StockItemActivity {
+  id           Int       @id @default(autoincrement())
+  tenantId     Int
+  itemId       Int
+  actorUserId  Int?
+  activityType String
+  message      String?
+  payload      Json?
+  createdAt    DateTime  @default(now())
+  StockItem    StockItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  Tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, activityType, createdAt])
+  @@index([tenantId, itemId, createdAt])
+}
+
+model StockPosition {
+  id                     Int                      @id @default(autoincrement())
+  tenantId               Int
+  code                   String
+  name                   String
+  description            String?
+  active                 Boolean                  @default(true)
+  isManagerPosition      Boolean                  @default(false)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  PositionItemAssignment PositionItemAssignment[]
+  PositionZoneAssignment PositionZoneAssignment[]
+  StockCount             StockCount[]
+  Tenant                 Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  UserPositionAssignment UserPositionAssignment[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, active, name])
+}
+
+model StockValidationRequest {
+  id                Int        @id @default(autoincrement())
+  tenantId          Int
+  targetType        String
+  targetId          Int
+  itemId            Int?
+  requestedByUserId Int?
+  requestReason     String?
+  payload           Json?
+  status            String     @default("pending")
+  reviewedByUserId  Int?
+  reviewNote        String?
+  createdAt         DateTime   @default(now())
+  reviewedAt        DateTime?
+  updatedAt         DateTime
+  StockItem         StockItem? @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  Tenant            Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, itemId])
+  @@index([tenantId, status, createdAt])
+}
+
+model StockZone {
+  id                     Int                      @id @default(autoincrement())
+  tenantId               Int
+  code                   String
+  name                   String
+  description            String?
+  zoneType               String?
+  active                 Boolean                  @default(true)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  PositionZoneAssignment PositionZoneAssignment[]
+  StockCount             StockCount[]
+  Tenant                 Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ZoneItemAssignment     ZoneItemAssignment[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, active, name])
+}
+
+model Tenant {
+  id                         Int                      @id @default(autoincrement())
+  slug                       String                   @unique
+  name                       String
+  primaryDomain              String?                  @unique
+  adminDomain                String?                  @unique
+  active                     Boolean                  @default(true)
+  createdAt                  DateTime                 @default(now())
+  updatedAt                  DateTime                 @default(now())
+  establishmentCode          String                   @unique @db.Char(3)
+  siteEnabled                Boolean                  @default(true)
+  appEnabled                 Boolean                  @default(true)
+  supportOwner               String?
+  supportNotes               String?
+  onboardingDomainValidated  Boolean                  @default(false)
+  onboardingSiteValidated    Boolean                  @default(false)
+  onboardingMenuValidated    Boolean                  @default(false)
+  onboardingAppValidated     Boolean                  @default(false)
+  lastVerificationAt         DateTime?
+  lastVerificationStatus     String?
+  lastVerificationNote       String?
+  lastAutoVerificationAt     DateTime?
+  lastAutoVerificationStatus String?
+  lastAutoVerificationNote   String?
+  lastAutoVerificationChecks Json?
+  supportPriority            String?
+  supportStatus              String?
+  supportNextFollowUpAt      DateTime?
+  supportHistory             Json?
+  BlogArticle                BlogArticle[]
+  Category                   Category[]
+  HomeGalleryImage           HomeGalleryImage[]
+  Ingredient                 Ingredient[]
+  Location                   Location[]
+  Menu                       Menu[]
+  Order                      Order[]
+  PageFaq                    PageFaq[]
+  Pizza                      Product[]
+  PositionItemAssignment     PositionItemAssignment[]
+  PositionZoneAssignment     PositionZoneAssignment[]
+  PrintAgent                 PrintAgent[]
+  PrintJob                   PrintJob[]
+  Printer                    Printer[]
+  SiteSetting                SiteSetting?
+  StockAlertState            StockAlertState[]
+  StockAuditLog              StockAuditLog[]
+  StockCount                 StockCount[]
+  StockCountLine             StockCountLine[]
+  StockItem                  StockItem[]
+  StockItemActivity          StockItemActivity[]
+  StockPosition              StockPosition[]
+  StockValidationRequest     StockValidationRequest[]
+  StockZone                  StockZone[]
+  TimeSlot                   TimeSlot[]
+  User                       User[]
+  UserPositionAssignment     UserPositionAssignment[]
+  ZoneItemAssignment         ZoneItemAssignment[]
+}
+
+model UserPositionAssignment {
+  id            Int           @id @default(autoincrement())
+  tenantId      Int
+  userId        Int
+  positionId    Int
+  active        Boolean       @default(true)
+  isResponsible Boolean       @default(false)
+  startedAt     DateTime      @default(now())
+  endedAt       DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime
+  StockPosition StockPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  Tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  User          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, positionId])
+  @@index([tenantId, positionId, active])
+  @@index([tenantId, userId, active])
+}
+
+model ZoneItemAssignment {
+  id        Int       @id @default(autoincrement())
+  tenantId  Int
+  zoneId    Int
+  itemId    Int
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime
+  StockItem StockItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  Tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  StockZone StockZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@unique([zoneId, itemId])
+  @@index([tenantId, itemId, active])
+  @@index([tenantId, zoneId, active])
 }
 
 enum OrderStatus {
   PENDING
   FINALIZED
   COMPLETED
-  VALIDATE
   CANCELED
+  VALIDATE
 }
 
 enum Role {
   CLIENT
   ADMIN
+  STAFF
+  SUPER_ADMIN
 }
 
 enum CategoryKind {

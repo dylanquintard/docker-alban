@@ -1,4 +1,8 @@
 const prisma = require("../lib/prisma");
+const {
+  withDefaultTenantData,
+  withDefaultTenantWhere,
+} = require("./tenant-context.service");
 
 const CATEGORY_KINDS = {
   PRODUCT: "PRODUCT",
@@ -65,11 +69,11 @@ async function getCategories(filters = {}) {
   const sortBy = parseCategorySortBy(filters.sortBy);
   const where =
     active === undefined && kind === undefined
-      ? undefined
-      : {
+      ? withDefaultTenantWhere()
+      : withDefaultTenantWhere({
           active: active === undefined ? undefined : active,
           kind: kind === undefined ? undefined : kind,
-        };
+        });
 
   return prisma.category.findMany({
     where,
@@ -82,8 +86,8 @@ async function getCategories(filters = {}) {
 
 async function getCategoryById(id) {
   const categoryId = parsePositiveInt(id, "id");
-  const category = await prisma.category.findUnique({
-    where: { id: categoryId },
+  const category = await prisma.category.findFirst({
+    where: withDefaultTenantWhere({ id: categoryId }),
   });
   if (!category) throw new Error("Category not found");
   return category;
@@ -93,7 +97,7 @@ async function createCategory(data) {
   const kind = parseCategoryKind(data.kind, { required: false }) || CATEGORY_KINDS.PRODUCT;
 
   return prisma.category.create({
-    data: {
+    data: withDefaultTenantData({
       name: parseName(data.name),
       kind,
       description:
@@ -103,13 +107,15 @@ async function createCategory(data) {
       sortOrder: parseSortOrder(data.sortOrder) ?? 0,
       active: parseOptionalBoolean(data.active) ?? true,
       customerCanCustomize: false,
-    },
+    }),
   });
 }
 
 async function updateCategory(id, data) {
   const categoryId = parsePositiveInt(id, "id");
-  const existing = await prisma.category.findUnique({ where: { id: categoryId } });
+  const existing = await prisma.category.findFirst({
+    where: withDefaultTenantWhere({ id: categoryId }),
+  });
   if (!existing) throw new Error("Category not found");
 
   const nextKind = parseCategoryKind(data.kind, { required: false });
@@ -145,9 +151,11 @@ async function activateCategory(id, active) {
 
 async function deleteCategory(id) {
   const categoryId = parsePositiveInt(id, "id");
-  return prisma.category.delete({
-    where: { id: categoryId },
+  const existing = await prisma.category.findFirst({
+    where: withDefaultTenantWhere({ id: categoryId }),
   });
+  if (!existing) throw new Error("Category not found");
+  return prisma.category.delete({ where: { id: categoryId } });
 }
 
 module.exports = {

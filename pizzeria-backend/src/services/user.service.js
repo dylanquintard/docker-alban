@@ -15,6 +15,10 @@ const { sanitizeUser } = require("../utils/user");
 const { normalizeCustomizations } = require("../utils/customizations");
 const { DELETED_PRODUCT_FALLBACK_NAME } = require("../utils/product");
 const {
+  withDefaultTenantData,
+  withDefaultTenantWhere,
+} = require("./tenant-context.service");
+const {
   escapeHtml,
   getEmailBranding,
   buildEmailLayout,
@@ -671,13 +675,15 @@ async function createUser(data) {
 
   const normalizedName = normalizeUserNameInput(data);
 
-  const existingUser = await prisma.user.findUnique({ where: { email } });
+  const existingUser = await prisma.user.findFirst({
+    where: withDefaultTenantWhere({ email }),
+  });
   if (existingUser) throw new Error("This email is already used");
 
   const hashedPassword = await bcrypt.hash(data.password, SALT_ROUNDS);
 
   const user = await prisma.user.create({
-    data: {
+    data: withDefaultTenantData({
       name: normalizedName.name,
       firstName: normalizedName.firstName,
       lastName: normalizedName.lastName,
@@ -687,7 +693,7 @@ async function createUser(data) {
       emailVerified: false,
       phoneVerified: true,
       role: Role.CLIENT,
-    },
+    }),
   });
 
   try {
@@ -714,7 +720,9 @@ async function verifyEmailCode({ email, code }) {
   const normalizedEmail = normalizeEmail(email);
   const normalizedCode = normalizeOtpCode(code);
 
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await prisma.user.findFirst({
+    where: withDefaultTenantWhere({ email: normalizedEmail }),
+  });
   if (!user) throw new Error("Invalid or expired verification code");
   if (user.emailVerified) {
     const token = generateToken(user);
@@ -751,7 +759,9 @@ async function verifyEmailCode({ email, code }) {
 
 async function resendEmailVerificationCode({ email }) {
   const normalizedEmail = normalizeEmail(email);
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await prisma.user.findFirst({
+    where: withDefaultTenantWhere({ email: normalizedEmail }),
+  });
   if (!user) {
     return { sent: true };
   }
@@ -772,7 +782,9 @@ async function resendEmailVerificationCode({ email }) {
 
 async function forgotPassword({ email }) {
   const normalizedEmail = normalizeEmail(email);
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await prisma.user.findFirst({
+    where: withDefaultTenantWhere({ email: normalizedEmail }),
+  });
 
   // Keep response identical to avoid account enumeration.
   if (!user) {
@@ -832,7 +844,9 @@ async function resetPassword({ email, token, password }) {
     throw new Error("Invalid or expired reset link");
   }
 
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await prisma.user.findFirst({
+    where: withDefaultTenantWhere({ email: normalizedEmail }),
+  });
   if (!user || !user.passwordResetTokenHash || !user.passwordResetExpiresAt) {
     throw new Error("Invalid or expired reset link");
   }
@@ -869,7 +883,9 @@ async function loginUser({ email, password }) {
   const normalizedEmail = normalizeEmail(email);
   validatePasswordInput(password);
 
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await prisma.user.findFirst({
+    where: withDefaultTenantWhere({ email: normalizedEmail }),
+  });
   if (!user) throw new Error("Invalid email or password");
   if (isAdminLockActive(user)) {
     throw createAdminAccountLockedError(user.lockedUntil);
@@ -914,7 +930,7 @@ async function getOrdersByUserId(userId) {
   const parsedUserId = parsePositiveInt(userId, "userId");
 
   const orders = await prisma.order.findMany({
-    where: { userId: parsedUserId },
+    where: withDefaultTenantWhere({ userId: parsedUserId }),
     orderBy: { createdAt: "desc" },
     include: {
       items: { include: { product: { include: { category: true } } } },
@@ -928,8 +944,8 @@ async function getOrdersByUserId(userId) {
 }
 
 async function getMe(userId) {
-  return prisma.user.findUnique({
-    where: { id: parsePositiveInt(userId, "userId") },
+  return prisma.user.findFirst({
+    where: withDefaultTenantWhere({ id: parsePositiveInt(userId, "userId") }),
     select: {
       id: true,
       name: true,
@@ -951,7 +967,9 @@ async function updateMe(userId, body) {
 
   async function getCurrentUser() {
     if (currentUser) return currentUser;
-    currentUser = await prisma.user.findUnique({ where: { id: parsedUserId } });
+    currentUser = await prisma.user.findFirst({
+      where: withDefaultTenantWhere({ id: parsedUserId }),
+    });
     if (!currentUser) throw new Error("User not found");
     return currentUser;
   }
@@ -1013,9 +1031,11 @@ async function updateMe(userId, body) {
 async function getAllUsers() {
   const users = await prisma.user.findMany({
     where: {
-      email: {
-        not: ARCHIVED_USER_EMAIL,
-      },
+      ...withDefaultTenantWhere({
+        email: {
+          not: ARCHIVED_USER_EMAIL,
+        },
+      }),
     },
     orderBy: { id: "asc" },
     select: {
@@ -1035,8 +1055,8 @@ async function getAllUsers() {
 }
 
 async function getUserById(id) {
-  const user = await prisma.user.findUnique({
-    where: { id: parsePositiveInt(id, "id") },
+  const user = await prisma.user.findFirst({
+    where: withDefaultTenantWhere({ id: parsePositiveInt(id, "id") }),
     select: {
       id: true,
       name: true,
@@ -1057,7 +1077,9 @@ async function updateUserRole(userId, newRole) {
   const parsedUserId = parsePositiveInt(userId, "userId");
   const role = parseRole(newRole);
 
-  const user = await prisma.user.findUnique({ where: { id: parsedUserId } });
+  const user = await prisma.user.findFirst({
+    where: withDefaultTenantWhere({ id: parsedUserId }),
+  });
   if (!user) throw new Error("User not found");
 
   const updatedUser = await prisma.user.update({
@@ -1074,7 +1096,9 @@ async function updateUserRole(userId, newRole) {
 }
 
 async function getOrCreateArchivedUser(tx) {
-  const existing = await tx.user.findUnique({ where: { email: ARCHIVED_USER_EMAIL } });
+  const existing = await tx.user.findFirst({
+    where: withDefaultTenantWhere({ email: ARCHIVED_USER_EMAIL }),
+  });
   if (existing) return existing;
 
   const fallbackPassword = generateRandomPassword(24);
@@ -1083,7 +1107,7 @@ async function getOrCreateArchivedUser(tx) {
 
   try {
     return await tx.user.create({
-      data: {
+      data: withDefaultTenantData({
         name: ARCHIVED_USER_NAME,
         firstName: archivedNameParts.firstName,
         lastName: archivedNameParts.lastName,
@@ -1093,12 +1117,12 @@ async function getOrCreateArchivedUser(tx) {
         emailVerified: true,
         phoneVerified: true,
         role: Role.CLIENT,
-      },
+      }),
     });
   } catch (err) {
     if (err?.code === "P2002") {
-      const concurrentCreated = await tx.user.findUnique({
-        where: { email: ARCHIVED_USER_EMAIL },
+      const concurrentCreated = await tx.user.findFirst({
+        where: withDefaultTenantWhere({ email: ARCHIVED_USER_EMAIL }),
       });
       if (concurrentCreated) return concurrentCreated;
     }
@@ -1109,13 +1133,17 @@ async function getOrCreateArchivedUser(tx) {
 async function deleteUser(userId) {
   const parsedUserId = parsePositiveInt(userId, "userId");
 
-  const user = await prisma.user.findUnique({ where: { id: parsedUserId } });
+  const user = await prisma.user.findFirst({
+    where: withDefaultTenantWhere({ id: parsedUserId }),
+  });
   if (!user) throw new Error("User not found");
   if (user.email === ARCHIVED_USER_EMAIL) {
     throw new Error("Cannot delete archived placeholder user");
   }
 
-  const orderCount = await prisma.order.count({ where: { userId: parsedUserId } });
+  const orderCount = await prisma.order.count({
+    where: withDefaultTenantWhere({ userId: parsedUserId }),
+  });
   if (orderCount === 0) {
     return prisma.user.delete({
       where: { id: parsedUserId },
@@ -1140,7 +1168,7 @@ async function deleteUser(userId) {
     }
 
     const pendingOrders = await tx.order.findMany({
-      where: { userId: parsedUserId, status: "PENDING" },
+      where: withDefaultTenantWhere({ userId: parsedUserId, status: "PENDING" }),
       select: { id: true },
     });
 
@@ -1155,7 +1183,7 @@ async function deleteUser(userId) {
     }
 
     await tx.order.updateMany({
-      where: { userId: parsedUserId },
+      where: withDefaultTenantWhere({ userId: parsedUserId }),
       data: { userId: archivedUser.id },
     });
 

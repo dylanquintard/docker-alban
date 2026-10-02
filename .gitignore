@@ -20,6 +20,7 @@ data/
 *.db
 *.sqlite
 *.sqlite3
+.tmp-edge-profile/
 
 # Logs
 *.log

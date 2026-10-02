@@ -341,7 +341,7 @@ export default function Header() {
             {token && user?.role === "ADMIN" && (
               <Link
                 to="/admin/orders"
-                className="hidden lg:inline-flex rounded-full border border-emerald-400/50 px-3 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/10"
+                className="hidden md:inline-flex rounded-full border border-emerald-400/50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-300 transition hover:bg-emerald-500/10"
               >
                 Admin
               </Link>
@@ -572,13 +572,24 @@ export default function Header() {
                 )}
 
                 {token ? (
-                  <Link
-                    to="/order"
-                    onClick={closeMobileMenus}
-                    className="mt-1 rounded-md bg-saffron px-3 py-2 text-center text-sm font-semibold text-charcoal"
-                  >
-                    {tr("Commander", "Order")}
-                  </Link>
+                  <div className="mt-1 grid gap-2">
+                    {isAdminUser && (
+                      <Link
+                        to="/admin/orders"
+                        onClick={closeMobileMenus}
+                        className="rounded-md border border-emerald-400/50 px-3 py-2 text-center text-sm font-semibold text-emerald-200"
+                      >
+                        Admin
+                      </Link>
+                    )}
+                    <Link
+                      to="/order"
+                      onClick={closeMobileMenus}
+                      className="rounded-md bg-saffron px-3 py-2 text-center text-sm font-semibold text-charcoal"
+                    >
+                      {tr("Commander", "Order")}
+                    </Link>
+                  </div>
                 ) : (
                   <Link
                     to="/login"

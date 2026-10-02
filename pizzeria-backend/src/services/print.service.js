@@ -25,6 +25,11 @@ const {
 } = require("../lib/env");
 const { normalizeCustomizations } = require("../utils/customizations");
 const { DELETED_PRODUCT_FALLBACK_NAME } = require("../utils/product");
+const {
+  getDefaultTenantId,
+  withDefaultTenantData,
+  withDefaultTenantWhere,
+} = require("./tenant-context.service");
 
 const MIN_NOTE_LENGTH = 0;
 const MAX_NOTE_LENGTH = 1000;
@@ -285,6 +290,7 @@ async function findPrinterForOrder(client, locationId, forcedPrinterId = null) {
       where: {
         id: parsePositiveInt(forcedPrinterId, "printerId"),
         isActive: true,
+        tenantId: getDefaultTenantId() || undefined,
       },
     });
   }
@@ -294,6 +300,7 @@ async function findPrinterForOrder(client, locationId, forcedPrinterId = null) {
       where: {
         isActive: true,
         locationId,
+        tenantId: getDefaultTenantId() || undefined,
       },
       include: {
         agent: {
@@ -312,6 +319,7 @@ async function findPrinterForOrder(client, locationId, forcedPrinterId = null) {
     where: {
       isActive: true,
       locationId: null,
+      tenantId: getDefaultTenantId() || undefined,
     },
     include: {
       agent: {
@@ -329,6 +337,7 @@ async function findPrinterForOrder(client, locationId, forcedPrinterId = null) {
   const allActivePrinters = await client.printer.findMany({
     where: {
       isActive: true,
+      tenantId: getDefaultTenantId() || undefined,
     },
     include: {
       agent: {
@@ -434,8 +443,8 @@ async function createPrintLog(client, data) {
 async function enqueueOrderTicketForOrderId(client, orderId, options = {}) {
   const parsedOrderId = parsePositiveInt(orderId, "orderId");
   const forceNow = parseBoolean(options.forceNow, false);
-  const order = await client.order.findUnique({
-    where: { id: parsedOrderId },
+  const order = await client.order.findFirst({
+    where: withDefaultTenantWhere({ id: parsedOrderId }),
     include: ORDER_TICKET_INCLUDE,
   });
 
@@ -507,7 +516,7 @@ async function enqueueOrderTicketForOrderId(client, orderId, options = {}) {
 
   try {
     let job = await client.printJob.create({
-      data: {
+      data: withDefaultTenantData({
         orderId: order.id,
         printerId: printer.id,
         jobType: PrintJobType.ORDER_TICKET,
@@ -518,7 +527,7 @@ async function enqueueOrderTicketForOrderId(client, orderId, options = {}) {
         reprintOfJobId: options.reprintOfJobId || null,
         idempotencyKey,
         payload,
-      },
+      }),
     });
 
     job = await client.printJob.update({
@@ -571,8 +580,8 @@ async function authenticatePrintAgent(agentCode, rawToken) {
     throw createError("Unauthorized print agent", 401, "PRINT_AGENT_UNAUTHORIZED");
   }
 
-  const agent = await prisma.printAgent.findUnique({
-    where: { code: normalizedCode },
+  const agent = await prisma.printAgent.findFirst({
+    where: withDefaultTenantWhere({ code: normalizedCode }),
   });
 
   if (!agent) {
@@ -590,6 +599,7 @@ async function authenticatePrintAgent(agentCode, rawToken) {
 
 async function getPrintAgents() {
   return prisma.printAgent.findMany({
+    where: withDefaultTenantWhere({}),
     include: {
       printers: {
         include: {
@@ -613,7 +623,9 @@ async function upsertPrintAgent(payload = {}) {
   const code = normalizeCode(payload.code, "code");
   const name = normalizeRequiredText(payload.name, "name", 120);
 
-  const existing = await prisma.printAgent.findUnique({ where: { code } });
+  const existing = await prisma.printAgent.findFirst({
+    where: withDefaultTenantWhere({ code }),
+  });
   const providedToken = normalizeOptionalText(payload.token, "token", 512);
   let tokenToReturn = null;
 
@@ -622,13 +634,13 @@ async function upsertPrintAgent(payload = {}) {
     tokenToReturn = rawToken;
 
     const created = await prisma.printAgent.create({
-      data: {
+      data: withDefaultTenantData({
         code,
         name,
         status: PrintAgentStatus.OFFLINE,
         tokenHash: hashPrintAgentToken(rawToken),
         metadata: payload.metadata || null,
-      },
+      }),
     });
 
     return {
@@ -663,7 +675,9 @@ async function upsertPrintAgent(payload = {}) {
 
 async function rotatePrintAgentToken(agentCode) {
   const code = normalizeCode(agentCode, "agentCode");
-  const existing = await prisma.printAgent.findUnique({ where: { code } });
+  const existing = await prisma.printAgent.findFirst({
+    where: withDefaultTenantWhere({ code }),
+  });
 
   if (!existing) {
     throw createError("Print agent not found", 404, "PRINT_AGENT_NOT_FOUND");
@@ -685,7 +699,9 @@ async function rotatePrintAgentToken(agentCode) {
 
 async function deletePrintAgent(agentCode) {
   const code = normalizeCode(agentCode, "agentCode");
-  const existing = await prisma.printAgent.findUnique({ where: { code } });
+  const existing = await prisma.printAgent.findFirst({
+    where: withDefaultTenantWhere({ code }),
+  });
 
   if (!existing) {
     throw createError("Print agent not found", 404, "PRINT_AGENT_NOT_FOUND");
@@ -709,6 +725,7 @@ async function deletePrintAgent(agentCode) {
 
 async function getPrinters() {
   const printers = await prisma.printer.findMany({
+    where: withDefaultTenantWhere({}),
     include: {
       agent: {
         select: {
@@ -754,7 +771,9 @@ async function upsertPrinter(payload = {}) {
 
   let agentId = null;
   if (agentCode) {
-    const agent = await prisma.printAgent.findUnique({ where: { code: agentCode } });
+    const agent = await prisma.printAgent.findFirst({
+      where: withDefaultTenantWhere({ code: agentCode }),
+    });
     if (!agent) {
       throw createError("Print agent not found", 404, "PRINT_AGENT_NOT_FOUND");
     }
@@ -762,17 +781,21 @@ async function upsertPrinter(payload = {}) {
   }
 
   if (locationId) {
-    const location = await prisma.location.findUnique({ where: { id: locationId } });
+    const location = await prisma.location.findFirst({
+      where: withDefaultTenantWhere({ id: locationId }),
+    });
     if (!location) {
       throw createError("Location not found", 404, "LOCATION_NOT_FOUND");
     }
   }
 
-  const existing = await prisma.printer.findUnique({ where: { code } });
+  const existing = await prisma.printer.findFirst({
+    where: withDefaultTenantWhere({ code }),
+  });
 
   if (!existing) {
     return prisma.printer.create({
-      data: {
+      data: withDefaultTenantData({
         code,
         name,
         model,
@@ -783,7 +806,7 @@ async function upsertPrinter(payload = {}) {
         isActive,
         agentId,
         locationId,
-      },
+      }),
     });
   }
 
@@ -805,7 +828,9 @@ async function upsertPrinter(payload = {}) {
 
 async function deletePrinter(printerCode) {
   const code = normalizeCode(printerCode, "printerCode");
-  const existing = await prisma.printer.findUnique({ where: { code } });
+  const existing = await prisma.printer.findFirst({
+    where: withDefaultTenantWhere({ code }),
+  });
 
   if (!existing) {
     throw createError("Printer not found", 404, "PRINTER_NOT_FOUND");
@@ -895,6 +920,7 @@ async function claimNextPrintJob(agent, payload = {}) {
     where: {
       code: printerCode,
       isActive: true,
+      tenantId: getDefaultTenantId() || undefined,
       OR: [{ agentId: null }, { agentId: agent.id }],
     },
   });
@@ -909,6 +935,7 @@ async function claimNextPrintJob(agent, payload = {}) {
       const candidate = await tx.printJob.findFirst({
         where: {
           printerId: printer.id,
+          tenantId: getDefaultTenantId() || undefined,
           status: PrintJobStatus.READY,
           cancelledAt: null,
           scheduledAt: { lte: new Date() },
@@ -1227,6 +1254,7 @@ async function markPrintJobFailure(agent, jobId, payload = {}) {
 
 async function getPrintJobs(filters = {}) {
   const where = {};
+  Object.assign(where, withDefaultTenantWhere({}));
 
   if (filters.status) {
     where.status = parsePrintJobStatus(filters.status);
@@ -1312,17 +1340,20 @@ async function getPrintOverview(filters = {}) {
 
   const [jobGroups, failedLast24h, readyStaleJobs, agents, printers] = await Promise.all([
     prisma.printJob.groupBy({
+      where: withDefaultTenantWhere({}),
       by: ["status"],
       _count: { _all: true },
     }),
     prisma.printJob.count({
       where: {
+        tenantId: getDefaultTenantId() || undefined,
         status: PrintJobStatus.FAILED,
         updatedAt: { gte: failedSince },
       },
     }),
     prisma.printJob.findMany({
       where: {
+        tenantId: getDefaultTenantId() || undefined,
         status: PrintJobStatus.READY,
         cancelledAt: null,
         scheduledAt: { lte: readyStaleBefore },
@@ -1343,6 +1374,7 @@ async function getPrintOverview(filters = {}) {
       take: 20,
     }),
     prisma.printAgent.findMany({
+      where: withDefaultTenantWhere({}),
       include: {
         printers: {
           select: {
@@ -1357,6 +1389,7 @@ async function getPrintOverview(filters = {}) {
       orderBy: { code: "asc" },
     }),
     prisma.printer.findMany({
+      where: withDefaultTenantWhere({}),
       include: {
         agent: {
           select: {

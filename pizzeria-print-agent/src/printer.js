@@ -79,6 +79,7 @@ function createPrinterClient(options) {
   const code = String(options.printerCode || options.code || "").trim();
   const timeoutMs = Number(options.socketTimeoutMs || 5000);
   const agentName = String(options.agentName || options.agentCode || "Print Agent");
+  const dryRun = Boolean(options.dryRun);
 
   if (!host) {
     throw new Error(`Missing printer host for printer ${code || "(unknown)"}`);
@@ -92,15 +93,18 @@ function createPrinterClient(options) {
     ip: host,
     port,
     async checkConnection() {
+      if (dryRun) return true;
       return checkPrinterTcp(host, port, Math.min(timeoutMs, 3000));
     },
     async printOrder(payload) {
       const buffer = buildOrderTicketBuffer(payload, { agentName });
+      if (dryRun) return true;
       await sendRawBuffer(host, port, buffer, timeoutMs);
       return true;
     },
     async printTest(text) {
       const buffer = buildTestTicketBuffer(text, { agentName });
+      if (dryRun) return true;
       await sendRawBuffer(host, port, buffer, timeoutMs);
       return true;
     },

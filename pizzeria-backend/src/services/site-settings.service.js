@@ -1,6 +1,11 @@
 const { Prisma } = require("@prisma/client");
 const prisma = require("../lib/prisma");
 const { normalizePublicMediaUrl } = require("../utils/media-url");
+const {
+  getDefaultTenantId,
+  withDefaultTenantData,
+  withDefaultTenantWhere,
+} = require("./tenant-context.service");
 
 const SITE_SETTINGS_SINGLETON_ID = 1;
 const ANNOUNCEMENT_VARIANTS = new Set(["info", "alert", "success"]);
@@ -567,8 +572,9 @@ async function translateFrenchMultilineTextToEnglish(value) {
 }
 
 async function getSiteSettingsRecord() {
-  return prisma.siteSetting.findUnique({
-    where: { id: SITE_SETTINGS_SINGLETON_ID },
+  return prisma.siteSetting.findFirst({
+    where: withDefaultTenantWhere({}),
+    orderBy: { id: "asc" },
   });
 }
 
@@ -965,14 +971,19 @@ async function updateSiteSettings(payload) {
     throw new Error("announcement.variant must be info, alert or success");
   }
 
-  const saved = await prisma.siteSetting.upsert({
-    where: { id: SITE_SETTINGS_SINGLETON_ID },
-    update: buildPersistedPayload(next),
-    create: {
-      id: SITE_SETTINGS_SINGLETON_ID,
-      ...buildPersistedPayload(next),
-    },
-  });
+  const existing = await getSiteSettingsRecord();
+  const persistedPayload = buildPersistedPayload(next);
+  const saved = existing
+    ? await prisma.siteSetting.update({
+        where: { id: existing.id },
+        data: persistedPayload,
+      })
+    : await prisma.siteSetting.create({
+        data: withDefaultTenantData({
+          ...(getDefaultTenantId() ? {} : { id: SITE_SETTINGS_SINGLETON_ID }),
+          ...persistedPayload,
+        }),
+      });
 
   return formatSiteSettingsRecord(saved);
 }

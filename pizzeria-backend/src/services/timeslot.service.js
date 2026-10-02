@@ -14,6 +14,10 @@ const {
   getDateRange,
   minutesBetween,
 } = require("../utils/weekly-timeslots");
+const {
+  withDefaultTenantData,
+  withDefaultTenantWhere,
+} = require("./tenant-context.service");
 
 function parsePositiveInt(value, fieldName) {
   const parsed = Number(value);
@@ -115,14 +119,18 @@ const TIMESLOT_INCLUDE = {
 };
 
 async function assertLocationExists(locationId) {
-  const location = await prisma.location.findUnique({ where: { id: locationId } });
+  const location = await prisma.location.findFirst({
+    where: withDefaultTenantWhere({ id: locationId }),
+  });
   if (!location) throw new Error("Location not found");
   if (!location.active) throw new Error("Location must be active");
   return location;
 }
 
 async function assertPrintAgentExists(agentId) {
-  const agent = await prisma.printAgent.findUnique({ where: { id: agentId } });
+  const agent = await prisma.printAgent.findFirst({
+    where: withDefaultTenantWhere({ id: agentId }),
+  });
   if (!agent) throw new Error("Print agent not found");
   return agent;
 }
@@ -312,12 +320,12 @@ async function getWeeklySettingByDay(dayOfWeek) {
   const range = getDateRange(anchorDate);
 
   const slots = await prisma.timeSlot.findMany({
-    where: {
+    where: withDefaultTenantWhere({
       serviceDate: {
         gte: range.start,
         lt: range.end,
       },
-    },
+    }),
     include: TIMESLOT_INCLUDE,
     orderBy: [{ startTime: "asc" }, { id: "asc" }],
   });
@@ -327,12 +335,12 @@ async function getWeeklySettingByDay(dayOfWeek) {
 
 async function getWeeklySettings() {
   const slots = await prisma.timeSlot.findMany({
-    where: {
+    where: withDefaultTenantWhere({
       serviceDate: {
         gte: ANCHOR_WEEK_START,
         lt: ANCHOR_WEEK_END,
       },
-    },
+    }),
     include: TIMESLOT_INCLUDE,
     orderBy: [{ serviceDate: "asc" }, { startTime: "asc" }, { id: "asc" }],
   });
@@ -359,12 +367,12 @@ async function upsertWeeklySetting(dayOfWeek, payload = {}) {
 
   if (!shouldOpen) {
     await prisma.timeSlot.deleteMany({
-      where: {
+      where: withDefaultTenantWhere({
         serviceDate: {
           gte: range.start,
           lt: range.end,
         },
-      },
+      }),
     });
 
     return buildWeeklySetting(parsedDay, []);
@@ -393,7 +401,7 @@ async function upsertWeeklySetting(dayOfWeek, payload = {}) {
   }
 
   const overlapCount = await prisma.timeSlot.count({
-    where: {
+    where: withDefaultTenantWhere({
       serviceDate: {
         gte: range.start,
         lt: range.end,
@@ -401,7 +409,7 @@ async function upsertWeeklySetting(dayOfWeek, payload = {}) {
       locationId,
       startTime: { lt: serviceEnd },
       endTime: { gt: serviceStart },
-    },
+    }),
   });
   if (overlapCount > 0) {
     throw new Error(
@@ -419,7 +427,9 @@ async function upsertWeeklySetting(dayOfWeek, payload = {}) {
     agentId: agentId || null,
   });
 
-  await prisma.timeSlot.createMany({ data: templateRows });
+  await prisma.timeSlot.createMany({
+    data: templateRows.map((row) => withDefaultTenantData(row)),
+  });
   return getWeeklySettingByDay(parsedDay);
 }
 
@@ -458,7 +468,7 @@ async function removeWeeklyService(dayOfWeek, payload = {}) {
   }
 
   const deleted = await prisma.timeSlot.deleteMany({
-    where: {
+    where: withDefaultTenantWhere({
       serviceDate: {
         gte: range.start,
         lt: range.end,
@@ -466,7 +476,7 @@ async function removeWeeklyService(dayOfWeek, payload = {}) {
       locationId,
       startTime: { gte: serviceStart },
       endTime: { lte: serviceEnd },
-    },
+    }),
   });
 
   if (deleted.count === 0) {
@@ -570,19 +580,19 @@ async function getPickupAvailability(params = {}) {
 
   const [templateSlots, concreteSlots] = await Promise.all([
     prisma.timeSlot.findMany({
-      where: {
+      where: withDefaultTenantWhere({
         serviceDate: {
           gte: templateRange.start,
           lt: templateRange.end,
         },
         active: true,
         locationId: { not: null },
-      },
+      }),
       include: TIMESLOT_INCLUDE,
       orderBy: [{ startTime: "asc" }, { id: "asc" }],
     }),
     prisma.timeSlot.findMany({
-      where: {
+      where: withDefaultTenantWhere({
         serviceDate: {
           gte: concreteRange.start,
           lt: concreteRange.end,
@@ -592,7 +602,7 @@ async function getPickupAvailability(params = {}) {
           lt: concreteRange.end,
         },
         locationId: { not: null },
-      },
+      }),
       orderBy: [{ startTime: "asc" }, { id: "asc" }],
     }),
   ]);
@@ -690,7 +700,7 @@ async function getConcreteSlotsForService(params = {}) {
 
   const [templateSlots, concreteSlots] = await Promise.all([
     prisma.timeSlot.findMany({
-      where: {
+      where: withDefaultTenantWhere({
         serviceDate: {
           gte: templateRange.start,
           lt: templateRange.end,
@@ -701,12 +711,12 @@ async function getConcreteSlotsForService(params = {}) {
           gte: templateServiceStart,
           lt: templateServiceEnd,
         },
-      },
+      }),
       include: TIMESLOT_INCLUDE,
       orderBy: [{ startTime: "asc" }, { id: "asc" }],
     }),
     prisma.timeSlot.findMany({
-      where: {
+      where: withDefaultTenantWhere({
         serviceDate: {
           gte: concreteRange.start,
           lt: concreteRange.end,
@@ -716,7 +726,7 @@ async function getConcreteSlotsForService(params = {}) {
           gte: concreteServiceStart,
           lt: concreteServiceEnd,
         },
-      },
+      }),
       include: TIMESLOT_INCLUDE,
       orderBy: [{ startTime: "asc" }, { id: "asc" }],
     }),
@@ -776,7 +786,7 @@ async function getTemplateSlotForPickupSelection(
   const templateStartTime = buildDateTime(anchorDate, pickupTime, "pickupTime");
 
   return dbClient.timeSlot.findFirst({
-    where: {
+    where: withDefaultTenantWhere({
       serviceDate: {
         gte: templateRange.start,
         lt: templateRange.end,
@@ -784,7 +794,7 @@ async function getTemplateSlotForPickupSelection(
       locationId: parsedLocationId,
       active: true,
       startTime: templateStartTime,
-    },
+    }),
     orderBy: { id: "asc" },
   });
 }
@@ -813,14 +823,14 @@ async function findOrCreateConcreteSlotForPickup(
   const slotDuration = Math.max(1, minutesBetween(templateSlot.startTime, templateSlot.endTime));
   const concreteEndTime = new Date(concreteStartTime.getTime() + slotDuration * 60_000);
 
-  const concreteWhere = {
+  const concreteWhere = withDefaultTenantWhere({
     serviceDate: {
       gte: concreteRange.start,
       lt: concreteRange.end,
     },
     locationId: parsedLocationId,
     startTime: concreteStartTime,
-  };
+  });
 
   const existingConcreteSlot = await dbClient.timeSlot.findFirst({
     where: concreteWhere,
@@ -833,7 +843,7 @@ async function findOrCreateConcreteSlotForPickup(
 
   if (!existingConcreteSlot) {
     await dbClient.timeSlot.create({
-      data: {
+      data: withDefaultTenantData({
         startTime: concreteStartTime,
         endTime: concreteEndTime,
         maxPizzas: templateSlot.maxPizzas,
@@ -842,7 +852,7 @@ async function findOrCreateConcreteSlotForPickup(
         serviceDate: concreteRange.start,
         locationId: parsedLocationId,
         agentId: templateSlot.agentId || null,
-      },
+      }),
     });
   }
 
@@ -907,14 +917,14 @@ async function updateConcreteSlotActiveState(payload = {}) {
   const concreteEndTime = new Date(concreteStartTime.getTime() + slotDuration * 60_000);
 
   const matchingSlots = await prisma.timeSlot.findMany({
-    where: {
+    where: withDefaultTenantWhere({
       serviceDate: {
         gte: concreteRange.start,
         lt: concreteRange.end,
       },
       locationId,
       startTime: concreteStartTime,
-    },
+    }),
     orderBy: { id: "asc" },
   });
 
@@ -942,7 +952,7 @@ async function updateConcreteSlotActiveState(payload = {}) {
     });
   } else {
     primarySlot = await prisma.timeSlot.create({
-      data: {
+      data: withDefaultTenantData({
         startTime: concreteStartTime,
         endTime: concreteEndTime,
         maxPizzas: templateSlot.maxPizzas,
@@ -951,7 +961,7 @@ async function updateConcreteSlotActiveState(payload = {}) {
         serviceDate: concreteRange.start,
         locationId,
         agentId: templateSlot.agentId || null,
-      },
+      }),
       include: TIMESLOT_INCLUDE,
     });
   }

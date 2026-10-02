@@ -46,12 +46,24 @@ const runtimeSiteUrl =
   typeof window !== "undefined" ? normalizeUrl(window.location.origin) : "";
 const fallbackSiteUrl = "https://example.invalid";
 
+const isLocalHttpUrl = (value) => {
+  try {
+    const parsed = new URL(value);
+    return (
+      parsed.protocol === "http:" &&
+      ["localhost", "127.0.0.1", "::1"].includes(parsed.hostname)
+    );
+  } catch (_error) {
+    return false;
+  }
+};
+
 if (isProduction) {
   if (!configuredApiBaseUrl) {
     throw new Error("VITE_API_BASE_URL is required in production.");
   }
 
-  if (!configuredApiBaseUrl.startsWith("https://")) {
+  if (!configuredApiBaseUrl.startsWith("https://") && !isLocalHttpUrl(configuredApiBaseUrl)) {
     throw new Error("VITE_API_BASE_URL must use HTTPS in production.");
   }
 }

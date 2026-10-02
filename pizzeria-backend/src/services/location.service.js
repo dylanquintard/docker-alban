@@ -1,4 +1,8 @@
 const prisma = require("../lib/prisma");
+const {
+  withDefaultTenantData,
+  withDefaultTenantWhere,
+} = require("./tenant-context.service");
 
 function parsePositiveInt(value, fieldName) {
   const parsed = Number(value);
@@ -160,7 +164,7 @@ function deriveCityFromLocationInput(data = {}, fallbackCity = "") {
 
 async function getLocations(filters = {}) {
   const active = parseOptionalBoolean(filters.active);
-  const where = active === undefined ? undefined : { active };
+  const where = withDefaultTenantWhere(active === undefined ? {} : { active });
 
   return prisma.location.findMany({
     where,
@@ -170,8 +174,8 @@ async function getLocations(filters = {}) {
 
 async function getLocationById(id) {
   const locationId = parsePositiveInt(id, "id");
-  const location = await prisma.location.findUnique({
-    where: { id: locationId },
+  const location = await prisma.location.findFirst({
+    where: withDefaultTenantWhere({ id: locationId }),
   });
   if (!location) throw new Error("Location not found");
   return location;
@@ -194,7 +198,7 @@ async function createLocation(data) {
   });
 
   return prisma.location.create({
-    data: {
+    data: withDefaultTenantData({
       name: city,
       addressLine1,
       addressLine2,
@@ -205,13 +209,15 @@ async function createLocation(data) {
       longitude: parseOptionalDecimal(data.longitude, "longitude"),
       notes: parseOptionalString(data.notes),
       active: parseOptionalBoolean(data.active) ?? true,
-    },
+    }),
   });
 }
 
 async function updateLocation(id, data) {
   const locationId = parsePositiveInt(id, "id");
-  const existing = await prisma.location.findUnique({ where: { id: locationId } });
+  const existing = await prisma.location.findFirst({
+    where: withDefaultTenantWhere({ id: locationId }),
+  });
   if (!existing) throw new Error("Location not found");
 
   const nextAddressLine1 =
@@ -264,6 +270,10 @@ async function activateLocation(id, active) {
 
 async function deleteLocation(id) {
   const locationId = parsePositiveInt(id, "id");
+  const existing = await prisma.location.findFirst({
+    where: withDefaultTenantWhere({ id: locationId }),
+  });
+  if (!existing) throw new Error("Location not found");
   return prisma.location.delete({ where: { id: locationId } });
 }
 

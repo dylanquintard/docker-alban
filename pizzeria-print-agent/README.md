@@ -58,6 +58,33 @@ curl -X POST http://127.0.0.1:3000/reprint-last \
 
 En production (`NODE_ENV=production`), `LOCAL_ADMIN_TOKEN` doit etre defini au demarrage sinon le process refuse de se lancer.
 
+## Simulateur POS local
+
+Pour tester sans imprimante physique, lancer un faux serveur TCP ESC/POS:
+
+```bash
+npm run sim:pos
+```
+
+Par defaut, il ecoute sur `0.0.0.0:9100` et ecrit les tickets dans `tmp/pos-simulator`:
+
+- `.bin`: flux ESC/POS brut envoye a l'imprimante
+- `.txt`: extrait texte lisible pour recette
+
+Exemple de configuration print-agent:
+
+```env
+DRY_RUN=false
+PRINTER_IP=127.0.0.1
+PRINTER_PORT=9100
+```
+
+Variables utiles:
+
+- `POS_SIM_HOST`
+- `POS_SIM_PORT`
+- `POS_SIM_OUTPUT_DIR`
+
 ## Service systemd (Pi)
 
 ```bash

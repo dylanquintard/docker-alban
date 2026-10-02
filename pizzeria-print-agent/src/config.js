@@ -79,6 +79,15 @@ function parseLocalBindHost(value) {
   return normalized;
 }
 
+function booleanFromEnv(name, fallback = false) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === null || raw === "") return fallback;
+  const normalized = String(raw).trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  throw new Error(`${name} must be a boolean`);
+}
+
 const printersFromJson = parsePrintersFromJson(process.env.PRINTERS_JSON);
 const printers = printersFromJson.length > 0
   ? printersFromJson
@@ -107,6 +116,7 @@ const config = {
   heartbeatMs: numberFromEnv("HEARTBEAT_MS", 10000),
   requestTimeoutMs: numberFromEnv("REQUEST_TIMEOUT_MS", 10000),
   socketTimeoutMs: numberFromEnv("SOCKET_TIMEOUT_MS", 5000),
+  dryRun: booleanFromEnv("DRY_RUN", false),
   localHttpPort: numberFromEnv("LOCAL_HTTP_PORT", 3000),
   localHttpHost: parseLocalBindHost(process.env.LOCAL_HTTP_HOST),
   localAdminToken,

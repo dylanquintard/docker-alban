@@ -31,6 +31,7 @@ async function main() {
       printerCode: printer.code,
       printerIp: printer.ip,
       printerPort: printer.port,
+      dryRun: config.dryRun,
     }),
   }));
   const agent = createAgent({ config, api, db, printers: printerClients, logger });

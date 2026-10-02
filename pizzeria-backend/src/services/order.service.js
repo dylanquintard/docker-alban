@@ -8,6 +8,10 @@ const {
 } = require("../utils/order-status");
 const timeSlotService = require("./timeslot.service");
 const printService = require("./print.service");
+const {
+  getDefaultTenantId,
+  withDefaultTenantWhere,
+} = require("./tenant-context.service");
 
 const ORDER_INCLUDE = {
   items: { include: { product: { include: { category: true } } } },
@@ -138,7 +142,7 @@ function applyAdminStatusFilter(where, status) {
 }
 
 function buildAdminOrdersWhere(filters = {}) {
-  const where = {};
+  const where = withDefaultTenantWhere();
 
   if (filters.userId) {
     where.userId = parsePositiveInt(filters.userId, "userId");
@@ -301,7 +305,7 @@ async function buildIngredientMapFromOrders(orders) {
   if (ingredientIds.size === 0) return new Map();
 
   const ingredients = await prisma.ingredient.findMany({
-    where: { id: { in: [...ingredientIds] } },
+    where: withDefaultTenantWhere({ id: { in: [...ingredientIds] } }),
     select: { id: true, name: true, price: true },
   });
 
@@ -430,8 +434,9 @@ async function formatOrderCollection(orders) {
 }
 
 async function findOrCreatePendingCart(tx, userId) {
+  const tenantId = getDefaultTenantId();
   const existingCart = await tx.order.findFirst({
-    where: { userId, status: OrderStatus.PENDING },
+    where: withDefaultTenantWhere({ userId, status: OrderStatus.PENDING }),
     orderBy: { createdAt: "desc" },
   });
 
@@ -443,12 +448,13 @@ async function findOrCreatePendingCart(tx, userId) {
         status: OrderStatus.PENDING,
         total: 0,
         userId,
+        tenantId: tenantId || undefined,
       },
     });
   } catch (err) {
     if (err.code === "P2002") {
       const cart = await tx.order.findFirst({
-        where: { userId, status: OrderStatus.PENDING },
+        where: withDefaultTenantWhere({ userId, status: OrderStatus.PENDING }),
         orderBy: { createdAt: "desc" },
       });
       if (cart) return cart;
@@ -463,7 +469,9 @@ async function reserveSlotCapacity(
   productsToReserve,
   { enforceStartBuffer = false } = {}
 ) {
-  const slot = await tx.timeSlot.findUnique({ where: { id: timeSlotId } });
+  const slot = await tx.timeSlot.findFirst({
+    where: withDefaultTenantWhere({ id: timeSlotId }),
+  });
 
   if (!slot || !slot.active) {
     throw new Error("Invalid time slot");
@@ -501,7 +509,9 @@ async function reserveSlotCapacity(
 }
 
 async function releaseSlotCapacity(tx, timeSlotId, productsToRelease) {
-  const slot = await tx.timeSlot.findUnique({ where: { id: timeSlotId } });
+  const slot = await tx.timeSlot.findFirst({
+    where: withDefaultTenantWhere({ id: timeSlotId }),
+  });
   if (!slot) return;
 
   const nextCount = Math.max(0, slot.currentPizzas - productsToRelease);
@@ -515,7 +525,7 @@ async function getCartByUserId(userId) {
   const parsedUserId = parsePositiveInt(userId, "userId");
 
   const cart = await prisma.order.findFirst({
-    where: { userId: parsedUserId, status: OrderStatus.PENDING },
+    where: withDefaultTenantWhere({ userId: parsedUserId, status: OrderStatus.PENDING }),
     include: ORDER_INCLUDE,
     orderBy: { createdAt: "desc" },
   });
@@ -587,6 +597,10 @@ async function validateCartCustomizations(tx, productId, normalizedCustomization
   });
 
   if (!product) throw new Error("Product not found");
+  const tenantId = getDefaultTenantId();
+  if (tenantId && product.tenantId !== tenantId) {
+    throw new Error("Product not found");
+  }
 
   const linkedIngredients = Array.isArray(product.ingredients) ? product.ingredients : [];
   const linkedIngredientIds = new Set(
@@ -608,10 +622,10 @@ async function validateCartCustomizations(tx, productId, normalizedCustomization
   }
 
   const addedIngredients = await tx.ingredient.findMany({
-    where: {
+    where: withDefaultTenantWhere({
       id: { in: normalizedCustomizations.addedIngredients },
       active: true,
-    },
+    }),
   });
 
   if (addedIngredients.length !== normalizedCustomizations.addedIngredients.length) {
@@ -695,7 +709,7 @@ async function removeItemFromCart(userId, itemId) {
 
   const updatedOrder = await prisma.$transaction(async (tx) => {
     const cart = await tx.order.findFirst({
-      where: { userId: parsedUserId, status: OrderStatus.PENDING },
+      where: withDefaultTenantWhere({ userId: parsedUserId, status: OrderStatus.PENDING }),
       include: { items: true },
       orderBy: { createdAt: "desc" },
     });
@@ -734,7 +748,7 @@ async function finalizeOrder(userId, pickupSelection = {}) {
 
   const finalizedOrder = await prisma.$transaction(async (tx) => {
     const cart = await tx.order.findFirst({
-      where: { userId: parsedUserId, status: OrderStatus.PENDING },
+      where: withDefaultTenantWhere({ userId: parsedUserId, status: OrderStatus.PENDING }),
       include: { items: true },
       orderBy: { createdAt: "desc" },
     });
@@ -760,6 +774,7 @@ async function finalizeOrder(userId, pickupSelection = {}) {
         status: OrderStatus.COMPLETED,
         timeSlotId: concreteSlot.id,
         customerNote,
+        tenantId: getDefaultTenantId() || undefined,
       },
     });
 
@@ -861,8 +876,8 @@ async function getOrdersAdminPaginated(filters = {}) {
 async function getOrderById(orderId) {
   const parsedOrderId = parsePositiveInt(orderId, "orderId");
 
-  const order = await prisma.order.findUnique({
-    where: { id: parsedOrderId },
+  const order = await prisma.order.findFirst({
+    where: withDefaultTenantWhere({ id: parsedOrderId }),
     include: ORDER_INCLUDE,
   });
 
@@ -874,8 +889,8 @@ async function deleteOrder(orderId) {
   const parsedOrderId = parsePositiveInt(orderId, "orderId");
 
   await prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({
-      where: { id: parsedOrderId },
+    const order = await tx.order.findFirst({
+      where: withDefaultTenantWhere({ id: parsedOrderId }),
       include: { items: true },
     });
 
@@ -903,8 +918,8 @@ async function updateOrderStatusAdmin(orderId, status, actorUserId = null) {
       : parsePositiveInt(actorUserId, "actorUserId");
 
   const updatedOrder = await prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({
-      where: { id: parsedOrderId },
+    const order = await tx.order.findFirst({
+      where: withDefaultTenantWhere({ id: parsedOrderId }),
       include: {
         items: true,
         timeSlot: true,
@@ -971,8 +986,8 @@ async function updateOrderStatusAdmin(orderId, status, actorUserId = null) {
 async function getOrderConfirmationEmailData(orderId) {
   const parsedOrderId = parsePositiveInt(orderId, "orderId");
 
-  const order = await prisma.order.findUnique({
-    where: { id: parsedOrderId },
+  const order = await prisma.order.findFirst({
+    where: withDefaultTenantWhere({ id: parsedOrderId }),
     include: {
       user: { select: { email: true, name: true, firstName: true, lastName: true } },
       timeSlot: { include: { location: true } },
@@ -1000,14 +1015,14 @@ async function getOrderValidationEmailData(orderId) {
   const parsedOrderId = parsePositiveInt(orderId, "orderId");
 
   const [order, siteSettings] = await Promise.all([
-    prisma.order.findUnique({
-      where: { id: parsedOrderId },
+    prisma.order.findFirst({
+      where: withDefaultTenantWhere({ id: parsedOrderId }),
       include: {
         user: { select: { email: true, name: true, firstName: true, lastName: true } },
       },
     }),
-    prisma.siteSetting.findUnique({
-      where: { id: 1 },
+    prisma.siteSetting.findFirst({
+      where: withDefaultTenantWhere({}),
       select: {
         siteName: true,
         seo: true,

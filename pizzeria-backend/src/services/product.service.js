@@ -1,6 +1,10 @@
 const prisma = require("../lib/prisma");
 const { normalizeCustomizations } = require("../utils/customizations");
 const { normalizePublicMediaUrl } = require("../utils/media-url");
+const {
+  withDefaultTenantData,
+  withDefaultTenantWhere,
+} = require("./tenant-context.service");
 
 const CATEGORY_KINDS = {
   PRODUCT: "PRODUCT",
@@ -135,7 +139,9 @@ async function recalculateOrderTotal(client, orderId) {
 async function ensureCategoryKind(categoryId, expectedKind) {
   if (categoryId === null || categoryId === undefined) return;
 
-  const category = await prisma.category.findUnique({ where: { id: categoryId } });
+  const category = await prisma.category.findFirst({
+    where: withDefaultTenantWhere({ id: categoryId }),
+  });
   if (!category) throw new Error("Category not found");
   if (category.kind !== expectedKind) {
     throw new Error(`Category kind must be ${expectedKind}`);
@@ -156,9 +162,9 @@ async function getAllProducts(filters = {}) {
   const categoryId = parseNullablePositiveInt(filters.categoryId, "categoryId");
 
   const products = await prisma.product.findMany({
-    where: {
+    where: withDefaultTenantWhere({
       categoryId: categoryId === undefined ? undefined : categoryId,
-    },
+    }),
     include: {
       category: true,
       ingredients: {
@@ -174,8 +180,8 @@ async function getAllProducts(filters = {}) {
 async function getProductById(id) {
   const productId = parsePositiveInt(id, "id");
 
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
+  const product = await prisma.product.findFirst({
+    where: withDefaultTenantWhere({ id: productId }),
     include: {
       category: true,
       ingredients: {
@@ -198,7 +204,7 @@ async function createProduct(data) {
   }
 
   const product = await prisma.product.create({
-    data: {
+    data: withDefaultTenantData({
       name,
       description: typeof data.description === "string" ? data.description.trim() : "",
       basePrice: parseDecimal(data.basePrice, "basePrice"),
@@ -206,7 +212,7 @@ async function createProduct(data) {
       thumbnailUrl: parseOptionalString(data.thumbnailUrl),
       imageAlt: parseOptionalString(data.imageAlt),
       categoryId,
-    },
+    }),
     include: { category: true },
   });
 
@@ -215,7 +221,9 @@ async function createProduct(data) {
 
 async function updateProduct(id, data) {
   const productId = parsePositiveInt(id, "id");
-  const existing = await prisma.product.findUnique({ where: { id: productId } });
+  const existing = await prisma.product.findFirst({
+    where: withDefaultTenantWhere({ id: productId }),
+  });
   if (!existing) throw new Error("Product not found");
   const categoryId = parseNullablePositiveInt(data.categoryId, "categoryId");
 
@@ -246,8 +254,8 @@ async function updateProduct(id, data) {
 
 async function deleteProduct(id) {
   const productId = parsePositiveInt(id, "id");
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
+  const product = await prisma.product.findFirst({
+    where: withDefaultTenantWhere({ id: productId }),
     include: { category: true },
   });
   if (!product) throw new Error("Product not found");
@@ -321,11 +329,11 @@ async function getAllIngredients(filters = {}) {
   const active = parseOptionalBoolean(filters.active, "active");
 
   return prisma.ingredient.findMany({
-    where: {
+    where: withDefaultTenantWhere({
       categoryId: categoryId === undefined ? undefined : categoryId,
       isExtra: isExtra === undefined ? undefined : isExtra,
       active: active === undefined ? undefined : active,
-    },
+    }),
     include: {
       category: true,
     },
@@ -343,7 +351,7 @@ async function createIngredient(data) {
   }
 
   return prisma.ingredient.create({
-    data: {
+    data: withDefaultTenantData({
       name,
       price: parseDecimal(data.price, "price"),
       isExtra: data.isExtra === undefined ? true : Boolean(data.isExtra),
@@ -351,7 +359,7 @@ async function createIngredient(data) {
         data.isBaseIngredient === undefined ? false : Boolean(data.isBaseIngredient),
       active: data.active === undefined ? true : Boolean(data.active),
       categoryId,
-    },
+    }),
     include: {
       category: true,
     },
@@ -361,7 +369,9 @@ async function createIngredient(data) {
 async function updateIngredient(id, data) {
   const ingredientId = parsePositiveInt(id, "id");
 
-  const existing = await prisma.ingredient.findUnique({ where: { id: ingredientId } });
+  const existing = await prisma.ingredient.findFirst({
+    where: withDefaultTenantWhere({ id: ingredientId }),
+  });
   if (!existing) throw new Error("Ingredient not found");
   const categoryId = parseNullablePositiveInt(data.categoryId, "categoryId");
 
@@ -412,9 +422,11 @@ async function addIngredientToProduct(productId, ingredientId, data = {}) {
   const parsedProductId = parsePositiveInt(productId, "productId");
   const parsedIngredientId = parsePositiveInt(ingredientId, "ingredientId");
 
-  await prisma.product.findUniqueOrThrow({ where: { id: parsedProductId } });
-  const ingredient = await prisma.ingredient.findUniqueOrThrow({
-    where: { id: parsedIngredientId },
+  await prisma.product.findFirstOrThrow({
+    where: withDefaultTenantWhere({ id: parsedProductId }),
+  });
+  const ingredient = await prisma.ingredient.findFirstOrThrow({
+    where: withDefaultTenantWhere({ id: parsedIngredientId }),
     select: { isExtra: true },
   });
   const shouldRecommend =
@@ -447,8 +459,8 @@ async function addIngredientToProduct(productId, ingredientId, data = {}) {
 async function updateIngredientLinkOnProduct(productId, ingredientId, data = {}) {
   const parsedProductId = parsePositiveInt(productId, "productId");
   const parsedIngredientId = parsePositiveInt(ingredientId, "ingredientId");
-  const ingredient = await prisma.ingredient.findUniqueOrThrow({
-    where: { id: parsedIngredientId },
+  const ingredient = await prisma.ingredient.findFirstOrThrow({
+    where: withDefaultTenantWhere({ id: parsedIngredientId }),
     select: { isExtra: true },
   });
   const shouldRecommend =
