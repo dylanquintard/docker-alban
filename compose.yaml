@@ -42,6 +42,7 @@ services:
         condition: service_healthy
     command: ["sh", "-c", "npm run prisma:migrate:deploy && npm run start"]
     environment:
+      TZ: ${APP_TIMEZONE:-Europe/Paris}
       NODE_ENV: production
       PORT: 5000
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-pizzeria}?schema=public
@@ -128,6 +129,7 @@ services:
         condition: service_healthy
     command: ["npm", "run", "worker"]
     environment:
+      TZ: ${APP_TIMEZONE:-Europe/Paris}
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-pizzeria}?schema=public
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
