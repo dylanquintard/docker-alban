@@ -48,6 +48,7 @@ model Category {
   updatedAt            DateTime     @updatedAt
   kind                 CategoryKind @default(PRODUCT)
   customerCanCustomize Boolean      @default(false)
+  countsTowardCapacity Boolean      @default(true)
   tenantId             Int?
   menuId               Int?
   Menu                 Menu?        @relation(fields: [menuId], references: [id])

@@ -107,6 +107,10 @@ async function createCategory(data) {
       sortOrder: parseSortOrder(data.sortOrder) ?? 0,
       active: parseOptionalBoolean(data.active) ?? true,
       customerCanCustomize: false,
+      countsTowardCapacity:
+        kind === CATEGORY_KINDS.PRODUCT
+          ? parseOptionalBoolean(data.countsTowardCapacity, "countsTowardCapacity") ?? true
+          : true,
     }),
   });
 }
@@ -137,6 +141,10 @@ async function updateCategory(id, data) {
         existing.kind === CATEGORY_KINDS.PRODUCT || nextKind === CATEGORY_KINDS.PRODUCT
           ? parseOptionalBoolean(data.customerCanCustomize, "customerCanCustomize")
           : false,
+      countsTowardCapacity:
+        existing.kind === CATEGORY_KINDS.PRODUCT || nextKind === CATEGORY_KINDS.PRODUCT
+          ? parseOptionalBoolean(data.countsTowardCapacity, "countsTowardCapacity")
+          : true,
     },
   });
 }

@@ -209,7 +209,11 @@ function parseOptionalCustomerNote(value) {
 }
 
 function getOrderProductsCount(order) {
-  return order.items.reduce((sum, item) => sum + item.quantity, 0);
+  return order.items.reduce(
+    (sum, item) =>
+      item.product?.category?.countsTowardCapacity === false ? sum : sum + item.quantity,
+    0
+  );
 }
 
 function formatPickupAddress(location) {
@@ -710,7 +714,7 @@ async function removeItemFromCart(userId, itemId) {
   const updatedOrder = await prisma.$transaction(async (tx) => {
     const cart = await tx.order.findFirst({
       where: withDefaultTenantWhere({ userId: parsedUserId, status: OrderStatus.PENDING }),
-      include: { items: true },
+      include: { items: { include: { product: { include: { category: true } } } } },
       orderBy: { createdAt: "desc" },
     });
 
@@ -749,7 +753,7 @@ async function finalizeOrder(userId, pickupSelection = {}) {
   const finalizedOrder = await prisma.$transaction(async (tx) => {
     const cart = await tx.order.findFirst({
       where: withDefaultTenantWhere({ userId: parsedUserId, status: OrderStatus.PENDING }),
-      include: { items: true },
+      include: { items: { include: { product: { include: { category: true } } } } },
       orderBy: { createdAt: "desc" },
     });
 
@@ -921,7 +925,7 @@ async function updateOrderStatusAdmin(orderId, status, actorUserId = null) {
     const order = await tx.order.findFirst({
       where: withDefaultTenantWhere({ id: parsedOrderId }),
       include: {
-        items: true,
+        items: { include: { product: { include: { category: true } } } },
         timeSlot: true,
         user: { select: { id: true, name: true, firstName: true, lastName: true, phone: true, email: true } },
       },

@@ -146,12 +146,12 @@ export const DEFAULT_SITE_SETTINGS = Object.freeze({
   },
   pizzaPage: {
     sectionTitle: {
-      fr: "Nos pizzas du moment",
-      en: "Our featured pizzas",
+      fr: "LES PIZZAS DU MOMENT",
+      en: "PIZZAS OF THE MOMENT",
     },
     sectionDescription: {
-      fr: "Une sélection mise en avant par l'équipe. Commandez en ligne en quelques clics.",
-      en: "A sélection highlighted by the team. Order online in just a few clicks.",
+      fr: "Découvrez notre sélection de pizzas, imaginées au gré des saisons et des produits du moment.",
+      en: "Discover our selection of pizzas, created around the seasons and the ingredients of the moment.",
     },
     featuredProductIds: [],
   },

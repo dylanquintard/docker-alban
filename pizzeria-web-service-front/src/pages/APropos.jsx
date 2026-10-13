@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import CompactServiceInfoPanel from "../components/common/CompactServiceInfoPanel";
 import PageFaqSection from "../components/common/PageFaqSection";
-import CompactReviewsPanel from "../components/reviews/CompactReviewsPanel";
 import SeoHead from "../components/seo/SeoHead";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../context/SiteSettingsContext";
@@ -62,8 +61,8 @@ export default function APropos() {
         <p className="text-xs uppercase tracking-[0.25em] text-saffron">{tr("A propos", "About")}</p>
         <h1 className="font-display text-4xl uppercase tracking-wide text-white sm:text-5xl">
           {tr(
-            `${companyName}, un camion pizza pense pour bien servir la Moselle`,
-            `${companyName}, a pizza truck built to serve Moselle well`
+            `${companyName}, la pizza napolitaine au cœur de la Moselle`,
+            `${companyName}, Neapolitan pizza at the heart of Moselle`
           )}
         </h1>
         <div className="flex flex-wrap gap-2">
@@ -85,20 +84,19 @@ export default function APropos() {
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)] lg:items-start">
         <div className="grid gap-5">
           <section className="glass-panel p-6">
-            <h2 className="text-xl font-bold text-saffron">Notre camion pizza</h2>
+            <h2 className="text-xl font-bold text-saffron">Notre FoodTruck</h2>
             <p className="mt-3 text-base leading-8 text-stone-200">
-              Installe en Moselle, pres de Thionville (57), notre camion pizza vous propose des pizzas artisanales preparees avec soin et passion. Nous venons au plus pres de vous pour partager une cuisine conviviale, genereuse et pleine d'authenticite.
+              Installé en Moselle, Il Forno D’oro sillonne les communes alentours pour vous proposer des pizzas napolitaines artisanales préparées à la commande. Notre objectif : vous faire découvrir une pizza authentique, généreuse et conviviale, au plus près de chez vous.
             </p>
           </section>
 
           <section className="glass-panel p-6">
-            <h2 className="text-xl font-bold text-saffron">Notre facon de faire</h2>
+            <h2 className="text-xl font-bold text-saffron">Notre exigence</h2>
             <p className="mt-3 text-base leading-8 text-stone-200">
-              Nous selectionnons des produits italiens de qualite pour composer une base d'ingredients savoureuse, avec une pate travaillee facon napolitaine, bien aeree et legere. Le tout est cuit dans un four napolitain au feu de bois, pour offrir des pizzas riches en gout et en caractere.
+              Chaque détail compte. Des recettes travaillées, des produits soigneusement sélectionnés et une préparation réalisée avec attention, pour vous servir des pizzas qui ont du goût.
             </p>
           </section>
 
-          <CompactReviewsPanel limit={4} compact grid className="w-full" />
         </div>
 
         <aside className="space-y-6">

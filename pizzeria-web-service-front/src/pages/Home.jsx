@@ -41,11 +41,6 @@ const MenuBoard = lazyWithSingleReload(
   () => import("../components/menu/MenuBoard"),
   "home-menu-board"
 );
-const PublicReviewsSection = lazyWithSingleReload(
-  () => import("../components/reviews/PublicReviewsSection"),
-  "home-public-reviews"
-);
-
 function getInitialIsMobileViewport() {
   if (typeof window === "undefined") {
     return true;
@@ -618,14 +613,14 @@ const truckTourSchedule = useMemo(
           <article className="glass-panel p-6 sm:p-8">
             <h2 className="font-display text-3xl uppercase tracking-wide text-white">
               {tr(
-                "Des produits choisis pour leur tenue, pas pour remplir la carte",
-                "Ingredients chosen for balance, not just to pad out the menu"
+                "DES PRODUITS SOIGNEUSEMENT SÉLECTIONNÉS",
+                "CAREFULLY SELECTED INGREDIENTS"
               )}
             </h2>
             <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
               {tr(
-                "La base produit reste volontairement courte pour garder des recettes plus nettes:",
-                "The ingredient list stays intentionally short to keep the recipes clear:"
+                "Nous privilégions des produits de qualité, choisis avec soin pour composer chacune de nos pizzas.",
+                "We favor quality ingredients, carefully chosen for every one of our pizzas."
               )}
             </p>
             <ul className="mt-4 grid gap-2 text-sm text-stone-200 sm:grid-cols-2">
@@ -640,79 +635,49 @@ const truckTourSchedule = useMemo(
             </ul>
             <p className="mt-4 text-xs uppercase tracking-[0.22em] text-saffron">
               {tr(
-                "pate travaillee | ingredients bien choisis | cuisson minute",
-                "worked dough | carefully chosen ingredients | baked to order"
+                "PÂTE FERMENTÉE | PRODUITS ITALIENS | CUISSON MINUTE",
+                "FERMENTED DOUGH | ITALIAN PRODUCTS | BAKED TO ORDER"
               )}
             </p>
           </article>
 
           <article className="glass-panel p-6 sm:p-8">
             <h2 className="font-display text-3xl uppercase tracking-wide text-white">
-              {tr("Ou trouver notre camion pizza", "Where to find our pizza truck")}
+              {tr("OÙ NOUS TROUVER ?", "WHERE TO FIND US?")}
             </h2>
             <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
               {tr(
-                "Le camion passe sur plusieurs points autour de Thionville et dans les communes voisines de Moselle.",
-                "The truck stops at several pickup points around Thionville and nearby towns across Moselle."
+                "Retrouvez-nous chaque semaine dans différentes communes de Moselle.",
+                "Find us every week in different towns across Moselle."
               )}
             </p>
             <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
               {tr(
-                "Les emplacements changent selon la tournee hebdomadaire.",
-                "Locations change with the weekly route."
-              )}
-            </p>
-            <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
-              {tr(
-                "Consultez le planning pour connaitre les horaires et les points de retrait ouverts.",
-                "Check the schedule to see opening hours and available pickup points."
+                "Consultez nos prochains emplacements et horaires pour savoir où nous retrouver.",
+                "Check our upcoming locations and opening hours to find us."
               )}
             </p>
             <Link
               to="/planing"
               className="mt-5 inline-flex rounded-full border border-saffron/60 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
             >
-              {tr("Voir les horaires d'ouverture", "See opening hours")}
+              {tr("Voir les horaires d'ouvertures", "See opening hours")}
             </Link>
           </article>
 
           <article className="glass-panel p-6 sm:p-8">
             <h2 className="font-display text-3xl uppercase tracking-wide text-white">
-              {tr("Cuisson au four a bois et gaz", "Wood-and-gas oven baking")}
+              {tr("UNE CUISSON À LA FLAMME", "FLAME-FIRED COOKING")}
             </h2>
             <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
               {tr(
-                "Le four sert a garder une cuisson courte et lisible: un bord qui se developpe, une base qui tient et une pizza qui ne seche pas.",
-                "The oven keeps the bake short and clean: a risen crust, a base that holds and a pizza that does not dry out."
+                "Notre four fonctionne au gaz pour garantir une température maîtrisée et une cuisson régulière. Nous y ajoutons quelques morceaux de bois pour apporter une subtile note fumée et retrouver le goût caractéristique d’une cuisson au feu.",
+                "Our oven runs on gas to ensure controlled temperatures and consistent baking. We add a few pieces of wood for a subtle smoky note and the distinctive flavor of flame cooking."
               )}
             </p>
-            <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
-              {tr(
-                "Chaque pizza est lancee a la commande pour sortir au bon moment, pas pour attendre sur le cote.",
-                "Every pizza goes in to order so it comes out at the right moment, not to sit waiting on the side."
-              )}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-[11px] uppercase tracking-wide text-saffron">
-                {tr("pizza napolitaine feu de bois", "wood-fired Neapolitan pizza")}
-              </span>
-              <span className="rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-[11px] uppercase tracking-wide text-saffron">
-                {tr("pizza feu de bois thionville", "wood-fired pizza Thionville")}
-              </span>
-              <span className="rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-[11px] uppercase tracking-wide text-saffron">
-                {tr("pizza artisanale moselle", "artisan pizza Moselle")}
-              </span>
-              <span className="rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-[11px] uppercase tracking-wide text-saffron">
-                {tr("camion pizza napolitaine", "Neapolitan pizza truck")}
-              </span>
-            </div>
           </article>
         </div>
       </section>
-
-      <DeferredSection minHeightClass={CONTENT_SECTION_MIN_HEIGHT_CLASS} rootMargin="380px">
-        <PublicReviewsSection />
-      </DeferredSection>
 
       <DeferredSection minHeightClass={CONTENT_SECTION_MIN_HEIGHT_CLASS} rootMargin="420px">
         <PageFaqSection

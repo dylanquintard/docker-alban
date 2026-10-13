@@ -116,6 +116,8 @@ function CategoryTable({ title, categories, token, tr, onRefresh, onError, kind 
         active: Boolean(category.active),
         customerCanCustomize:
           kind === KIND.MENU ? Boolean(category.customerCanCustomize) : false,
+        countsTowardCapacity:
+          kind === KIND.MENU ? Boolean(category.countsTowardCapacity) : true,
         kind: category.kind,
       });
       await onRefresh();
@@ -192,19 +194,34 @@ function CategoryTable({ title, categories, token, tr, onRefresh, onError, kind 
 
                 {kind === KIND.MENU ? (
                   <div className="flex items-end">
-                    <label className="flex items-center gap-2 rounded-full border border-white/15 bg-charcoal/60 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-stone-200">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(category.customerCanCustomize)}
-                        disabled={!isEditing}
-                        onChange={(event) =>
-                          patchLocal(category.id, {
-                            customerCanCustomize: event.target.checked,
-                          })
-                        }
-                      />
-                      <span>{tr("Modifiable client", "Customer customizable")}</span>
-                    </label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 rounded-full border border-white/15 bg-charcoal/60 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-stone-200">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(category.customerCanCustomize)}
+                          disabled={!isEditing}
+                          onChange={(event) =>
+                            patchLocal(category.id, {
+                              customerCanCustomize: event.target.checked,
+                            })
+                          }
+                        />
+                        <span>{tr("Modifiable client", "Customer customizable")}</span>
+                      </label>
+                      <label className="flex items-center gap-2 rounded-full border border-white/15 bg-charcoal/60 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-stone-200">
+                        <input
+                          type="checkbox"
+                          checked={category.countsTowardCapacity !== false}
+                          disabled={!isEditing}
+                          onChange={(event) =>
+                            patchLocal(category.id, {
+                              countsTowardCapacity: event.target.checked,
+                            })
+                          }
+                        />
+                        <span>{tr("Compte dans la capacité", "Counts toward capacity")}</span>
+                      </label>
+                    </div>
                   </div>
                 ) : null}
 
@@ -347,6 +364,7 @@ export default function Products() {
         sortOrder: 0,
         active: true,
         customerCanCustomize: false,
+        countsTowardCapacity: true,
         kind,
       });
       if (kind === KIND.MENU) {
@@ -629,7 +647,7 @@ export default function Products() {
                 : "border-white/20 bg-black/20 text-stone-100 hover:bg-white/10"
             }`}
           >
-            {tr("Ajouter un plat au menu", "Add a dish to menu")}
+            {tr("Ajouter un produit au menu", "Add a product to the menu")}
           </button>
           <button
             type="button"
@@ -757,7 +775,7 @@ export default function Products() {
 
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-white">
-                    {tr("Liste catégories plats", "Dish category list")}
+                    {tr("Liste des catégories menu", "Menu category list")}
                   </p>
                   <CategoryTable
                     title={tr("Liste catégorie menu", "Menu category list")}
@@ -861,10 +879,10 @@ export default function Products() {
           {activePanel === KIND.MENU ? (
             <div className="space-y-4">
               <div className="rounded-xl border border-white/10 bg-charcoal/40 p-3">
-                <p className="mb-2 text-sm font-semibold text-white">{tr("Ajouter un plat au menu", "Add a dish to menu")}</p>
+                <p className="mb-2 text-sm font-semibold text-white">{tr("Ajouter un produit au menu", "Add a product to the menu")}</p>
                 <div className="grid gap-2 sm:grid-cols-4">
                   <input
-                    placeholder={tr("Nom du plat", "Dish name")}
+                    placeholder={tr("Nom du produit", "Product name")}
                     value={newProductName}
                     onChange={(event) => setNewProductName(event.target.value)}
                   />

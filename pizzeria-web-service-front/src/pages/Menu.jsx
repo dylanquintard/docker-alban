@@ -125,12 +125,12 @@ export default function Menu() {
         })}
       />
       <header className="space-y-3 text-center">
-        <p className="text-xs uppercase tracking-[0.35em] text-saffron">{tr("Menu restaurant", "Restaurant menu")}</p>
+        <p className="text-xs uppercase tracking-[0.35em] text-saffron">{tr("FOODTRUCK", "FOOD TRUCK")}</p>
         <h1 className="font-display text-5xl uppercase tracking-[0.08em] text-white sm:text-6xl">{tr("Notre carte", "Our menu")}</h1>
         <p className="mx-auto max-w-2xl text-sm text-stone-300 sm:text-base">
           {tr(
-            "Pizzas au four a bois et produits frais, présentes comme une vraie carte de restaurant.",
-            "Wood-fired pizzas and fresh products, displayed like a real restaurant menu."
+            "Découvrez nos pizzas napolitaines, préparées à la commande avec des produits italiens soigneusement sélectionnés.",
+            "Discover our Neapolitan pizzas, made to order with carefully selected Italian products."
           )}
         </p>
       </header>

@@ -4,7 +4,6 @@ import { getLocations } from "../api/location.api";
 import { getSeoLocations } from "../api/seo.api";
 import { getPublicWeeklySettings } from "../api/timeslot.api";
 import PageFaqSection from "../components/common/PageFaqSection";
-import CompactReviewsPanel from "../components/reviews/CompactReviewsPanel";
 import SeoHead from "../components/seo/SeoHead";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../context/SiteSettingsContext";
@@ -351,17 +350,6 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
     [locations, resolvedCitySlug]
   );
 
-  const reviewLocationId = useMemo(() => {
-    const fromQuery = Number(queryLocationId);
-    if (Number.isInteger(fromQuery) && fromQuery > 0) return fromQuery;
-
-    const fromCatalog = Number(catalogEntry?.locationId);
-    if (Number.isInteger(fromCatalog) && fromCatalog > 0) return fromCatalog;
-
-    const fallbackId = Number(matchingLocations[0]?.id);
-    return Number.isInteger(fallbackId) && fallbackId > 0 ? fallbackId : null;
-  }, [catalogEntry?.locationId, matchingLocations, queryLocationId]);
-
   const cityDisplay = catalogEntry?.label || currentBucket?.label || toDisplayCity(resolvedCitySlug);
   const canonicalPath = catalogEntry?.path || `/pizza-${resolvedCitySlug}`;
   const siteName = settings.siteName || DEFAULT_SITE_SETTINGS.siteName;
@@ -578,15 +566,6 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
             ))}
           </div>
 
-          {reviewLocationId ? (
-            <CompactReviewsPanel
-              locationId={reviewLocationId}
-              limit={4}
-              compact
-              grid
-              className="w-full"
-            />
-          ) : null}
         </div>
 
         <aside className="space-y-6">

@@ -230,18 +230,18 @@ export default function TourneeCamion() {
 
       <header className="space-y-3">
         <p className="text-xs uppercase tracking-[0.25em] text-saffron">
-          {tr("Horaires d'ouverture du camion", "Truck opening hours")}
+          {tr("NOS HORAIRES", "OUR OPENING HOURS")}
         </p>
         <h1 className="font-display text-4xl uppercase tracking-wide text-white sm:text-5xl">
           {tr(
-            "Horaires d'ouverture du camion pizza napolitaine",
-            "Opening hours for the Neapolitan pizza truck"
+            "OÙ NOUS TROUVER ?",
+            "WHERE TO FIND US?"
           )}
         </h1>
         <p className="max-w-3xl text-sm text-stone-300 sm:text-base">
           {tr(
-            "Retrouvez les emplacements et horaires du camion pizza napolitaine en Moselle et autour de Thionville.",
-            "Find the locations and opening hours of the Neapolitan pizza truck in Moselle and around Thionville."
+            "Découvrez nos prochains emplacements et horaires.",
+            "Discover our upcoming locations and opening hours."
           )}
         </p>
       </header>

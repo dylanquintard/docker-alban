@@ -109,30 +109,30 @@ export default function PizzaPage() {
   const trustHighlights = useMemo(
     () => [
       {
-        kicker: tr("Produit italiens", "Italian products"),
+        kicker: tr("PRODUITS ITALIENS", "ITALIAN PRODUCTS"),
         title: tr(
-          "De la pate aux ingredients, une selection d'ingredients d'italie pour une pizza de qualitee.",
-          "From dough to toppings, a selection of Italian ingredients from Italy for a quality pizza."
+          "Des produits italiens soigneusement sélectionnés",
+          "Carefully selected Italian products"
         ),
         text: tr(
-          "De la pate aux ingredients, une selection d'ingredients d'italie pour une pizza de qualitee.",
-          "From dough to toppings, a selection of Italian ingredients from Italy for a quality pizza."
-        ),
-      },
-      {
-        kicker: tr("Service", "Service"),
-        title: tr("Facilite de commande en ligne", "Easy online ordering"),
-        text: tr(
-          "Commandez en ligne, choisissez votre creneau, verifiez l'adresse de retrait et retirez votre commande. On garantie un temps d'attente tres limite !",
-          "Order online, choose your timeslot, check the pickup address and collect your order. We keep waiting time as short as possible."
+          "Nous sélectionnons des produits italiens de qualité pour vous offrir une pizza authentique, généreuse et pleine de saveurs.",
+          "We select quality Italian products to offer you an authentic, generous pizza full of flavor."
         ),
       },
       {
-        kicker: tr("Notre pate", "Our dough"),
-        title: tr("Une fermentation en 2 temps", "A two-step fermentation"),
+        kicker: tr("FOUR NAPOLITAIN", "NEAPOLITAN OVEN"),
+        title: tr("Une cuisson à la flamme", "Flame-fired cooking"),
         text: tr(
-          "Nous travaillons pour garantir une pate legere, alveolee et pleine de saveurs a la sortie du four.",
-          "We work to guarantee a light, airy dough full of flavor when it comes out of the oven."
+          "Chaque pizza est cuite à la commande dans notre four napolitain, à haute température, pour une pâte légère, alvéolée et parfaitement cuite.",
+          "Each pizza is cooked to order in our high-temperature Neapolitan oven for a light, airy, perfectly baked dough."
+        ),
+      },
+      {
+        kicker: tr("NOTRE PÂTE", "OUR DOUGH"),
+        title: tr("Une fermentation en deux temps", "A two-stage fermentation"),
+        text: tr(
+          "Notre pâte repose selon un procédé de fermentation en deux temps, pour développer ses arômes et obtenir une pâte légère, aérienne et pleine de saveurs.",
+          "Our dough rests through a two-stage fermentation process, developing its flavors and producing a light, airy dough full of character."
         ),
       },
     ],

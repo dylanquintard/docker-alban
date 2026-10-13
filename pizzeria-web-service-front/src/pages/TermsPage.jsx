@@ -22,38 +22,38 @@ export default function TermsPage() {
       eyebrow={tr("Utilisation du site", "Website use")}
       pageTitle={tr("Conditions d'utilisation", "Terms of use")}
       intro={tr(
-        "Ces conditions encadrent l'utilisation du site, de l'espace client et des fonctions de commande.",
-        "These terms govern the use of the website, customer account area and ordering features."
+        `Ces conditions définissent les modalités d’utilisation du site ${siteName}, de l’espace client et du service de commande en ligne.`,
+        `These terms define how the ${siteName} website, customer area and online ordering service may be used.`
       )}
       sections={[
         {
-          title: tr("Accès au service", "Access to the service"),
+          title: tr("Accès au site", "Website access"),
           paragraphs: [
             tr(
-              "Le site est accessible sous réserve de maintenance, d'indisponibilité temporaire ou d'évolution du service.",
-              "The website remains accessible subject to maintenance, temporary downtime or service updates."
+              "Le site est accessible sous réserve de disponibilité. Il Forno D’oro se réserve la possibilité d’interrompre temporairement l’accès au site pour des opérations de maintenance, des mises à jour ou des raisons techniques.",
+              "The website is accessible subject to availability. Il Forno D’oro may temporarily suspend access for maintenance, updates or technical reasons."
             ),
           ],
         },
         {
-          title: tr("Commande et disponibilité", "Ordering and availability"),
+          title: tr("Commandes et disponibilités", "Orders and availability"),
           paragraphs: [
             tr(
-              "Les commandes restent soumises aux créneaux ouverts, aux emplacements disponibles et a la validation finale du service.",
-              "Orders remain subject to available pickup slots, active locations and final service validation."
+              "Les commandes en ligne sont soumises aux créneaux de commande proposés, aux disponibilités des produits et aux modalités de retrait indiquées sur le site.",
+              "Online orders are subject to the offered ordering slots, product availability and pickup terms shown on the website."
             ),
             tr(
-              "Les informations affichees sur le site peuvent évoluer selon la tournée, les horaires et les contraintes d'exploitation.",
-              "Information displayed on the website may change depending on the weekly route, opening hours and operating constraints."
+              "Les horaires, emplacements du foodtruck, menus et disponibilités peuvent évoluer en fonction de la tournée et des contraintes d’exploitation. Les informations communiquées lors de la commande prévalent pour son traitement.",
+              "Opening hours, food truck locations, menus and availability may change according to the route and operational constraints. Information provided when an order is placed takes precedence for processing it."
             ),
           ],
         },
         {
-          title: tr("Bon usage", "Proper use"),
+          title: tr("Utilisation du site", "Use of the website"),
           paragraphs: [
             tr(
-              "L'utilisateur s'engage a fournir des informations exactes et a utiliser le site conformement a sa destination.",
-              "Users agree to provide accurate information and use the website for its intended purpose."
+              "L’utilisateur s’engage à fournir des informations exactes, notamment lors de la création d’un compte ou du passage d’une commande, et à utiliser le site conformément à sa destination et à la réglementation applicable.",
+              "Users agree to provide accurate information, especially when creating an account or placing an order, and to use the website in accordance with its purpose and applicable regulations."
             ),
           ],
         },
